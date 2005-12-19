@@ -18,6 +18,7 @@ LIBPREFIX?=$(PREFIX)/lib
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 
 VERSION = 0.1
+DEBVER =
 DEB_ARCH ?= $(shell dpkg-architecture -qDEB_BUILD_ARCH)
  
 all: libdbus-java.so libdbus-java.jar
@@ -25,7 +26,7 @@ all: libdbus-java.so libdbus-java.jar
 clean:
 	-rm -rf doc
 	-rm -rf classes
-	-rm *.o *.so *.h .classes .testclasses .doc *.jar
+	-rm *.o *.so *.h .classes .testclasses .doc *.jar *.log
 	
 classes: .classes
 testclasses: .testclasses
@@ -115,19 +116,29 @@ dist: .dist
 	cp -a $^ libdbus-java-$(VERSION)
 	touch .dist
 
+distclean:
+	-rm -rf libdbus-java-$(VERSION)
+	-rm -rf libdbus-java-$(VERSION).tar.gz
+	-rm libdbus-java_$(VERSION)$(DEBVER)_$(DEB_ARCH).deb
+	-rm libdbus-java_$(VERSION)$(DEBVER).dsc
+	-rm libdbus-java_$(VERSION)$(DEBVER)_$(DEB_ARCH).build
+	-rm libdbus-java_$(VERSION)$(DEBVER)_$(DEB_ARCH).changes
+	-rm libdbus-java_$(VERSION)$(DEBVER).diff.gz
+	-rm libdbus-java_$(VERSION).orig.tar.gz
+
 libdbus-java-$(VERSION): .dist
 	
 libdbus-java-$(VERSION).tar.gz: .dist
 	tar zcf $@ libdbus-java-$(VERSION)
 	
-libdbus-java_$(VERSION)-1_$(DEB_ARCH).deb: .dist libdbus-java-$(VERSION).tar.gz
+libdbus-java_$(VERSION)$(DEBVER)_$(DEB_ARCH).deb: .dist libdbus-java-$(VERSION).tar.gz
 	cp libdbus-java-$(VERSION).tar.gz libdbus-java_$(VERSION).orig.tar.gz
 	cp -a debian libdbus-java-$(VERSION)
 	(cd libdbus-java-$(VERSION); debuild -uc -us -rfakeroot)
 
-deb: libdbus-java_$(VERSION)-1_$(DEB_ARCH).deb
-libdbus-java_$(VERSION)-1.dsc: libdbus-java_$(VERSION)-1_$(DEB_ARCH).deb
-libdbus-java_$(VERSION)-1.diff.gz: libdbus-java_$(VERSION)-1_$(DEB_ARCH).deb
-libdbus-java_$(VERSION).orig.tar.gz: libdbus-java_$(VERSION)-1_$(DEB_ARCH).deb
+deb: libdbus-java_$(VERSION)$(DEBVER)_$(DEB_ARCH).deb
+libdbus-java_$(VERSION)$(DEBVER).dsc: libdbus-java_$(VERSION)$(DEBVER)_$(DEB_ARCH).deb
+libdbus-java_$(VERSION)$(DEBVER).diff.gz: libdbus-java_$(VERSION)$(DEBVER)_$(DEB_ARCH).deb
+libdbus-java_$(VERSION).orig.tar.gz: libdbus-java_$(VERSION)$(DEBVER)_$(DEB_ARCH).deb
 
 
