@@ -49,15 +49,15 @@ dbus-java.o: dbus-java.c org_freedesktop_dbus_DBusConnection.h
 
 libdbus-java.so: dbus-java.o
 	$(LD) $(LDFLAGS) -fpic -shared -o $@ $^ $(DBUSLIB)
-libdbus-java.jar: .classes
+libdbus-java-$(VERSION).jar: .classes
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/*.class org/freedesktop/*.class)
-dbus-java-test.jar: .testclasses
+dbus-java-test-$(VERSION).jar: .testclasses
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/test/*.class)
 	
 dist: tar
 
 tar: dbus-java.tar.gz
-jar: libdbus-java.jar
+jar: libdbus-java-$(VERSION).jar
 doc: doc/dbus-java.dvi doc/dbus-java.ps doc/dbus-java.pdf doc/dbus-java/index.html doc/api/index.html
 .doc:
 	-mkdir doc
@@ -92,10 +92,15 @@ check:
 	  rm $$TEMP ) ; \
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
 
+uninstall: 
+	rm $(JARPREFIX)/libdbus-java.jar $(JARPREFIX)/libdbus-java-$(VERSION).jar
+	rm $(LIBPREFIX)/libdbus-java.so
+	rm -rf $(DOCPREFIX)
 
-install: libdbus-java.jar libdbus-java.so doc
+install: libdbus-java-$(VERSION).jar libdbus-java.so doc
 	install -d $(JARPREFIX)
-	install -m 644 libdbus-java.jar $(JARPREFIX)
+	install -m 644 libdbus-java-$(VERSION).jar $(JARPREFIX)
+	ln -s libdbus-java-$(VERSION).jar $(JARPREFIX)/libdbus-java.jar
 	install -d $(LIBPREFIX)
 	install libdbus-java.so $(LIBPREFIX)
 	install -d $(DOCPREFIX)
