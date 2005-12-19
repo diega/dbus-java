@@ -1,0 +1,731 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage{fullpage}
+\usepackage{ifthen}
+
+\ifx\pdfoutput\undefined
+   \usepackage{hyperref}
+\else
+   \usepackage[
+     pdftex,
+     bookmarks,
+     bookmarksopen,
+     bookmarksnumbered=false,
+     colorlinks,
+     pdfpagemode=None,
+     urlcolor=black,
+     citecolor=black,
+     linkcolor=black,
+     pagecolor=black,
+     plainpages=false,
+     pdfpagelabels,
+   ]{hyperref}
+\fi
+
+\author{Matthew Johnson\\matthew.johnson@cl.cam.ac.uk}
+\title{DBus programming in Java 1.5}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\section{Introduction}
+
+This document describes how to use the Java bindings for DBus. DBus
+is an IPC mechanism which at a low level uses message passing over
+Unix Sockets or IP. DBus models its messages as either function
+calls on remote objects, or signals emitted from them.
+
+Java is an object-oriented language and these bindings attempt to
+match the DBus IPC model to the Java object model. The bindings also
+make heavy use of threads and exceptions. The programmer should be
+careful to take care of synchronisation issues in their code. All
+method calls by remote programs on exported objects and all signal
+handlers are run in new threads. Any calls on remote objects may
+throw {\tt DBusExcutionException}, which is a runtime exception and
+so the compiler will not remind you to handle it.
+
+The Java bindings API is also documented in the
+JavaDoc\footnote{http://javadoc.matthew.ath.cx/}, DBus is
+described in the
+specification\footnote{http://dbus.freedesktop.org/doc/dbus-specification.html}
+and the API
+documentation\footnote{http://dbus.freedesktop.org/doc/api/html/}.
+
+\subsection{Dependencies}
+
+These bindings require Java 1.5-compatible VM and compiler (either
+Sun, or ecj+jamvm with classpath-generics newer than 0.19), and DBus
+0.60 or newer.
+
+\subsection{DBus Terminology}
+
+DBus has several notions which are exposed to the users of the Java
+bindings.
+
+\subsubsection{Service Names}
+
+Programs on the bus are issued a unique identifier by the bus. This
+is guaranteed to be unique within one run of the bus, but is
+assigned sequentially to each new connection. 
+
+There are also so called well-known service names which a device can
+request on the bus. These are of the form {\em ``org.freedesktop.DBus''},
+and any program can request them if they are not already owned.
+
+\subsubsection{Interfaces}
+
+All method calls and signals are specified using an interface,
+similar to those in Java. When executing a method or sending a
+signal you specify the interface the method belongs to. These are of
+the form {\em ``org.freedesktop.DBus''}.
+
+\subsubsection{Object Paths}
+
+A program may expose more than one object which implements an
+interface. Object paths of the form {\em ``/org/freedesktop/DBus''}
+are used to distinguish objects.
+
+\subsubsection{Member Names}
+
+Methods and Signals have names which identify them within an
+interface. DBus does not support method overloading, only one
+method or signal should exist with each name.
+
+\section{DBusConnection}
+
+The {\tt
+DBusConnection\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/DBusConnection.html}}
+class provides methods for connecting to the bus, exporting objects,
+sending signals and getting references to remote objects.
+
+{\tt DBusConnection} is a singleton class, multiple calls to {\tt
+getConnection} will return the same bus connection. 
+
+\begin{verbatim}
+conn = DBusConnection.getConnection(DBusConnection.SESSION);
+\end{verbatim}
+
+This creates a connection to the session bus, or returns the
+existing connection.
+
+\begin{verbatim}
+conn.addSigHandler(TestSignalInterface.TestSignal.class,
+                   new SignalHandler());
+\end{verbatim}
+
+This sets up a signal handler for the given signal type.
+SignalHandler.handle will be called in a new thread with an instance
+of TestSignalInterface.TestSignal when that signal is recieved.
+
+\begin{verbatim}
+conn.sendSignal(new TestSignalInterface.TestSignal(
+                     "/foo/bar/com/Wibble", 
+                     "Bar", 
+                     new UInt32(42)));
+\end{verbatim}
+
+This sends a signal of type {\tt TestSignalInterface.TestSignal},
+from the object {\em ``/foo/bar/com/Wibble''} with the arguments {\em
+``Bar''} and {\tt UInt32(42)}.
+
+\begin{verbatim}
+conn.exportObject("/Test", new testclass());
+\end{verbatim}
+
+This exports the {\tt testclass} object on the path {\em ``/Test''}
+
+\begin{verbatim}
+Introspectable intro = (Introspectable) conn.getRemoteObject(
+                              "foo.bar.Test", "/Test",
+                              Introspectable.class);
+\end{verbatim}
+
+This gets a reference to a an object on a remote program. The object
+implements the {\tt Introspectable} interface, and calls may be made
+to methods in that interface as if it was a local object.
+
+\begin{verbatim}
+String data = intro.Introspect();
+\end{verbatim}
+
+The Runtime Exception {\tt DBusExecutionException} may be thrown
+by any remote method if any part of the execution failed.
+
+\section{DBusInterface}
+
+To call methods or expose methods on DBus you need to define them
+with their exact signature in a Java interface. The full name of
+this interface must be the same as the DBus interface they
+represent.
+
+For example, if I want to expose methods on the interface
+{\em ``org.freedesktop.DBus''} I would define a Java interface in
+the package {\tt org.freedesktop} called {\tt DBus}. This would be
+in the file {\tt org/freedesktop/DBus.java} as normal. Any object
+wanting to export these methods would implement {\tt
+org.freedesktop.DBus}.
+
+Any interfaces which can be exported over DBus must extend {\tt
+DBusInterface\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/DBusInterface.html}}.
+A class may implement more than one exportable interface, all public
+methods declared in an interface which extend {\tt DBusInterface}
+will be exported.
+
+A sample interface definition is given in
+figure~\ref{fig:interface}, and a class which implements it in
+figure~\ref{fig:class}. More complicated definitions can be seen in
+the test
+classes\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/test/TestRemoteInterface2.java
+http://javadoc.matthew.ath.cx/org/freedesktop/dbus/test/TestRemoteInterface.java}.
+
+All method calls by other programs on objects you export over DBus
+are executed in their own thread.
+
+{\tt DBusInterface} itself specifies one method \verb&boolean isRemote()&. If this is executed on a remote object it will always
+return true. Local objects implementing a remote interface should
+implement this method to return false.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+package org.freedesktop;
+import org.freedesktop.dbus.UInt32;
+import org.freedesktop.dbus.DBusInterface;
+
+public interface DBus extends DBusInterface
+{
+   public boolean NameHasOwner(String name);
+   public UInt32 RequestName(String name, UInt32 flags);
+}
+\end{verbatim}
+\end{center}
+\caption{An interface which exposes two methods}
+\label{fig:interface}
+\end{figure}
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+package my.real.implementation;
+import org.freedesktop.dbus.DBus;
+import org.freedesktop.dbus.UInt32;
+
+public class DBusImpl implements DBus
+{
+   Vector<String> names;
+   public boolean NameHasOwner(String name)
+   {
+      if (names.contains(name)) return true;
+      else return false;
+   }
+   public UInt32 RequestName(String name, UInt32 flags)
+   {
+      names.add(name);
+      return new UInt32(0);
+   }
+}
+\end{verbatim}
+\end{center}
+\caption{A class providing a real implementation which can be exported}
+\label{fig:class}
+\end{figure}
+
+\section{DBusSignal}
+
+Signals are also declared as part of an interface. The Java API
+models these as inner classes within an interface. The containing
+interface must extend {\tt DBusInterface}, and the inner classes
+representing the signals must extend {\tt
+DBusSignal\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/DBusSignal.html}}.
+The Signal name is derived from the name of this inner class, and
+the interface from its containing interface.
+
+Signals can take parameters as methods can (although they cannot
+return anything). For the reflection to work, a Signal must be
+parameterised with the types of parameter to take. For example, a
+signal called {\tt Disconnected} in the interface {\tt
+SigInterface} which takes a String as a parameter would be
+declared as:
+
+\begin{verbatim}
+public interface SigInterface extends DBusInterface {
+   public class Disconnected<A extends String> 
+                               extends DBusSignal
+   {
+      ...
+\end{verbatim}
+
+In addition, signal constructors MUST take the object path they are
+being emitted from as their first (String) argument, followed by
+the other parameters in order. They must also call the superclass
+constructor with the same parameters. A full definition of a signal
+can be seen in figure~\ref{fig:signal}. Again, more complicated
+definitions are available in the test classes\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/test/TestSignalInterface.html}.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+package org.freedesktop;
+import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.DBusSignal;
+
+public interface DBus extends DBusInterface
+{
+   public class NameAquired<A extends String> 
+                              extends DBusSignal
+   {
+      public final A name;
+      public NameAquired(String path, A name) 
+                              throws DBusException
+      {
+         super(path, name);
+         this.name = name;
+      }
+   }
+}
+\end{verbatim}
+\end{center}
+\caption{A Signal with one parameter}
+\label{fig:signal}
+\end{figure}
+
+\section{DBusSigHandler}
+
+To handle incoming signals from other programs on the Bus you must
+register a signal handler. This must implement {\tt
+DBusSigHandler\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/DBusSigHandler.html}}
+and provide an implementation for the handle method. An example Signal Handler is in figure~\ref{fig:handler}. Signal handlers will be run in their own thread.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+import org.freedesktop.dbus.DBusSignal;
+import org.freedesktop.dbus.DBusSigHandler;
+
+public class Handler extends DBusSigHandler
+{
+   public void handle(DBusSignal sig)
+   {
+      if (sig instanceof DBus.NameAquired) {
+         ...
+      }
+   }
+}
+\end{verbatim}
+\end{center}
+\caption{A Signal Handler}
+\label{fig:handler}
+\end{figure}
+
+
+\section{DBus Types}
+
+DBus supports a number of types in its messages, some which Java
+supports natively, and some which it doesn't. These bindings provide
+a way of modelling the extra DBus Types in Java. The full list of
+types and what DBus type they map to is in table \ref{table:types}.
+
+\subsection{Basic Types}
+
+All of Java's basic types are supported as parameters and return types to methods, and as parameters to signals. These can be used in either their primitive or wrapper types.
+
+\subsubsection{Unsigned Types}
+
+DBus, like C an similar languages, has a notion of unsigned numeric
+types. These binding supply {\tt
+UInt16\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/UInt16.html}}, {\tt
+UInt32} and {\tt UInt64} classes to represent these new basic types.
+
+\subsection{Strings}
+
+DBus also supports sending Strings. When mentioned below, Strings
+count as a basic type.
+
+\subsection{Arrays}
+
+You can send arrays of any valid DBus Type over DBus. These can
+either be declared in Java as arrays (e.g. \verb&Integer[]& or
+\verb&int[]&) or as Lists (e.g. \verb&List<String>&). All lists {\bf
+must} be parameterised with their type in the source (reflection on
+this is used by the bindings to determine their type).
+
+\subsection{Maps}
+
+DBus supports a dictionary type analogous to the Java Map type. This
+has the additional restriction that only basic types can be used as
+the key (including String). Any valid DBus type can be the value. As
+with lists, maps must be fully parameterised. (e.g.
+\verb&Map<Integer, String>&).
+
+\subsection{Variants}
+
+DBus has support for a Variant type. This is similar to declaring that a method takes a parameter of type {\tt Object}, in that a Variant may contain any other type. Variants can either be declared using the {\tt Variant\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/Variant.html}} class, or as a Type Variable. In the latter case the value is automatically unwrapped and passed to the function. Variants in compound types (Arrays, Maps, etc) must be declared using the Variant class and manually unwrapped.
+
+Both these methods use variants:
+
+\begin{verbatim}
+public void display(Variant v);
+public <T> int hash(T v);
+\end{verbatim}
+
+\subsection{Structs}
+
+DBus has a struct type, which is a collection of other types. Java
+does not have an analogue of this other than fields in classes, and
+due to the limitation of Java reflection this is not sufficient. The
+bindings declare a {\tt
+Struct\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/Struct.html}} class
+which should be subclassed as neccessary to create structs of the
+appropriate sizes. The types are then added by the functions which
+declare them. This is best demonstrated by an example.
+Figure~\ref{fig:struct} shows a Struct definition, and
+figure~\ref{fig:structmethod} shows this being used as a parameter
+to a method.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+package org.freedesktop.dbus.test;
+
+import org.freedesktop.dbus.DBusException;
+import org.freedesktop.dbus.Struct;
+
+public final class Struct3<A, B, C> extends Struct
+{
+   public final A a;
+   public final B b;
+   public final C c;
+   public Struct3(A a, B b, C c) throws DBusException
+   {
+      super(a, b, c);
+      this.a = a;
+      this.b = b;
+      this.c = c;
+   }
+}
+\end{verbatim}
+\end{center}
+\caption{A Struct of size 3}
+\label{fig:struct}
+\end{figure}
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+public void do(Struct3<String, UInt32, String> data);
+\end{verbatim}
+\end{center}
+\caption{A struct as a parameter to a method}
+\label{fig:structmethod}
+\end{figure}
+
+
+Section~\ref{sec:create} describes how these can be automatically
+generated from DBus introspection data.
+
+\subsection{Objects}
+
+You can pass references to exportable objects round using their object paths.
+To do this in Java you declare a type of {\tt DBusInterface}. When the bindings
+receive an object path they will automatically convert it into the object you
+are exporting with that object path. You can pass remote objects back to their
+services in a similar fashion.
+
+
+\subsection{Multiple Return Values}
+
+DBus also allows functions to return multiple values, another
+facility which java is alien to. This has been solved in a similar
+fashion to the structs, using a {\tt
+Tuple\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/Tuple.html}} class, and
+defining tuples of the appropriate length. This can be seen in
+figure~\ref{fig:tuple}. Again, these can be automatically generated
+from introspection data.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+public ThreeTuple<String, Integer, Boolean> status(int item);
+\end{verbatim}
+\end{center}
+\caption{A Tuple being returned from a method}
+\label{fig:tuple}
+\end{figure}
+
+\subsection{Full list of types}
+
+Table \ref{table:types} contains a full list of all the Java types and their corresponding DBus types.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{l|l}
+\bf Java Type & \bf DBus Type \\
+\hline
+Byte	&	DBUS\_TYPE\_BYTE	\\
+byte	&	DBUS\_TYPE\_BYTE	\\
+Boolean	&	DBUS\_TYPE\_BOOLEAN	\\
+boolean	&	DBUS\_TYPE\_BOOLEAN	\\
+Short	&	DBUS\_TYPE\_INT16	\\
+short	&	DBUS\_TYPE\_INT16	\\
+UInt16	&	DBUS\_TYPE\_UINT16	\\
+int	&	DBUS\_TYPE\_INT32	\\
+Integer	&	DBUS\_TYPE\_INT32	\\
+UInt32	&	DBUS\_TYPE\_UINT32	\\
+long	&	DBUS\_TYPE\_INT64	\\
+Long	&	DBUS\_TYPE\_INT64	\\
+UInt64	&	DBUS\_TYPE\_UINT64	\\
+double	&	DBUS\_TYPE\_DOUBLE	\\
+Double	&	DBUS\_TYPE\_DOUBLE	\\
+String	&	DBUS\_TYPE\_STRING	\\
+$<$T$>$	&	DBUS\_TYPE\_VARIANT	\\
+Variant	&	DBUS\_TYPE\_VARIANT	\\
+? extends Struct	&	DBUS\_TYPE\_STRUCT	\\
+?$[$~$]$	&	DBUS\_TYPE\_ARRAY	\\
+? extends List	&	DBUS\_TYPE\_ARRAY	\\
+? extends Map	&	DBUS\_TYPE\_DICT	\\
+? extends DBusInterface	&	DBUS\_TYPE\_OBJECT\_PATH	\\
+\end{tabular}
+\end{center}
+\caption{Mapping between Java types and DBus types}
+\label{table:types}
+\end{table}
+
+\section{CreateInterface}
+\label{sec:create}
+
+DBus provides a method to get introspection data on a remote object,
+which describes the interfaces, methods and signals it provides.
+This data is in an XML
+format\footnote{http://dbus.freedesktop.org/doc/dbus-specification.html\#introspection-format}.
+The Java bindings automatically provide introspection data on all
+objects which are exported by it, and data can be used to create
+Java interface definitions automatically.
+
+The {\tt
+CreateInterface\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/CreateInterface.html}}
+class will automatically create Java files from a XML file
+containing the introspection data, or by querying the remote object
+over DBus.
+
+The syntax for CreateInterface is
+
+\begin{verbatim}
+CreateInterface [--system] [--session] [--create-files] 
+                  <service> <object>
+CreateInterface [--create-files] <introspection-file.xml>
+\end{verbatim}
+
+The Java interfaces will be written to the standard ouput. If the
+{\tt --create-files} option is specified the correct files in the
+correct directory structure will be created.
+
+\section{Examples}
+
+As an example here are a complete set of interfaces for the
+bluemon\footnote{http://www.matthew.ath.cx/projects/bluemon} daemon,
+which communicates over DBus. These interfaces were all created by
+querying introspection data over the bus.
+
+\newpage
+
+\begin{figure}[!h]
+\begin{center}
+\begin{verbatim}
+package cx.ath.matthew.bluemon;
+import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.UInt32;
+public interface Bluemon extends DBusInterface
+{
+  public Triplet<String, Boolean, UInt32> 
+  Status(String address);
+}
+\end{verbatim}
+\end{center}
+\caption{cx/ath/matthew/bluemon/Bluemon.java}
+\end{figure}
+
+\newpage
+
+\begin{figure}[!h]
+\begin{center}
+\begin{verbatim}
+package cx.ath.matthew.bluemon;
+import org.freedesktop.dbus.DBusException;
+import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.DBusSignal;
+public interface ProximitySignal extends DBusInterface
+{
+   public static class Connect<A extends String> 
+                                 extends DBusSignal
+   {
+      public final A address;
+      public Connect(String path, A address) 
+                                 throws DBusException
+      {
+         super(path, address);
+         this.address = address;
+      }
+   }
+   public static class Disconnect<A extends String> 
+                                    extends DBusSignal
+   {
+      public final A address;
+      public Disconnect(String path, A address)
+                                 throws DBusException
+      {
+         super(path, address);
+         this.address = address;
+      }
+   }
+}
+\end{verbatim}
+\end{center}
+\caption{cx/ath/matthew/bluemon/ProximitySignal.java}
+\end{figure}
+
+\newpage
+
+\begin{figure}[!h]
+\begin{center}
+\begin{verbatim}
+package cx.ath.matthew.bluemon;
+import org.freedesktop.dbus.Tuple;
+/** Just a typed container class */
+public final class Triplet <A,B,C> extends Tuple
+{
+   public final A a;
+   public final B b;
+   public final C c;
+   public Triplet(A a, B b, C c)
+   {
+      super(a, b, c);
+      this.a = a;
+      this.b = b;
+      this.c = c;
+   }
+}
+\end{verbatim}
+\end{center}
+\caption{cx/ath/matthew/bluemon/Triplet.java}
+\end{figure}
+
+\newpage
+
+\begin{figure}[!h]
+\begin{center}
+\begin{verbatim}
+package cx.ath.matthew.bluemon;
+import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.DBusException;
+import org.freedesktop.dbus.DBusSigHandler;
+import org.freedesktop.dbus.DBusSignal;
+import org.freedesktop.dbus.UInt32;
+
+public class Query {
+   public static void main(String[] args) {
+      String btid;
+      Triplet<String, Boolean, UInt32> rv = null;
+      
+      if (0 == args.length) btid = "";
+      else btid = args[0];
+      
+      DBusConnection conn = null;
+      try {
+         conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
+      } catch (DBusException De) {
+         System.exit(1);
+      }     
+      Bluemon b = (Bluemon) conn.getRemoteObject(
+            "cx.ath.matthew.bluemon.server", 
+            "/cx/ath/matthew/bluemon/Bluemon", Bluemon.class);
+      try {
+         rv = b.Status(btid);
+      } catch (RuntimeException Re) {
+         System.exit(1);
+      }
+      String address = rv.a;
+      boolean status = rv.b;
+      int level = rv.c.intValue();
+
+      if (status)
+         System.out.println("Device "+address+
+                            " connected with level "+level);
+      else
+         System.out.println("Device "+address+" not connected");
+      conn.disconnect();
+   }
+}
+\end{verbatim}
+\end{center}
+\caption{cx/ath/matthew/bluemon/Query.java}
+\end{figure}
+
+\newpage
+
+\begin{figure}[!h]
+\begin{center}
+\begin{verbatim}
+/* cx/ath/matthew/bluemon/Client.java */
+package cx.ath.matthew.bluemon;
+
+import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.DBusException;
+import org.freedesktop.dbus.DBusSigHandler;
+import org.freedesktop.dbus.DBusSignal;
+
+public class Client implements DBusSigHandler
+{
+   public void handle(DBusSignal s)
+   {
+      if (s instanceof ProximitySignal.Connect)
+         System.out.println("Got a connect for "
+               +((ProximitySignal.Connect) s).address);
+      else if (s instanceof ProximitySignal.Disconnect)
+         System.out.println("Got a disconnect for "
+               +((ProximitySignal.Disconnect) s).address);
+   }
+   public static void main(String[] args) 
+   {
+      System.out.println("Creating Connection");
+      DBusConnection conn = null;
+      try {
+         conn = DBusConnection
+                  .getConnection(DBusConnection.SYSTEM);
+      } catch (DBusException DBe) {
+         System.out.println("Could not connect to bus");
+         System.exit(1);
+      }
+      
+      try {
+         conn.addSigHandler(ProximitySignal.Connect.class, 
+         new Client());
+         conn.addSigHandler(ProximitySignal.Disconnect.class, 
+         new Client());
+      } catch (DBusException DBe) {
+         conn.disconnect();
+         System.exit(1);
+      }
+   }
+}
+\end{verbatim}
+\end{center}
+\caption{cx/ath/matthew/bluemon/Client.java}
+\end{figure}
+
+\newpage
+
+\section{Credits}
+
+This document and the Java API were written by and are copyright to
+Matthew Johnson. Much help and advice was provided by the members of
+the \#dbus irc channel. Comments, corrections and patches can be sent
+to dbus-java@matthew.ath.cx.
+
+\end{document}
+
+

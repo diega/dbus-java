@@ -1,0 +1,1 @@
+P4: sync -f //depot/projects/libdbus-java/...@697 processing 117 changes from p4 (//depot/projects/libdbus-java/...) to git (dbus-java)Importing changeset 697P4: describe -s 697P4: users mjj29P4: sync    //depot/projects/libdbus-java/...@697 GIT: ls-files -m -d -o -z | git update-index --add --remove -z --stdin
