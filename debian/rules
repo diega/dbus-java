@@ -34,8 +34,7 @@ build-stamp: configure-stamp
 	dh_testdir
 
 	# Add here commands to compile the package.
-	#$(MAKE) all doc check
-	$(MAKE) all doc 
+	$(MAKE) all doc check
 
 	touch build-stamp
 

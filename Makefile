@@ -76,7 +76,7 @@ doc/dbus-java/index.html: dbus-java.tex .doc
 doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
 	javadoc -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java
 
-dbus-java.tar.gz: org *.c Makefile *.tex
+dbus-java.tar.gz: org *.c Makefile *.tex debian
 	(tar -zcf dbus-java.tar.gz $^)
 
 testrun: libdbus-java.so libdbus-java.jar dbus-java-test.jar

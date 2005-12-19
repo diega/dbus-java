@@ -2,7 +2,7 @@ Source: libdbus-java
 Section: libs
 Priority: optional
 Maintainer: Matthew Johnson <debian@matthew.ath.cx>
-Build-Depends: debhelper (>= 4.0.0), devscripts, libdbus-1-dev (>= 0.60), pkg-config, dbus-1-utils, dbus (>= 0.60), tetex-bin, latex2html
+Build-Depends: debhelper (>= 4.0.0), devscripts, libdbus-1-dev (>= 0.60), pkg-config, dbus-1-utils, dbus (>= 0.60), tetex-bin, latex2html, java-compiler, java-virtual-machine
 Standards-Version: 3.6.2
 
 Package: libdbus-java
