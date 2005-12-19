@@ -5,7 +5,7 @@ import java.util.Iterator;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class IterableNodeList implements Iterable<Node>
+class IterableNodeList implements Iterable<Node>
 {
    private NodeList nl;
    public IterableNodeList(NodeList nl)

@@ -1,6 +1,6 @@
 package org.freedesktop.dbus;
 
-public class DBusMatchRule
+class DBusMatchRule
 {
    /* signal, error, method_call, method_reply */
    private String type;
