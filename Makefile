@@ -21,7 +21,7 @@ VERSION = 0.1
 DEBVER =
 DEB_ARCH ?= $(shell dpkg-architecture -qDEB_BUILD_ARCH)
  
-all: libdbus-java.so libdbus-java.jar
+all: libdbus-java.so libdbus-java-$(VERSION).jar
 
 clean:
 	-rm -rf doc
@@ -79,8 +79,8 @@ doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
 dbus-java.tar.gz: org *.c Makefile *.tex debian
 	(tar -zcf dbus-java.tar.gz $^)
 
-testrun: libdbus-java.so libdbus-java.jar dbus-java-test.jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java.jar:dbus-java-test.jar org.freedesktop.dbus.test.test
+testrun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
 
 check:
 	( PASS=false; \
@@ -118,7 +118,7 @@ install: libdbus-java-$(VERSION).jar libdbus-java.so doc
 dist: .dist
 .dist: dbus-java.c dbus-java.tex Makefile org
 	-mkdir libdbus-java-$(VERSION)
-	cp -a $^ libdbus-java-$(VERSION)
+	cp -fa $^ libdbus-java-$(VERSION)
 	touch .dist
 
 distclean:
@@ -138,7 +138,7 @@ libdbus-java-$(VERSION).tar.gz: .dist
 	
 libdbus-java_$(VERSION)$(DEBVER)_$(DEB_ARCH).deb: .dist libdbus-java-$(VERSION).tar.gz
 	cp libdbus-java-$(VERSION).tar.gz libdbus-java_$(VERSION).orig.tar.gz
-	cp -a debian libdbus-java-$(VERSION)
+	cp -fa debian libdbus-java-$(VERSION)
 	(cd libdbus-java-$(VERSION); debuild -uc -us -rfakeroot)
 
 deb: libdbus-java_$(VERSION)$(DEBVER)_$(DEB_ARCH).deb
