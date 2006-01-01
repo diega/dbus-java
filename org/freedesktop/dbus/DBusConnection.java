@@ -144,7 +144,7 @@ public class DBusConnection
    {
       public void handle(DBusSignal s)
       {
-         if (s.getName().equals("Disconnected")) {
+         if (s instanceof org.freedesktop.DBus.Local.Disconnected) {
             DBusErrorMessage err = new InternalErrorMessage(servicenames.get(0), "Disconnected");
             synchronized (pendingCalls) {
                Long[] set = (Long[]) pendingCalls.keySet().toArray(new Long[]{});
