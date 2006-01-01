@@ -13,7 +13,7 @@ SRCDIR=org/freedesktop
 CLASSDIR=classes/org/freedesktop/dbus
 
 PREFIX?=$(DESTDIR)/usr
-JARPREFIX?=$(PREFIX)/java
+JARPREFIX?=$(PREFIX)/share/java
 LIBPREFIX?=$(PREFIX)/lib
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 
@@ -26,7 +26,7 @@ all: libdbus-java.so libdbus-java-$(VERSION).jar
 clean:
 	-rm -rf doc
 	-rm -rf classes
-	-rm *.o *.so *.h .classes .testclasses .doc *.jar *.log
+	-rm *.o *.so *.h .classes .testclasses .doc *.jar *.log pid address tmp-session-bus
 	
 classes: .classes
 testclasses: .testclasses
@@ -76,7 +76,7 @@ doc/dbus-java/index.html: dbus-java.tex .doc
 doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
 	javadoc -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java
 
-dbus-java.tar.gz: org *.c Makefile *.tex debian
+dbus-java.tar.gz: org *.c Makefile *.tex debian tmp-session.conf
 	(tar -zcf dbus-java.tar.gz $^)
 
 testrun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
@@ -84,12 +84,10 @@ testrun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).j
 
 check:
 	( PASS=false; \
-	  TEMP=`mktemp` && ( \
-	  dbus-launch --sh-syntax > $$TEMP && ( \
-	  source $$TEMP; \
-	  if make testrun ; then PASS=true; fi  ; \
-	  kill $$DBUS_SESSION_BUS_PID ) ; \
-	  rm $$TEMP ) ; \
+	  dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
+	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
+	  if make testrun ; then export PASS=true; fi  ; \
+	  kill $$(cat pid) ; \
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
 
 uninstall: 
@@ -116,7 +114,7 @@ install: libdbus-java-$(VERSION).jar libdbus-java.so doc
 	
 
 dist: .dist
-.dist: dbus-java.c dbus-java.tex Makefile org
+.dist: dbus-java.c dbus-java.tex Makefile org tmp-session.conf
 	-mkdir libdbus-java-$(VERSION)
 	cp -fa $^ libdbus-java-$(VERSION)
 	touch .dist
