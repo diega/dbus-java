@@ -6,6 +6,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.List;
@@ -110,7 +111,12 @@ class RemoteInvocationHandler implements InvocationHandler
       if (method.getName().equals("isRemote")) return true;
       else if (method.getName().equals("clone")) return null;
       else if (method.getName().equals("equals")) {
-         if (1 == args.length) return remote.equals(args[0]);
+         try { 
+            if (1 == args.length)   
+               return new Boolean(remote.equals(((RemoteInvocationHandler) Proxy.getInvocationHandler(args[0])).remote));
+         } catch (IllegalArgumentException IAe) {
+            return Boolean.FALSE;
+         }
       }
       else if (method.getName().equals("finalize")) return null;
       else if (method.getName().equals("getClass")) return iface;
