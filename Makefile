@@ -14,7 +14,7 @@ CLASSDIR=classes/org/freedesktop/dbus
 
 PREFIX?=$(DESTDIR)/usr
 JARPREFIX?=$(PREFIX)/share/java
-LIBPREFIX?=$(PREFIX)/lib
+LIBPREFIX?=$(PREFIX)/lib/jni
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 
 VERSION = 0.1
@@ -89,14 +89,14 @@ check:
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
 
 uninstall: 
-	rm $(JARPREFIX)/libdbus-java.jar $(JARPREFIX)/libdbus-java-$(VERSION).jar
+	rm $(JARPREFIX)/dbus.jar $(JARPREFIX)/dbus-$(VERSION).jar
 	rm $(LIBPREFIX)/libdbus-java.so
 	rm -rf $(DOCPREFIX)
 
 install: libdbus-java-$(VERSION).jar libdbus-java.so doc
 	install -d $(JARPREFIX)
-	install -m 644 libdbus-java-$(VERSION).jar $(JARPREFIX)
-	ln -s libdbus-java-$(VERSION).jar $(JARPREFIX)/libdbus-java.jar
+	install -m 644 libdbus-java-$(VERSION).jar $(JARPREFIX)/dbus-$(VERSION).jar
+	ln -s dbus-$(VERSION).jar $(JARPREFIX)/dbus.jar
 	install -d $(LIBPREFIX)
 	install libdbus-java.so $(LIBPREFIX)
 	install -d $(DOCPREFIX)
