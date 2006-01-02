@@ -9,5 +9,5 @@ Package: libdbus-java
 Architecture: any
 Depends: java5-runtime, ${shlibs:Depends}
 Suggests: java-virtual-machine
-Description: Java Bindings for DBus (Java code)
-   Bindings for the Java language for DBus IPC system.
+Description: Java 1.5 Bindings for DBus
+   Bindings for the Java (1.5) language for DBus IPC system.
