@@ -54,9 +54,7 @@ libdbus-java-$(VERSION).jar: .classes
 dbus-java-test-$(VERSION).jar: .testclasses
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/test/*.class)
 	
-dist: tar
 
-tar: dbus-java.tar.gz
 jar: libdbus-java-$(VERSION).jar
 doc: doc/dbus-java.dvi doc/dbus-java.ps doc/dbus-java.pdf doc/dbus-java/index.html doc/api/index.html
 .doc:
@@ -118,6 +116,7 @@ dist: .dist
 	-mkdir libdbus-java-$(VERSION)
 	cp -fa $^ libdbus-java-$(VERSION)
 	touch .dist
+tar: libdbus-java-$(VERSION).tar.gz
 
 distclean:
 	-rm -rf libdbus-java-$(VERSION)
