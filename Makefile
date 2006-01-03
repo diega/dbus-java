@@ -15,6 +15,7 @@ CLASSDIR=classes/org/freedesktop/dbus
 PREFIX?=$(DESTDIR)/usr
 JARPREFIX?=$(PREFIX)/share/java
 LIBPREFIX?=$(PREFIX)/lib/jni
+BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 
 VERSION = 0.1
@@ -93,12 +94,15 @@ uninstall:
 	rm $(LIBPREFIX)/libdbus-java.so
 	rm -rf $(DOCPREFIX)
 
-install: libdbus-java-$(VERSION).jar libdbus-java.so doc
+install: libdbus-java-$(VERSION).jar libdbus-java.so doc bin/CreateInterface bin/ListDBus
 	install -d $(JARPREFIX)
 	install -m 644 libdbus-java-$(VERSION).jar $(JARPREFIX)/dbus-$(VERSION).jar
 	ln -s dbus-$(VERSION).jar $(JARPREFIX)/dbus.jar
 	install -d $(LIBPREFIX)
 	install libdbus-java.so $(LIBPREFIX)
+	install -d $(BINPREFIX)
+	install bin/CreateInterface $(BINPREFIX)
+	install bin/ListDBus $(BINPREFIX)
 	install -d $(DOCPREFIX)
 	install -m 644 doc/dbus-java.dvi $(DOCPREFIX)
 	install -m 644 doc/dbus-java.ps $(DOCPREFIX)
