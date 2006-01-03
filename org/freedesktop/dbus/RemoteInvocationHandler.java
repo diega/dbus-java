@@ -34,6 +34,7 @@ class RemoteInvocationHandler implements InvocationHandler
       if (c.equals(DBusNoReply.class)) return null;
 
       DBusMessage reply = call.getReply();
+      if (null == reply) throw new DBusExecutionException("No reply within specified time");
                
       Object[] rp = reply.getParameters();
 

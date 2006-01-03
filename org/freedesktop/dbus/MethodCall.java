@@ -2,6 +2,7 @@ package org.freedesktop.dbus;
 
 class MethodCall extends DBusMessage
 {
+   static long REPLY_WAIT_TIMEOUT = 20000;
    String service;
    String objectpath;
    DBusMessage reply = null;
@@ -23,7 +24,7 @@ class MethodCall extends DBusMessage
    {
       if (null != reply) return reply;
       try {
-         while (null == reply) wait();
+         wait(REPLY_WAIT_TIMEOUT);
          return reply;
       } catch (InterruptedException Ie) { return reply; }
    }

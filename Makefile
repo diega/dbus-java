@@ -34,7 +34,7 @@ testclasses: .testclasses
 	-mkdir classes
 	$(JAVAC) -d classes $(JCFLAGS) $(SRCDIR)/dbus/test/*.java
 	touch .testclasses 
-.classes: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java
+.classes: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java
 	-mkdir classes
 	$(JAVAC) -d classes $(JCFLAGS) $^
 	touch .classes
@@ -50,7 +50,7 @@ dbus-java.o: dbus-java.c org_freedesktop_dbus_DBusConnection.h
 libdbus-java.so: dbus-java.o
 	$(LD) $(LDFLAGS) -fpic -shared -o $@ $^ $(DBUSLIB)
 libdbus-java-$(VERSION).jar: .classes
-	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/*.class org/freedesktop/*.class)
+	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/Hal/*.class)
 dbus-java-test-$(VERSION).jar: .testclasses
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/test/*.class)
 	
@@ -71,8 +71,8 @@ doc/dbus-java.pdf: doc/dbus-java.dvi .doc
 	(cd doc; pdflatex ../dbus-java.tex)
 doc/dbus-java/index.html: dbus-java.tex .doc
 	latex2html -dir doc/dbus-java dbus-java.tex
-doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
-	javadoc -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java
+doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java .doc
+	javadoc -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java
 
 dbus-java.tar.gz: org *.c Makefile *.tex debian tmp-session.conf
 	(tar -zcf dbus-java.tar.gz $^)
@@ -127,6 +127,7 @@ distclean:
 	-rm libdbus-java_$(VERSION)$(DEBVER)_$(DEB_ARCH).changes
 	-rm libdbus-java_$(VERSION)$(DEBVER).diff.gz
 	-rm libdbus-java_$(VERSION).orig.tar.gz
+	-rm .dist
 
 libdbus-java-$(VERSION): .dist
 	

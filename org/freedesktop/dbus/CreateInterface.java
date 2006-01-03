@@ -367,13 +367,18 @@ public class CreateInterface
       if (null != service) try {
          DBusConnection conn = DBusConnection.getConnection(bus);
          Introspectable in = (Introspectable) conn.getRemoteObject(service, object, Introspectable.class);
-         introspectdata = new StringReader(in.Introspect());
+         String id = in.Introspect();
+         if (null == id) {
+            System.err.println("ERROR: Failed to get introspection data");
+            System.exit(1);
+         }
+         introspectdata = new StringReader(id);
          conn.disconnect();
       } catch (DBusException DBe) {
          System.err.println("ERROR: Failure in DBus Communications: "+DBe.getMessage());
          System.exit(1);
-      } catch (RuntimeException Re) {
-         System.err.println("ERROR: Failure in DBus Communications: "+Re.getCause().getMessage());
+      } catch (DBusExecutionException DEe) {
+         System.err.println("ERROR: Failure in DBus Communications: "+DEe.getMessage());
          System.exit(1);
 
       } else if (null != datafile) try {
