@@ -27,9 +27,11 @@ JNIEXPORT void JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1connect
    // connect to the bus
    if (org_freedesktop_dbus_DBusConnection_SESSION == bus)
       address = getenv("DBUS_SESSION_BUS_ADDRESS");
-   else if (org_freedesktop_dbus_DBusConnection_SYSTEM == bus)
+   else if (org_freedesktop_dbus_DBusConnection_SYSTEM == bus) {
       address = getenv("DBUS_SYSTEM_BUS_ADDRESS");
-   else {
+      if (NULL == address)
+         address = "unix:path=/var/run/dbus/system_bus_socket";
+   } else {
       (*env)->ThrowNew(env, dbeclass, "Invalid Bus Type");
       return;
    }
