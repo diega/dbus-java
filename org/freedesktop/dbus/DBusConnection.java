@@ -368,8 +368,7 @@ public class DBusConnection
       else if (c.equals(Variant.class)) out.append('v');
       else if (c instanceof Class && 
             DBusInterface.class.isAssignableFrom((Class) c)) out.append('o');
-      else if (c instanceof Class &&
-            Object[].class.isAssignableFrom((Class) c)) {
+      else if (c instanceof Class && ((Class) c).isArray()) {
          out.append('a');
          out.append(getDBusType(((Class) c).getComponentType(), false));
       }
