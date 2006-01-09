@@ -24,33 +24,22 @@ public abstract class DBusSignal extends DBusMessage
    }
    static DBusSignal createSignal(Class<? extends DBusSignal> c, String source, String objectpath, long serial, Object... parameters) throws DBusException
    {
-      TypeVariable[] ts = c.getTypeParameters();
-      Type[] types = new Type[ts.length];
-      Class[] sig = new Class[ts.length+1];
-      sig[0] = String.class;
-      for (int i = 0; i < ts.length; i++)
-         for (Type b: ts[i].getBounds()) {
-            types[i] = b;
-            if (b instanceof Class)
-               sig[i+1] = (Class) b;
-            else if (b instanceof ParameterizedType)
-               sig[i+1] = (Class) ((ParameterizedType) b).getRawType();
-         }
-      
-      Constructor<? extends DBusSignal> con = null;
-      try { con = c.getDeclaredConstructor(sig); }
-      catch (NoSuchMethodException NSMe) { 
-         throw new DBusException(NSMe.getMessage());
-      }
+      Constructor<? extends DBusSignal> con = c.getDeclaredConstructors()[0];
+      Type[] ts = con.getGenericParameterTypes();
+      Type[] types = new Type[ts.length-1];
+      for (int i = 1; i < ts.length; i++)
+         if (ts[i] instanceof TypeVariable)
+            for (Type b: ((TypeVariable) ts[i]).getBounds())
+               types[i-1] = b;
+         else
+            types[i-1] = ts[i];
 
       try {
          parameters = DBusConnection.deSerialiseParameters(parameters, types);
          Object[] args = new Object[parameters.length + 1];
-         int i = 0;
-         args[i++] = objectpath;
-         for (; i < args.length; i++) {
+         args[1] = objectpath;
+         for (int i = 1; i < args.length; i++)
             args[i] = parameters[i-1];
-         }
 
          return con.newInstance(args);
       } catch (Exception e) { 

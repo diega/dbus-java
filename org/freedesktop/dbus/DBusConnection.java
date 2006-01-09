@@ -543,6 +543,11 @@ public class DBusConnection
          else if (types[i] instanceof GenericArrayType &&
                ! (parameters[i] instanceof Object[]))
             parameters[i] = ArrayFrob.wrap(parameters[i]);
+         else if (types[i] instanceof Class &&
+               ((Class) types[i]).isArray() &&
+               ! (parameters[i] instanceof Object[]))
+            parameters[i] = ArrayFrob.wrap(parameters[i]);
+         
       }
       return parameters;
    }
@@ -597,6 +602,12 @@ public class DBusConnection
                   cc = (Class) ct;
                if (ct instanceof ParameterizedType)
                   cc = (Class) ((ParameterizedType) ct).getRawType();
+               Object o = Array.newInstance(cc, 0);
+               parameters[i] = ArrayFrob.convert(parameters[i],
+                     o.getClass());
+            } else if (types[i] instanceof Class &&
+                  ((Class) types[i]).isArray()) {
+               Class cc = ((Class) types[i]).getComponentType();
                Object o = Array.newInstance(cc, 0);
                parameters[i] = ArrayFrob.convert(parameters[i],
                      o.getClass());
