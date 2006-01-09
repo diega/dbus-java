@@ -244,27 +244,15 @@ DBusSignal\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/DBusSigna
 The Signal name is derived from the name of this inner class, and
 the interface from its containing interface.
 
-Signals can take parameters as methods can (although they cannot
-return anything). For the reflection to work, a Signal must be
-parameterised with the types of parameter to take. For example, a
-signal called {\tt Disconnected} in the interface {\tt
-SigInterface} which takes a String as a parameter would be
-declared as:
-
-\begin{verbatim}
-public interface SigInterface extends DBusInterface {
-   public class Disconnected<A extends String> 
-                               extends DBusSignal
-   {
-      ...
-\end{verbatim}
-
-In addition, signal constructors MUST take the object path they are
-being emitted from as their first (String) argument, followed by
-the other parameters in order. They must also call the superclass
-constructor with the same parameters. A full definition of a signal
-can be seen in figure~\ref{fig:signal}. Again, more complicated
-definitions are available in the test classes\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/test/TestSignalInterface.html}.
+Signals can take parameters as methods can (although they cannot return
+      anything). For the reflection to work, a Signal declare a single
+constructor of the correct type. The constructor must  take the object path
+they are being emitted from as their first (String) argument, followed by the
+other parameters in order. They must also call the superclass constructor with
+the same parameters.  A full definition of a signal can be seen in
+figure~\ref{fig:signal}. Again, more complicated definitions are available in
+the test
+classes\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/test/TestSignalInterface.html}.
 
 \begin{figure}[htb]
 \begin{center}
@@ -275,11 +263,10 @@ import org.freedesktop.dbus.DBusSignal;
 
 public interface DBus extends DBusInterface
 {
-   public class NameAquired<A extends String> 
-                              extends DBusSignal
+   public class NameAquired extends DBusSignal
    {
-      public final A name;
-      public NameAquired(String path, A name) 
+      public final String name;
+      public NameAquired(String path, String name) 
                               throws DBusException
       {
          super(path, name);
@@ -559,22 +546,20 @@ import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
 public interface ProximitySignal extends DBusInterface
 {
-   public static class Connect<A extends String> 
-                                 extends DBusSignal
+   public static class Connect extends DBusSignal
    {
-      public final A address;
-      public Connect(String path, A address) 
+      public final String address;
+      public Connect(String path, String address) 
                                  throws DBusException
       {
          super(path, address);
          this.address = address;
       }
    }
-   public static class Disconnect<A extends String> 
-                                    extends DBusSignal
+   public static class Disconnect extends DBusSignal
    {
-      public final A address;
-      public Disconnect(String path, A address)
+      public final String address;
+      public Disconnect(String path, String address)
                                  throws DBusException
       {
          super(path, address);
