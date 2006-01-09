@@ -148,7 +148,7 @@ public class test implements DBusSigHandler
       if (s instanceof TestSignalInterface.TestSignal) {
          System.out.print("Got a test signal with Parameters: ");
          /** Use the test signal interface to get the parameters. */
-         TestSignalInterface.TestSignal<String, UInt32> t = (TestSignalInterface.TestSignal<String, UInt32>) s;
+         TestSignalInterface.TestSignal t = (TestSignalInterface.TestSignal) s;
          System.out.println("string("+t.value+") int("+t.number+")");
          if (!"Bar".equals(t.value) || !(new UInt32(42)).equals(t.number))
             fail("Incorrect TestSignal parameters");
@@ -157,7 +157,7 @@ public class test implements DBusSigHandler
       else if (s instanceof TestSignalInterface.TestArraySignal) {
          System.out.println("Got a test array signal with Parameters: ");
          /** Use the test signal interface to get the parameters. */
-         TestSignalInterface.TestArraySignal<TestStruct2<String[],Variant>> t = (TestSignalInterface.TestArraySignal<TestStruct2<String[],Variant>>) s;
+         TestSignalInterface.TestArraySignal t = (TestSignalInterface.TestArraySignal) s;
          for (String str: t.v.a)
             System.out.println("--"+str);
          System.out.println(t.v.b.getType());

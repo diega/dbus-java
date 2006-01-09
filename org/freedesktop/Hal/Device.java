@@ -37,12 +37,12 @@ public interface Device extends DBusInterface
 
    void Unlock();
 
-   public class PropertyModified<A extends String, B extends Boolean, C extends Boolean> extends DBusSignal
+   public class PropertyModified extends DBusSignal
    {
-      public final A key;
-      public final B added;
-      public final C removed;
-      public PropertyModified(String path, A key, B added, C removed) throws DBusException
+      public final String key;
+      public final Boolean added;
+      public final Boolean removed;
+      public PropertyModified(String path, String key, Boolean added, Boolean removed) throws DBusException
       {
          super(path, key, added, removed);
          this.key = key;
@@ -51,11 +51,11 @@ public interface Device extends DBusInterface
       }
    }
 
-   public class Condition<A extends String, V extends Variant> extends DBusSignal
+   public class Condition extends DBusSignal
    {
-      public final A condition;
-      public final V value;
-      public Condition(String path, A condition, V value) throws DBusException
+      public final String condition;
+      public final Variant value;
+      public Condition(String path, String condition, Variant value) throws DBusException
       {
          super(path, condition, value);
          this.condition = condition;

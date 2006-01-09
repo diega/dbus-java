@@ -130,12 +130,12 @@ public interface DBus extends DBusInterface
     */
    public void AddMatch(String matchrule);
          
-   public class NameOwnerChanged<A extends String,B extends String,C extends String> extends DBusSignal
+   public class NameOwnerChanged extends DBusSignal
    {
-      public final A name;
-      public final B old_owner;
-      public final C new_owner;
-      public NameOwnerChanged(String path, A name, B old_owner, C new_owner) throws DBusException
+      public final String name;
+      public final String old_owner;
+      public final String new_owner;
+      public NameOwnerChanged(String path, String name, String old_owner, String new_owner) throws DBusException
       {
          super(path, name, old_owner, new_owner);
          this.name = name;
@@ -143,19 +143,19 @@ public interface DBus extends DBusInterface
          this.new_owner = new_owner;
       }
    }
-   public class NameLost<A extends String> extends DBusSignal
+   public class NameLost extends DBusSignal
    {
-      public final A name;
-      public NameLost(String path, A name) throws DBusException
+      public final String name;
+      public NameLost(String path, String name) throws DBusException
       {
          super(path, name);
          this.name = name;
       }
    }
-   public class NameAquired<A extends String> extends DBusSignal
+   public class NameAquired extends DBusSignal
    {
-      public final A name;
-      public NameAquired(String path, A name) throws DBusException
+      public final String name;
+      public NameAquired(String path, String name) throws DBusException
       {
          super(path, name);
          this.name = name;

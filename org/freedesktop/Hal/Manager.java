@@ -10,29 +10,29 @@ public interface Manager extends DBusInterface
    boolean DeviceExists(String udi);
    String[] FindDeviceStringMatch(String key, String value);
    String[] FindDeviceByCapability(String capability);
-   public class DeviceAdded<A extends String> extends DBusSignal
+   public class DeviceAdded extends DBusSignal
    {
-      public final A udi;
-      public DeviceAdded(String path, A udi) throws DBusException
+      public final String udi;
+      public DeviceAdded(String path, String udi) throws DBusException
       {
          super(path, udi);
          this.udi = udi;
       }
    }
-   public class DeviceRemoved<A extends String> extends DBusSignal
+   public class DeviceRemoved extends DBusSignal
    {
-      public final A udi;
-      public DeviceRemoved(String path, A udi) throws DBusException
+      public final String udi;
+      public DeviceRemoved(String path, String udi) throws DBusException
       {
          super(path, udi);
          this.udi = udi;
       }
    }
-   public class NewCapability<A extends String, B extends String> extends DBusSignal
+   public class NewCapability extends DBusSignal
    {
-      public final A udi;
-      public final B capability;
-      public NewCapability(String path, A udi, B capability) throws DBusException
+      public final String udi;
+      public final String capability;
+      public NewCapability(String path, String udi, String capability) throws DBusException
       {
          super(path, udi, capability);
          this.udi = udi;
