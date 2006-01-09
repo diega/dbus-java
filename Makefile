@@ -18,7 +18,7 @@ LIBPREFIX?=$(PREFIX)/lib/jni
 BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 
-VERSION = 0.1
+VERSION = 1.0
 DEBVER =
 DEB_ARCH ?= $(shell dpkg-architecture -qDEB_BUILD_ARCH)
  
@@ -116,7 +116,7 @@ install: libdbus-java-$(VERSION).jar libdbus-java.so doc bin/CreateInterface bin
 	
 
 dist: .dist
-.dist: dbus-java.c dbus-java.tex Makefile org tmp-session.conf
+.dist: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf
 	-mkdir libdbus-java-$(VERSION)
 	cp -fa $^ libdbus-java-$(VERSION)
 	touch .dist

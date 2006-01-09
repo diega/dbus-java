@@ -2,12 +2,11 @@ Source: libdbus-java
 Section: libs
 Priority: optional
 Maintainer: Matthew Johnson <debian@matthew.ath.cx>
-Build-Depends: debhelper (>= 4.0.0), devscripts, libdbus-1-dev (>= 0.60), pkg-config, dbus-1-utils, dbus (>= 0.60), tetex-bin, latex2html, java-compiler, java5-runtime
+Build-Depends: debhelper (>= 4.0.0), devscripts, libdbus-1-dev (>= 0.60), pkg-config, dbus-1-utils, dbus (>= 0.60), tetex-bin, latex2html, jdk (>= 1.5.0) | sun-j2sdk1.5 
 Standards-Version: 3.6.2
 
 Package: libdbus-java
 Architecture: any
-Depends: java5-runtime, ${shlibs:Depends}
-Suggests: java-virtual-machine
+Depends: ${shlibs:Depends}, jdk (>= 1.5.0) | sun-j2sdk1.5
 Description: Java 1.5 Bindings for DBus
    Bindings for the Java (1.5) language for DBus IPC system.
