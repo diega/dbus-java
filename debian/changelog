@@ -1,8 +1,8 @@
-libdbus-java (1.0) unstable; urgency=low
+libdbus-java (1.0-1) unstable; urgency=low
 
-  * 1.x is a java 1.5 version, 0.x is a java 1.4 version 
+  * New Upstream Release
 
- -- matthew johnson <mjj29@localhost.localdomain>  Mon,  9 Jan 2006 16:39:17 +0000
+ -- Matthew Johnson <debian@matthew.ath.cx>  Mon,  9 Jan 2006 16:39:17 +0000
 
 libdbus-java (0.1) unstable; urgency=low
 

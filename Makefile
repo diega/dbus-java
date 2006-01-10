@@ -17,9 +17,10 @@ JARPREFIX?=$(PREFIX)/share/java
 LIBPREFIX?=$(PREFIX)/lib/jni
 BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
+MANPREFIX?=$(PREFIX)/share/man/man1
 
 VERSION = 1.0
-DEBVER =
+DEBVER = -1
 DEB_ARCH ?= $(shell dpkg-architecture -qDEB_BUILD_ARCH)
  
 all: libdbus-java.so libdbus-java-$(VERSION).jar
@@ -27,7 +28,7 @@ all: libdbus-java.so libdbus-java-$(VERSION).jar
 clean:
 	-rm -rf doc
 	-rm -rf classes
-	-rm *.o *.so *.h .classes .testclasses .doc *.jar *.log pid address tmp-session-bus
+	-rm *.1 *.o *.so *.h .classes .testclasses .doc *.jar *.log pid address tmp-session-bus
 	
 classes: .classes
 testclasses: .testclasses
@@ -78,6 +79,9 @@ doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java 
 dbus-java.tar.gz: org *.c Makefile *.tex debian tmp-session.conf
 	(tar -zcf dbus-java.tar.gz $^)
 
+%.1: %.sgml
+	docbook-to-man $< > $@
+	
 testrun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
 
@@ -90,11 +94,12 @@ check:
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
 
 uninstall: 
-	rm $(JARPREFIX)/dbus.jar $(JARPREFIX)/dbus-$(VERSION).jar
-	rm $(LIBPREFIX)/libdbus-java.so
-	rm -rf $(DOCPREFIX)
+	-rm $(JARPREFIX)/dbus.jar $(JARPREFIX)/dbus-$(VERSION).jar
+	-rm $(LIBPREFIX)/libdbus-java.so
+	-rm -rf $(DOCPREFIX)
+	-rm $(MANPREFIX)/CreateInterface.1 $(MANPREFIX)/ListDBus.1
 
-install: libdbus-java-$(VERSION).jar libdbus-java.so doc bin/CreateInterface bin/ListDBus
+install: libdbus-java-$(VERSION).jar libdbus-java.so doc bin/CreateInterface bin/ListDBus CreateInterface.1 ListDBus.1 changelog
 	install -d $(JARPREFIX)
 	install -m 644 libdbus-java-$(VERSION).jar $(JARPREFIX)/dbus-$(VERSION).jar
 	ln -s dbus-$(VERSION).jar $(JARPREFIX)/dbus.jar
@@ -104,6 +109,7 @@ install: libdbus-java-$(VERSION).jar libdbus-java.so doc bin/CreateInterface bin
 	install bin/CreateInterface $(BINPREFIX)
 	install bin/ListDBus $(BINPREFIX)
 	install -d $(DOCPREFIX)
+	install -m 644 changelog $(DOCPREFIX)
 	install -m 644 doc/dbus-java.dvi $(DOCPREFIX)
 	install -m 644 doc/dbus-java.ps $(DOCPREFIX)
 	install -m 644 doc/dbus-java.pdf $(DOCPREFIX)
@@ -113,10 +119,12 @@ install: libdbus-java-$(VERSION).jar libdbus-java.so doc bin/CreateInterface bin
 	install -m 644 doc/dbus-java/*.png $(DOCPREFIX)/dbus-java
 	install -d $(DOCPREFIX)/api
 	cp -a doc/api/* $(DOCPREFIX)/api
-	
+	install -d $(MANPREFIX)
+	install -m 644 CreateInterface.1 $(MANPREFIX)/CreateInterface.1
+	install -m 644 ListDBus.1 $(MANPREFIX)/ListDBus.1
 
 dist: .dist
-.dist: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf
+.dist: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml changelog
 	-mkdir libdbus-java-$(VERSION)
 	cp -fa $^ libdbus-java-$(VERSION)
 	touch .dist
