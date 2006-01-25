@@ -113,10 +113,7 @@ class ExportedObject
    {
       this.object = object;
       methods = new HashMap<MethodTuple,Method>();
-      introspectiondata = 
-         "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\" "+
-         "\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"+
-         "<node>\n";
+      introspectiondata = "";
       methods.putAll(getExportedMethods(object.getClass()));
       introspectiondata += 
          " <interface name=\"org.freedesktop.DBus.Introspectable\">\n"+
@@ -124,8 +121,6 @@ class ExportedObject
          "   <arg type=\"s\" direction=\"out\"/>\n"+
          "  </method>\n"+
          " </interface>\n";
-         
-      introspectiondata += "</node>";
    }
 }
 
@@ -217,10 +212,28 @@ public class DBusConnection
       public void Ping() { return; }
       public String Introspect() 
       {
+         if ("/".equals(objectpath)) {
+            String data = "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\" "+
+         "\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"+
+         "<node name=\"/\">\n";
+            for (String path: exportedObjects.keySet()) {
+               if (null == path) continue;
+               data += "<node name=\""+path+"\">\n"
+                  + exportedObjects.get(path).introspectiondata
+                  + "</node>\n";
+            }
+            data += "</node>";
+            return data;
+         }
          ExportedObject eo = exportedObjects.get(objectpath);
          if (null == eo) 
-            throw new RuntimeException("Introspecting on non-existant object");
-         else return eo.introspectiondata;
+            throw new DBusExecutionException("Introspecting on non-existant object");
+         else return 
+            "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\" "+
+         "\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"+
+         "<node name=\""+objectpath+"\">\n"+
+            eo.introspectiondata +
+         "</node>";
       }
    }
    /**

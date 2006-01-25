@@ -217,7 +217,7 @@ public class test implements DBusSigHandler
       
       System.out.println("Getting our introspection data");
       /** This gets a remote object matching our service name and exported object path. */
-      Introspectable intro = (Introspectable) conn.getRemoteObject("foo.bar.Test", "/Test", Introspectable.class);
+      Introspectable intro = (Introspectable) conn.getRemoteObject("foo.bar.Test", "/", Introspectable.class);
       /** Get introspection data */
       String data = intro.Introspect();
       if (null == data || !data.startsWith("<!DOCTYPE"))

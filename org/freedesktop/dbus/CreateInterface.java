@@ -287,8 +287,10 @@ public class CreateInterface
                }
             }
          }
+         else if ("node".equals(iface.getNodeName())) 
+            parseRoot((Element) iface);
          else {
-            System.err.println("ERROR: Nested nodes not supported.");
+            System.err.println("ERROR: Unknown node: "+iface.getNodeName()+".");
             System.exit(1);
          }
       }
