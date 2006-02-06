@@ -258,26 +258,49 @@ public class DBusConnection
    private Map<Long,MethodCall> pendingCalls;
    private Vector<String> servicenames;
    private boolean _run;
+   private int connid;
    LinkedList<DBusMessage> outgoing;
    LinkedList<DBusErrorMessage> pendingErrors;
 
-   private native void dbus_connect(int bustype) throws DBusException;
-   private native void dbus_disconnect();
-   private native void dbus_listen_signal(String type, String name) throws DBusException;
-   private native DBusMessage dbus_read_write_pop(int timeoutms);
-   private native int dbus_send_signal(String objectpath, String type, String name, Object... parameters);
-   private native int dbus_send_error_message(String destination, String name, long replyserial, Object... params);
-   private native int dbus_call_method(String service, String objectpath, String type, String name, Object... params);
-   private native int dbus_reply_to_call(String destination, String type, String objectpath, String name, long replyserial, Object... params);
+   private native int dbus_connect(int bustype) throws DBusException;
+   private native int dbus_connect(String address) throws DBusException;
+   private native void dbus_disconnect(int connid);
+   private native void dbus_listen_signal(int connid, String type, String name) throws DBusException;
+   private native DBusMessage dbus_read_write_pop(int connid, int timeoutms);
+   private native int dbus_send_signal(int connid, String objectpath, String type, String name, Object... parameters);
+   private native int dbus_send_error_message(int connid, String destination, String name, long replyserial, Object... params);
+   private native int dbus_call_method(int connid, String service, String objectpath, String type, String name, Object... params);
+   private native int dbus_reply_to_call(int connid, String destination, String type, String objectpath, String name, long replyserial, Object... params);
    static {
       System.loadLibrary("dbus-1");
       System.loadLibrary("dbus-java");
    }
-   private static final DBusConnection[] conn = new DBusConnection[] { null, null };
+   private static final Map<Object,DBusConnection> conn = new HashMap<Object,DBusConnection>();
    private int _refcount = 0;
    private Object _reflock = new Object();
+   private Object connkey;
    private DBus _dbus;
 
+   /**
+    * Connect to the BUS. If a connection already exists to the specified Bus, a reference to it is returned.
+    * @param address The address of the bus to connect to
+    * @throws DBusException  If there is a problem connecting to the Bus.
+    */
+   public static DBusConnection getConnection(String address) throws DBusException
+   {
+      synchronized (conn) {
+         DBusConnection c = conn.get(address);
+         if (null != c) {
+            synchronized (c._reflock) { c._refcount++; }
+            return c;
+         }
+         else {
+            c = new DBusConnection(address);
+            conn.put(address, c);
+            return c;
+         }
+      }
+   }
    /**
     * Connect to the BUS. If a connection already exists to the specified Bus, a reference to it is returned.
     * @param bustype The Bus to connect to.
@@ -288,12 +311,17 @@ public class DBusConnection
    public static DBusConnection getConnection(int bustype) throws DBusException
    {
       synchronized (conn) {
-      if (bustype >= conn.length || bustype < 0) throw new DBusException("Invalid Bus Specifier");
-      if (null != conn[bustype]) {
-         synchronized (conn[bustype]._reflock) { conn[bustype]._refcount++; }
-         return conn[bustype];
-      }
-      else return (conn[bustype] = new DBusConnection(bustype));
+         if (bustype > 1 || bustype < 0) throw new DBusException("Invalid Bus Specifier");
+         DBusConnection c = conn.get(bustype);
+         if (null != c) {
+            synchronized (c._reflock) { c._refcount++; }
+            return c;
+         }
+         else {
+            c = new DBusConnection(bustype);
+            conn.put(bustype, c);
+            return c;
+         }
       }
    }
    /**
@@ -630,7 +658,7 @@ public class DBusConnection
       return parameters;
    }
 
-   private DBusConnection(int bustype) throws DBusException
+   private DBusConnection() throws DBusException
    {
       exportedObjects = new HashMap<String,ExportedObject>();
       importedObjects = new HashMap<DBusInterface,String>();
@@ -642,8 +670,37 @@ public class DBusConnection
       pendingErrors = new LinkedList<DBusErrorMessage>();
       _run = true;
       synchronized (_reflock) {
-         _refcount = 1; }
-      dbus_connect(bustype);
+         _refcount = 1; 
+      }
+   }
+   private DBusConnection(String address) throws DBusException
+   {
+      this();
+      connkey = address;
+
+      connid = dbus_connect(address);
+
+      // start listening
+      new _thread().start();
+      
+      // register ourselves
+      _dbus = (DBus) getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
+      try {
+         servicenames.add(_dbus.Hello());
+      } catch (DBusExecutionException DBEe) {
+         throw new DBusException(DBEe.getMessage());
+      }
+      // register disconnect handlers
+      addSigHandler(org.freedesktop.DBus.Local.Disconnected.class, new _sighandler());
+   }
+
+
+   private DBusConnection(int bustype) throws DBusException
+   {
+      this();
+      connkey = bustype;
+
+      connid = dbus_connect(bustype);
 
       // start listening
       new _thread().start();
@@ -807,10 +864,13 @@ public class DBusConnection
     */
    public void disconnect()
    {
-      synchronized (_reflock) {
-         if (0 == --_refcount) {
-            dbus_disconnect();
-            _run = false;
+      synchronized (conn) {
+         synchronized (_reflock) {
+            if (0 == --_refcount) {
+               dbus_disconnect(connid);
+               _run = false;
+               conn.remove(connkey);
+            }
          }
       }
    }
@@ -874,7 +934,6 @@ public class DBusConnection
          Type[] ts = meth.getGenericParameterTypes();
          m.parameters = deSerialiseParameters(m.parameters, ts);
       } catch (Exception e) {
-         e.printStackTrace();
          synchronized (outgoing) {
             outgoing.addLast(new InternalErrorMessage(m, "Failure in de-serialising message ("+e+")")); }
       }
@@ -895,7 +954,6 @@ public class DBusConnection
                   outqueue.addLast(reply);
                }
             } catch (Exception e) {
-               e.printStackTrace();
                synchronized (outqueue) {
                   outqueue.addLast(new InternalErrorMessage(m, "Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage())); 
                }
@@ -949,21 +1007,22 @@ public class DBusConnection
    {
       if (m instanceof DBusSignal) 
          try {
-            m.setSerial(dbus_send_signal(((DBusSignal) m).getObjectPath(), m.getType(), m.getName(), m.getParameters()));
+            m.setSerial(dbus_send_signal(connid, ((DBusSignal) m).getObjectPath(), m.getType(), m.getName(), m.getParameters()));
          } catch (Exception e) {}
       else if (m instanceof DBusErrorMessage) 
          try {
-            m.setSerial(dbus_send_error_message(((DBusErrorMessage) m).getDestination(), m.getName(), m.getReplySerial(), m.getParameters()));
+            m.setSerial(dbus_send_error_message(connid, ((DBusErrorMessage) m).getDestination(), m.getName(), m.getReplySerial(), m.getParameters()));
          } catch (Exception e) {}
       else if (m instanceof MethodCall) {
          try {
-            m.setSerial(dbus_call_method(((MethodCall) m).getService(), ((MethodCall) m).getObjectPath(), m.getType(), m.getName(), m.getParameters()));
-            if (0 < m.getSerial())
-               synchronized (pendingCalls) {
+            synchronized (pendingCalls) {
+               m.setSerial(dbus_call_method(connid, ((MethodCall) m).getService(), ((MethodCall) m).getObjectPath(), m.getType(), m.getName(), m.getParameters()));
+               if (0 < m.getSerial()) {
                   pendingCalls.put(m.getSerial(),(MethodCall) m);
                }
-            else
-               ((MethodCall) m).setReply(new InternalErrorMessage("Message Failed to Send"));
+               else
+                  ((MethodCall) m).setReply(new InternalErrorMessage("Message Failed to Send"));
+            }
          } catch (Exception e) {
                ((MethodCall) m).setReply(new InternalErrorMessage("Message Failed to Send: "+e.getMessage()));
          }
@@ -971,15 +1030,15 @@ public class DBusConnection
       else if (m instanceof MethodReply) {
          MethodCall call = ((MethodReply) m).getCall();
          try {
-            m.setSerial(dbus_reply_to_call(call.getSource(), call.getType(), call.getObjectPath(), call.getName(), call.getSerial(), m.getParameters()));
+            m.setSerial(dbus_reply_to_call(connid, call.getSource(), call.getType(), call.getObjectPath(), call.getName(), call.getSerial(), m.getParameters()));
          } catch (Exception e) {
-            dbus_send_error_message(call.getSource(), InternalErrorMessage.class.getName(), call.getSerial(), new Object[] { "Error sending reply: "+e.getMessage() });
+            dbus_send_error_message(connid, call.getSource(), InternalErrorMessage.class.getName(), call.getSerial(), new Object[] { "Error sending reply: "+e.getMessage() });
          }
       }
    }
    private DBusMessage readIncoming(int timeoutms)
    {
-      DBusMessage m = dbus_read_write_pop(timeoutms);
+      DBusMessage m = dbus_read_write_pop(connid, timeoutms);
       return m;
    }
 }

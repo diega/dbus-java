@@ -7,19 +7,67 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-DBusConnection* conn;
+typedef struct nodestruct node;
+struct nodestruct {
+   DBusConnection* conn;
+   jint cidx;
+   node* next;
+   node* last;
+};
+node* root = NULL;
+
+jint storeconn(DBusConnection* conn)
+{
+   node* n = malloc(sizeof(node));
+   n->conn = conn;
+   n->next = NULL;
+   if (NULL == root) {
+      root = n;
+      n->last = NULL;
+      n->cidx = 1;
+      return 1;
+   } else {
+      node* t = root;
+      while (NULL != t->next) t = t->next; 
+      n->last = t;
+      t->next = n;
+      n->cidx = t->cidx+1;
+      return n->cidx;
+   }
+}
+void removeconn(jint cidx)
+{
+   node* t = root;
+   while (NULL != t && t->cidx != cidx) t = t->next;
+   if (NULL != t) {
+      if (t->last != NULL)
+         t->last->next = t->next;
+      if (t->next != NULL)
+         t->next->last = t->last;
+      free(t);
+   }
+}
+DBusConnection* getconn(jint cidx)
+{
+   node* t = root;
+   while (NULL != t && t->cidx != cidx) t = t->next;
+   if (NULL != t) 
+      return t->conn;
+   else return NULL;
+}
 
 /*
  * Class:     org_freedesktop_dbus_DBusConnection
  * Method:    dbus_connect
  * Signature: (I)I
  */
-JNIEXPORT void JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1connect
+JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1connect__I
   (JNIEnv * env, jobject o, jint bus)
 {
    const char* address;
    const char* message = NULL;
    DBusError err;
+   DBusConnection* conn;
    // initialise the errors
    dbus_error_init(&err);
    jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusException");
@@ -33,12 +81,12 @@ JNIEXPORT void JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1connect
          address = "unix:path=/var/run/dbus/system_bus_socket";
    } else {
       (*env)->ThrowNew(env, dbeclass, "Invalid Bus Type");
-      return;
+      return -1;
    }
 
    if (NULL == address) {
       (*env)->ThrowNew(env, dbeclass, "Failed to get Bus Address");
-      return;
+      return -1;
    }
 
    conn = dbus_connection_open_private(address, &err);
@@ -52,10 +100,52 @@ JNIEXPORT void JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1connect
          (*env)->ThrowNew(env, dbeclass, "Failed to Connect to Bus");
       else
          (*env)->ThrowNew(env, dbeclass, message);
-      return;
+      return -1;
    }
 
-   return;
+   return storeconn(conn);
+}
+
+/*
+ * Class:     org_freedesktop_dbus_DBusConnection
+ * Method:    dbus_connect
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1connect__Ljava_lang_String_2
+  (JNIEnv * env, jobject o, jstring address)
+{
+   const char* caddress;
+   const char* message = NULL;
+   DBusError err;
+   DBusConnection* conn;
+   // initialise the errors
+   dbus_error_init(&err);
+   jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusException");
+
+
+   caddress = (*env)->GetStringUTFChars(env, address, 0);
+
+   if (NULL == caddress) {
+      (*env)->ThrowNew(env, dbeclass, "Failed to get Bus Address");
+      return -1;
+   }
+
+   conn = dbus_connection_open_private(caddress, &err);
+   (*env)->ReleaseStringUTFChars(env, address, caddress);
+   
+   if (dbus_error_is_set(&err)) {
+      message = err.message;
+      dbus_error_free(&err); 
+   } 
+   if (NULL == conn) {
+      if (NULL == message)
+         (*env)->ThrowNew(env, dbeclass, "Failed to Connect to Bus");
+      else
+         (*env)->ThrowNew(env, dbeclass, message);
+      return -1;
+   }
+
+   return storeconn(conn);
 }
 
 /*
@@ -64,8 +154,11 @@ JNIEXPORT void JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1connect
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1disconnect
-  (JNIEnv * env, jobject o)
+  (JNIEnv * env, jobject o, jint cidx)
 {
+   DBusConnection* conn;
+   conn = getconn(cidx);
+   removeconn(cidx);
    dbus_connection_close(conn);
 }
 
@@ -308,7 +401,7 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
  * Signature: (I)Lorg/freedesktop/dbus/DBusMessage;
  */
 JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1write_1pop
-  (JNIEnv * env, jobject connobj, jint timeout)
+  (JNIEnv * env, jobject connobj, jint cidx, jint timeout)
 {
    DBusMessage* msg;
    DBusMessageIter args;
@@ -332,12 +425,15 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    jlong replyserial;
    jsize len, typelen;
    int i; 
-
+   DBusConnection* conn;
+   
    jclass sigclass; 
    jclass callclass = (*env)->FindClass(env, "org/freedesktop/dbus/MethodCall");
    jclass errclass = (*env)->FindClass(env, "org/freedesktop/dbus/InternalErrorMessage");
    jclass replyclass = (*env)->FindClass(env, "org/freedesktop/dbus/MethodReply");
    jclass dsigclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusSignal");
+   
+   conn = getconn(cidx);
    // blocking for timeout ms read of the next available message
    dbus_connection_read_write(conn, timeout);
    msg = dbus_connection_pop_message(conn);
@@ -707,12 +803,13 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
  * Signature: (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)I
  */
    JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1signal
-(JNIEnv * env, jobject connobj, jstring objectpath, jstring type, jstring name, jobjectArray params)
+(JNIEnv * env, jobject connobj, jint cidx, jstring objectpath, jstring type, jstring name, jobjectArray params)
 {
    int rv;
    dbus_uint32_t serial = 0; // unique number to associate replies with requests
    DBusMessage* msg;
    DBusMessageIter args;
+   DBusConnection* conn;
 
    const char* cobjectpath = (*env)->GetStringUTFChars(env, objectpath, 0);
    const char* cname = (*env)->GetStringUTFChars(env, name, 0);
@@ -733,6 +830,7 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
       return rv;
    }
    
+   conn = getconn(cidx);
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);
@@ -755,12 +853,13 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
  * Signature: ([Ljava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1error_1message
-  (JNIEnv *env, jobject connobj, jstring destination, jstring name, jlong replyserial, jobjectArray params)
+  (JNIEnv *env, jobject connobj, jint cidx, jstring destination, jstring name, jlong replyserial, jobjectArray params)
 {
    int rv;
    dbus_uint32_t serial = 0; // unique number to associate replies with requests
    DBusMessage* msg;
    DBusMessageIter args;
+   DBusConnection* conn;
 
    const char* cdestination = NULL;
    if (NULL != destination)
@@ -787,6 +886,7 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1erro
       return rv;
    }
    
+   conn = getconn(cidx);
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);
@@ -809,12 +909,13 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1erro
  * Signature: ([Ljava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1method
-  (JNIEnv * env, jobject connobj, jstring service, jstring objectpath, jstring type, jstring name, jobjectArray params)
+  (JNIEnv * env, jobject connobj, jint cidx, jstring service, jstring objectpath, jstring type, jstring name, jobjectArray params)
 {
    int rv;
    dbus_uint32_t serial = 0; // unique number to associate replies with requests
    DBusMessage* msg;
    DBusMessageIter args;
+   DBusConnection* conn;
 
    const char* cservice = NULL;
    if (NULL != service)
@@ -848,6 +949,7 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1meth
    rv = append_args(env, &args, params, connobj);
    if (0 != rv) return rv;
    
+   conn = getconn(cidx);
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);
@@ -867,12 +969,13 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1meth
  * Signature: ([Ljava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1reply_1to_1call
-  (JNIEnv *env, jobject connobj,  jstring destination, jstring type, jstring objectpath, jstring name, jlong replyserial, jobjectArray params)
+  (JNIEnv *env, jobject connobj, jint cidx, jstring destination, jstring type, jstring objectpath, jstring name, jlong replyserial, jobjectArray params)
 {
    int rv;
    dbus_uint32_t serial = 0; // unique number to associate replies with requests
    DBusMessage* msg;
    DBusMessageIter args;
+   DBusConnection* conn;
 
    const char* cdestination = NULL;
    if (NULL != destination)
@@ -911,6 +1014,7 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1reply_1to_
       return rv;
    }
    
+   conn = getconn(cidx);
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);
