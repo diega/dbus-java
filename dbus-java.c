@@ -47,13 +47,23 @@ void removeconn(jint cidx)
       free(t);
    }
 }
-DBusConnection* getconn(jint cidx)
+DBusConnection* getconn(JNIEnv * env, jint cidx)
 {
    node* t = root;
    while (NULL != t && t->cidx != cidx) t = t->next;
    if (NULL != t) 
       return t->conn;
-   else return NULL;
+   else {
+      jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusException");
+      char message[70];
+      message[0] = '\0';
+      strncat((char*) message, "Getting stored connection returned NULL, id = ", 70);
+      char id[20];
+      snprintf(id, 20, "%d", cidx);
+      char* fmessage = strncat((char*)message, id, 70);
+      (*env)->ThrowNew(env, dbeclass, fmessage);
+      return NULL;
+   }
 }
 
 /*
@@ -157,7 +167,8 @@ JNIEXPORT void JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1disconnect
   (JNIEnv * env, jobject o, jint cidx)
 {
    DBusConnection* conn;
-   conn = getconn(cidx);
+   conn = getconn(env, cidx);
+   if (NULL == conn) return;
    removeconn(cidx);
    dbus_connection_close(conn);
 }
@@ -433,7 +444,8 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    jclass replyclass = (*env)->FindClass(env, "org/freedesktop/dbus/MethodReply");
    jclass dsigclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusSignal");
    
-   conn = getconn(cidx);
+   conn = getconn(env, cidx);
+   if (NULL == conn) return NULL;
    // blocking for timeout ms read of the next available message
    dbus_connection_read_write(conn, timeout);
    msg = dbus_connection_pop_message(conn);
@@ -830,7 +842,8 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
       return rv;
    }
    
-   conn = getconn(cidx);
+   conn = getconn(env, cidx);
+   if (NULL == conn) return -1;
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);
@@ -886,7 +899,8 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1erro
       return rv;
    }
    
-   conn = getconn(cidx);
+   conn = getconn(env, cidx);
+   if (NULL == conn) return -1;
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);
@@ -949,7 +963,8 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1meth
    rv = append_args(env, &args, params, connobj);
    if (0 != rv) return rv;
    
-   conn = getconn(cidx);
+   conn = getconn(env, cidx);
+   if (NULL == conn) return -1;
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);
@@ -1014,7 +1029,8 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1reply_1to_
       return rv;
    }
    
-   conn = getconn(cidx);
+   conn = getconn(env, cidx);
+   if (NULL == conn) return -1;
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);

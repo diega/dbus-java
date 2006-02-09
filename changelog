@@ -1,11 +1,13 @@
 Version 1.1:
 
-  * Fix connections to multiple busses
-  * Allow connections by bus address
+	* Fix connections to multiple busses
+	* Allow connections by bus address
+	* Stricter error checking in looking up connection object
+	* Make sure pending messages are sent on disconnect
 
 Version 1.0:
 
-  * 1.x is a java 1.5 version, 0.x is a java 1.4 version 
-  * introspect on the root object
-  * support for nested nodes in CreateInterface
+	* 1.x is a java 1.5 version, 0.x is a java 1.4 version 
+	* introspect on the root object
+	* support for nested nodes in CreateInterface
 

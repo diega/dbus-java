@@ -163,8 +163,9 @@ public class DBusConnection
       }
       public void run()
       {
+         DBusMessage m = null;
          while (_run) {
-            DBusMessage m = null;
+            m = null;
 
             // read from the wire
             m = readIncoming(TIMEOUT);
@@ -195,6 +196,18 @@ public class DBusConnection
                      m = outgoing.removeFirst(); }
             }
          }
+         synchronized (outgoing) {
+            if (outgoing.size() > 0)
+               m = outgoing.removeFirst(); 
+         }
+         while (null != m) {
+            sendMessage(m);
+            m = null;
+            synchronized (outgoing) {
+               if (outgoing.size() > 0)
+                  m = outgoing.removeFirst(); }
+         }
+         synchronized (this) { notifyAll(); }
       }
    }
    private class _globalhandler implements org.freedesktop.DBus.Peer, org.freedesktop.DBus.Introspectable
@@ -280,6 +293,7 @@ public class DBusConnection
    private Object _reflock = new Object();
    private Object connkey;
    private DBus _dbus;
+   private _thread thread;
 
    /**
     * Connect to the BUS. If a connection already exists to the specified Bus, a reference to it is returned.
@@ -681,7 +695,8 @@ public class DBusConnection
       connid = dbus_connect(address);
 
       // start listening
-      new _thread().start();
+      thread = new _thread();
+      thread.start();
       
       // register ourselves
       _dbus = (DBus) getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
@@ -703,7 +718,8 @@ public class DBusConnection
       connid = dbus_connect(bustype);
 
       // start listening
-      new _thread().start();
+      thread = new _thread();
+      thread.start();
       
       // register ourselves
       _dbus = (DBus) getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
@@ -867,8 +883,11 @@ public class DBusConnection
       synchronized (conn) {
          synchronized (_reflock) {
             if (0 == --_refcount) {
-               dbus_disconnect(connid);
                _run = false;
+               try {
+                  synchronized (thread) { thread.wait(); }
+               } catch (InterruptedException Ie) {}
+               dbus_disconnect(connid);
                conn.remove(connkey);
             }
          }
