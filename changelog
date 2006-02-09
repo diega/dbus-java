@@ -1,9 +1,12 @@
+Version 1.2:
+
+	* Make sure pending messages are sent on disconnect
+
 Version 1.1:
 
 	* Fix connections to multiple busses
 	* Allow connections by bus address
 	* Stricter error checking in looking up connection object
-	* Make sure pending messages are sent on disconnect
 
 Version 1.0:
 

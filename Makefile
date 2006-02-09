@@ -19,7 +19,7 @@ BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
 
-VERSION = 1.1
+VERSION = 1.2a
  
 all: libdbus-java.so libdbus-java-$(VERSION).jar
 
