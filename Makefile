@@ -21,7 +21,7 @@ MANPREFIX?=$(PREFIX)/share/man/man1
 
 VERSION = 1.2a
  
-all: libdbus-java.so libdbus-java-$(VERSION).jar
+all: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 
 clean:
 	-rm -rf doc
@@ -102,18 +102,22 @@ check:
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
 
 uninstall: 
-	-rm $(JARPREFIX)/dbus.jar $(JARPREFIX)/dbus-$(VERSION).jar
+	-rm $(JARPREFIX)/dbus.jar $(JARPREFIX)/dbus-$(VERSION).jar $(JARPREFIX)/dbus-viewer.jar $(JARPREFIX)/dbus-viewer-$(VERSION).jar
 	-rm $(LIBPREFIX)/libdbus-java.so
 	-rm -rf $(DOCPREFIX)
-	-rm $(MANPREFIX)/CreateInterface.1 $(MANPREFIX)/ListDBus.1
+	-rm $(MANPREFIX)/CreateInterface.1 $(MANPREFIX)/ListDBus.1  $(MANPREFIX)/DBusViewer.1
+	-rm $(BINPREFIX)/CreateInterface $(BINPREFIX)/ListDBus  $(BINPREFIX)/DBusViewer
 
-install: libdbus-java-$(VERSION).jar libdbus-java.so doc bin/CreateInterface bin/ListDBus CreateInterface.1 ListDBus.1 changelog
+install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-java.so doc bin/CreateInterface bin/ListDBus bin/DBusViewer CreateInterface.1 ListDBus.1 DBusViewer.1 changelog
 	install -d $(JARPREFIX)
 	install -m 644 libdbus-java-$(VERSION).jar $(JARPREFIX)/dbus-$(VERSION).jar
+	install -m 644 dbus-java-viewer-$(VERSION).jar $(JARPREFIX)/dbus-viewer-$(VERSION).jar
 	ln -s dbus-$(VERSION).jar $(JARPREFIX)/dbus.jar
+	ln -s dbus-viewer-$(VERSION).jar $(JARPREFIX)/dbus-viewer.jar
 	install -d $(LIBPREFIX)
 	install libdbus-java.so $(LIBPREFIX)
 	install -d $(BINPREFIX)
+	install bin/DBusViewer $(BINPREFIX)
 	install bin/CreateInterface $(BINPREFIX)
 	install bin/ListDBus $(BINPREFIX)
 	install -d $(DOCPREFIX)
@@ -130,6 +134,7 @@ install: libdbus-java-$(VERSION).jar libdbus-java.so doc bin/CreateInterface bin
 	install -d $(MANPREFIX)
 	install -m 644 CreateInterface.1 $(MANPREFIX)/CreateInterface.1
 	install -m 644 ListDBus.1 $(MANPREFIX)/ListDBus.1
+	install -m 644 DBusViewer.1 $(MANPREFIX)/DBusViewer.1
 
 dist: .dist
 .dist: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml changelog

@@ -1,0 +1,3 @@
+#!/bin/sh --
+
+java -Djava.library.path=/usr/lib:/usr/lib/jni -cp /usr/share/java/dbus.jar:/usr/share/java/dbus-viewer.jar org.freedesktop.dbus.viewer.DBusViewer "$@"
