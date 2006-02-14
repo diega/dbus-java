@@ -1,6 +1,9 @@
 Version 1.2:
 
 	* Make sure pending messages are sent on disconnect
+	* Import of viewer application (Peter Cox <petercox -at- gawab -dot- com>)
+	* Make CreateInterface usable in other apps.
+	* Import extra functions that weren't documented into DBus.java
 
 Version 1.1:
 

@@ -30,10 +30,15 @@ clean:
 	
 classes: .classes
 testclasses: .testclasses
+viewerclasses: .viewerclasses
 .testclasses: $(SRCDIR)/dbus/test/*.java .classes
 	-mkdir classes
 	$(JAVAC) -d classes $(JCFLAGS) $(SRCDIR)/dbus/test/*.java
 	touch .testclasses 
+.viewerclasses: $(SRCDIR)/dbus/viewer/*.java .classes
+	-mkdir classes
+	$(JAVAC) -d classes $(JCFLAGS) $(SRCDIR)/dbus/viewer/*.java
+	touch .viewerclasses 
 .classes: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java
 	-mkdir classes
 	$(JAVAC) -d classes $(JCFLAGS) $^
@@ -53,6 +58,8 @@ libdbus-java-$(VERSION).jar: .classes
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/Hal/*.class)
 dbus-java-test-$(VERSION).jar: .testclasses
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/test/*.class)
+dbus-java-viewer-$(VERSION).jar: .viewerclasses
+	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/viewer/*.class)
 	
 
 jar: libdbus-java-$(VERSION).jar
@@ -82,6 +89,9 @@ dbus-java.tar.gz: org *.c Makefile *.tex debian tmp-session.conf
 	
 testrun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
+
+viewer: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-viewer-$(VERSION).jar org.freedesktop.dbus.viewer.DBusViewer
 
 check:
 	( PASS=false; \

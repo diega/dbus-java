@@ -129,6 +129,39 @@ public interface DBus extends DBusInterface
     * @param matchrule The Match rule as a string. Format Undocumented.
     */
    public void AddMatch(String matchrule);
+
+   /**
+    * Remove a match rule.
+    * Will cause you to stop receiving messages that aren't directed to you which 
+    * match this rule.
+    * @param matchrule The Match rule as a string. Format Undocumented.
+    */
+   public void RemoveMatch(String matchrule);
+
+   /**
+    * List the connections currently queued for a name.
+    * @param name The name to query
+    * @return A list of unique connection IDs.
+    */
+   public String[] ListQueuedOwners(String name);
+
+   /**
+    * Returns the proccess ID associated with a connection.
+    * @param connection_name The name of the connection
+    * @return The PID of the connection.
+    */
+   public UInt32 GetConnectionUnixProcessID(String a);
+
+   /**
+    * Does something undocumented.
+    */
+   public Byte[] GetConnectionSELinuxSecurityContext(String a);
+
+   /**
+    * Does something undocumented.
+    */
+   public void ReloadConfig();
+
          
    public class NameOwnerChanged extends DBusSignal
    {
