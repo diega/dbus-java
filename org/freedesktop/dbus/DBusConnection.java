@@ -10,6 +10,7 @@ import java.util.Vector;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
@@ -140,7 +141,10 @@ public class DBusConnection
       public void handle(DBusSignal s)
       {
          if (s instanceof org.freedesktop.DBus.Local.Disconnected) {
-            DBusErrorMessage err = new InternalErrorMessage(servicenames.get(0), "Disconnected");
+            DBusErrorMessage err = new DBusErrorMessage(
+                  servicenames.get(0), servicenames.get(0), 
+                  "org.freedesktop.DBus.Local.Disconnected",
+                  new Object[] { "Disconnected" }, 0, 0);
             synchronized (pendingCalls) {
                Long[] set = (Long[]) pendingCalls.keySet().toArray(new Long[]{});
                for (Long l: set) {
@@ -150,7 +154,7 @@ public class DBusConnection
                }
             }
             synchronized (pendingErrors) {
-               pendingErrors.add(new InternalErrorMessage(servicenames.get(0), "Disconnected"));
+               pendingErrors.add(err);
             }
          }
       }
@@ -899,14 +903,14 @@ public class DBusConnection
    }
    /**
     * Return any DBus error which has been received.
-    * @return A DBusErrorMessage, or null if no error is pending.
+    * @return A DBusExecutionException, or null if no error is pending.
     */
-   public DBusErrorMessage getError()
+   public DBusExecutionException getError()
    {
       synchronized (pendingErrors) {
          if (pendingErrors.size() == 0) return null;
          else 
-            return pendingErrors.removeFirst();
+            return pendingErrors.removeFirst().getException();
       }
    }
    
@@ -937,13 +941,13 @@ public class DBusConnection
 
          if (null == eo) {
             synchronized (outgoing) {
-               outgoing.addLast(new InternalErrorMessage(m, m.getObjectPath()+" is not an object provided by this service.")); }
+               outgoing.addLast(new DBusErrorMessage(m, new DBus.Error.UnknownObject(m.getObjectPath()+" is not an object provided by this service."))); }
             return;
          }
          meth = eo.methods.get(new MethodTuple(m.getType(), m.getName()));
          if (null == meth) {
             synchronized (outgoing) {
-               outgoing.addLast(new InternalErrorMessage(m, "The method `"+m.getType()+"."+m.getName()+"' does not exist on this object.")); }
+               outgoing.addLast(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("The method `"+m.getType()+"."+m.getName()+"' does not exist on this object."))); }
             return;
          }
          o = eo.object;
@@ -954,7 +958,7 @@ public class DBusConnection
          m.parameters = deSerialiseParameters(m.parameters, ts);
       } catch (Exception e) {
          synchronized (outgoing) {
-            outgoing.addLast(new InternalErrorMessage(m, "Failure in de-serialising message ("+e+")")); }
+            outgoing.addLast(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serialising message ("+e+")"))); }
       }
 
       // now execute it
@@ -966,15 +970,24 @@ public class DBusConnection
          public void run() 
          { 
             try { 
-               Object result = me.invoke(ob, m.parameters);
+               Object result;
+               try {
+                  result = me.invoke(ob, m.parameters);
+               } catch (InvocationTargetException ITe) {
+                  throw ITe.getCause();
+               }
                result = convertParameters(new Object[] { result }, new Type[] { me.getGenericReturnType() })[0];
                MethodReply reply = new MethodReply(m, result);
                synchronized (outqueue) {
                   outqueue.addLast(reply);
                }
-            } catch (Exception e) {
+            } catch (DBusExecutionException DBEe) {
                synchronized (outqueue) {
-                  outqueue.addLast(new InternalErrorMessage(m, "Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage())); 
+                  outqueue.addLast(new DBusErrorMessage(m, DBEe)); 
+               }
+            } catch (Throwable e) {
+               synchronized (outqueue) {
+                  outqueue.addLast(new DBusErrorMessage(m, new DBusExecutionException("Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage()))); 
                }
             } 
          }
@@ -1019,7 +1032,7 @@ public class DBusConnection
          m.setReply(mr);
       else
          synchronized (outgoing) {
-            outgoing.addLast(new InternalErrorMessage(mr, "Spurious reply. No message with the given serial id was awaiting a reply.")); 
+            outgoing.addLast(new DBusErrorMessage(mr, new DBusExecutionException("Spurious reply. No message with the given serial id was awaiting a reply."))); 
          }
    }
    private void sendMessage(DBusMessage m)
@@ -1030,7 +1043,7 @@ public class DBusConnection
          } catch (Exception e) {}
       else if (m instanceof DBusErrorMessage) 
          try {
-            m.setSerial(dbus_send_error_message(connid, ((DBusErrorMessage) m).getDestination(), m.getName(), m.getReplySerial(), m.getParameters()));
+            m.setSerial(dbus_send_error_message(connid, ((DBusErrorMessage) m).getDestination(), m.getType(), m.getReplySerial(), m.getParameters()));
          } catch (Exception e) {}
       else if (m instanceof MethodCall) {
          try {
@@ -1040,10 +1053,12 @@ public class DBusConnection
                   pendingCalls.put(m.getSerial(),(MethodCall) m);
                }
                else
-                  ((MethodCall) m).setReply(new InternalErrorMessage("Message Failed to Send"));
+                  ((MethodCall) m).setReply(new DBusErrorMessage(m, new InternalMessageException("Message Failed to Send")));
             }
+         } catch (DBusExecutionException DBEe) {
+               ((MethodCall) m).setReply(new DBusErrorMessage(m, DBEe));
          } catch (Exception e) {
-               ((MethodCall) m).setReply(new InternalErrorMessage("Message Failed to Send: "+e.getMessage()));
+               ((MethodCall) m).setReply(new DBusErrorMessage(m, new DBusExecutionException("Message Failed to Send: "+e.getMessage())));
          }
       }
       else if (m instanceof MethodReply) {
@@ -1051,7 +1066,7 @@ public class DBusConnection
          try {
             m.setSerial(dbus_reply_to_call(connid, call.getSource(), call.getType(), call.getObjectPath(), call.getName(), call.getSerial(), m.getParameters()));
          } catch (Exception e) {
-            dbus_send_error_message(connid, call.getSource(), InternalErrorMessage.class.getName(), call.getSerial(), new Object[] { "Error sending reply: "+e.getMessage() });
+            dbus_send_error_message(connid, call.getSource(), DBusExecutionException.class.getName(), call.getSerial(), new Object[] { "Error sending reply: "+e.getMessage() });
          }
       }
    }

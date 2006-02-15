@@ -16,6 +16,8 @@ import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
 import org.freedesktop.dbus.Variant;
 
+import org.freedesktop.DBus.Error.UnknownObject;
+import org.freedesktop.DBus.Error.ServiceUnknown;
 import org.freedesktop.DBus.Peer;
 import org.freedesktop.DBus.Introspectable;
 
@@ -126,6 +128,10 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
          test.fail("Didn't get this properly");
       return this;
    }
+   public void throwme() throws TestException
+   {
+      throw new TestException("test");
+   }
 }
 
 /**
@@ -203,7 +209,7 @@ public class test implements DBusSigHandler
          conn.addSigHandler(TestSignalInterface.TestArraySignal.class, t);
          System.out.println("done");
       } catch (DBusException DBe) {
-         System.out.println("failed");
+         test.fail("Failed to add handlers");
       }
       
       System.out.println("Listening for Method Calls");
@@ -253,16 +259,27 @@ public class test implements DBusSigHandler
       int rint = tri.frobnicate(ls, msmus, 13);
       if (-5 != rint)
          fail("frobnicate return value incorrect");
-      
+ 
+      /** call something that throws */
+      try {
+         System.out.println("Throwing stuff");
+         tri.throwme();
+         test.fail("Method Execution should have failed");
+      } catch (TestException Te) {
+         System.out.println("Remote Method Failed with: "+Te.getClass().getName()+" "+Te.getMessage());
+         if (!Te.getMessage().equals("test"))
+            test.fail("Error message was not correct");
+      }
+     
       /** Try and call an invalid remote object */
       try {
          System.out.println("Calling Method2");
          tri = (TestRemoteInterface) conn.getRemoteObject("foo.bar.NotATest", "/Moofle", TestRemoteInterface.class);
          System.out.println("Got Remote Name: "+tri.getName());
          test.fail("Method Execution should have failed");
-      } catch (DBusExecutionException DEe) {
-         System.out.println("Remote Method Failed with: "+DEe.getMessage());
-         if (!DEe.getMessage().equals("The name foo.bar.NotATest was not provided by any .service files"))
+      } catch (ServiceUnknown SU) {
+         System.out.println("Remote Method Failed with: "+SU.getClass().getName()+" "+SU.getMessage());
+         if (!SU.getMessage().equals("The name foo.bar.NotATest was not provided by any .service files"))
             test.fail("Error message was not correct");
       }
       
@@ -272,9 +289,9 @@ public class test implements DBusSigHandler
          tri = (TestRemoteInterface) conn.getRemoteObject("foo.bar.Test", "/Moofle", TestRemoteInterface.class);
          System.out.println("Got Remote Name: "+tri.getName());
          test.fail("Method Execution should have failed");
-      } catch (DBusExecutionException DEe) {
-         System.out.println("Remote Method Failed with: "+DEe.getMessage());
-         if (!DEe.getMessage().equals("/Moofle is not an object provided by this service."))
+      } catch (UnknownObject UO) {
+         System.out.println("Remote Method Failed with: "+UO.getClass().getName()+" "+UO.getMessage());
+         if (!UO.getMessage().equals("/Moofle is not an object provided by this service."))
             test.fail("Error message was not correct");
       }
 

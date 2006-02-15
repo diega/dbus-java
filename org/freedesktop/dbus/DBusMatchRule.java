@@ -12,17 +12,25 @@ class DBusMatchRule
       this.iface = iface;
       this.member = member;
    }
+   public DBusMatchRule(DBusExecutionException e)
+   {
+      iface = e.getClass().getName().replaceAll("[$]", ".");
+      member = null;
+      type = "error";
+   }
    public DBusMatchRule(DBusMessage m)
    {
       iface = m.getType();
       member = m.getName();
       if (m instanceof DBusSignal)
          type = "signal";
-      if (m instanceof DBusErrorMessage)
+      else if (m instanceof DBusErrorMessage) {
          type = "error";
-      if (m instanceof MethodCall)
+         member = null;
+      }
+      else if (m instanceof MethodCall)
          type = "method_call";
-      if (m instanceof MethodReply)
+      else if (m instanceof MethodReply)
          type = "method_reply";
    }
    public DBusMatchRule(Class<? extends DBusInterface> c, String method)
@@ -45,6 +53,11 @@ class DBusMatchRule
       }
       else if (DBusErrorMessage.class.isAssignableFrom(c)) {
          iface = c.getName().replaceAll("[$]", ".");
+         member = null;
+         type = "error";
+      }
+      else if (DBusExecutionException.class.isAssignableFrom(c)) {
+         iface = c.getClass().getName().replaceAll("[$]", ".");
          member = null;
          type = "error";
       }

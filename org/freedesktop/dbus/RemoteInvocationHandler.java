@@ -38,13 +38,9 @@ class RemoteInvocationHandler implements InvocationHandler
                
       Object[] rp = reply.getParameters();
 
-      if (reply instanceof DBusErrorMessage) {
-         if (null == rp || 0 == rp.length || null == rp[0])
-            throw new DBusExecutionException("Got Error Message in Reply");
-         else
-            throw new DBusExecutionException(""+rp[0]);
-      }
-
+      if (reply instanceof DBusErrorMessage)
+         ((DBusErrorMessage) reply).throwException();
+         
       if (null == rp) { 
          if(null == c || Void.TYPE.equals(c)) return null;
          else throw new DBusExecutionException("Wrong return type (expected void)");

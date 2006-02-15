@@ -1,4 +1,5 @@
 #include "org_freedesktop_dbus_DBusConnection.h"
+#include "org_freedesktop_dbus_DBusErrorMessage.h"
 #define DBUS_API_SUBJECT_TO_CHANGE
 #include <dbus/dbus.h>
 #include <stdbool.h>
@@ -64,6 +65,38 @@ DBusConnection* getconn(JNIEnv * env, jint cidx)
       (*env)->ThrowNew(env, dbeclass, fmessage);
       return NULL;
    }
+}
+
+/*
+ * Class:     org_freedesktop_dbus_DBusErrorMessage
+ * Method:    createExceptionClass
+ * Signature: (Ljava/lang/String;)Ljava/lang/Class;
+ */
+JNIEXPORT jclass JNICALL Java_org_freedesktop_dbus_DBusErrorMessage_createExceptionClass
+  (JNIEnv * env, jclass emsg, jstring name)
+{
+   int j;
+   const char* cname = (*env)->GetStringUTFChars(env, name, 0);
+   int clen = strlen(cname);
+   char* cclassname = malloc(clen+1);
+   memset(cclassname, 0, clen+1);
+   for (j = 0; j < clen; j++)
+      if ('.' == cname[j]) 
+         cclassname[j] = '/';
+      else
+         cclassname[j] = cname[j];
+   jclass exclass = NULL;
+   do {
+      exclass = (*env)->FindClass(env, cclassname);
+      (*env)->ExceptionClear(env);
+      if (NULL == exclass) {
+         while (j > 0 && cclassname[j] != '/') j--;
+         if (j > 0) cclassname[j] = '$';
+      }
+   } while (NULL == exclass && j > 0);
+   free(cclassname);
+   (*env)->ReleaseStringUTFChars(env, name, cname);
+   return exclass;
 }
 
 /*

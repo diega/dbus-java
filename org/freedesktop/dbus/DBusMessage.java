@@ -2,7 +2,7 @@ package org.freedesktop.dbus;
 
 /**
  * Class to represent a message on the Bus. 
- * This class should not be extended, instead extend DBusSignal or DBusErrorMessage.
+ * This class should not be extended, instead extend DBusSignal.
  */
 public abstract class DBusMessage
 {

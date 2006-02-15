@@ -1,6 +1,7 @@
 package org.freedesktop;
 
 import org.freedesktop.dbus.DBusException;
+import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.UInt32;
@@ -192,6 +193,30 @@ public interface DBus extends DBusInterface
       {
          super(path, name);
          this.name = name;
+      }
+   }
+   public interface Error 
+   {
+      public class UnknownMethod extends DBusExecutionException
+      {
+         public UnknownMethod(String message)
+         {
+            super(message);
+         }
+      }
+      public class UnknownObject extends DBusExecutionException
+      {
+         public UnknownObject(String message)
+         {
+            super(message);
+         }
+      }
+      public class ServiceUnknown extends DBusExecutionException
+      {
+         public ServiceUnknown(String message)
+         {
+            super(message);
+         }
       }
    }
 }

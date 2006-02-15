@@ -95,6 +95,12 @@ Methods and Signals have names which identify them within an
 interface. DBus does not support method overloading, only one
 method or signal should exist with each name.
 
+\subsubsection{Errors}
+
+A reply to any message may be an error condition. In which case you reply with
+an error message which has a name of the form {\em
+   ``org.freedesktop.DBus.Error.ServiceUnknown''}. 
+
 \section{DBusConnection}
 
 The {\tt
@@ -278,6 +284,70 @@ public interface DBus extends DBusInterface
 \end{center}
 \caption{A Signal with one parameter}
 \label{fig:signal}
+\end{figure}
+
+\section{DBusExecutionException}
+
+If you wish to report an error condition in a method call you can throw an
+instance of {\tt
+DBusExecutionException\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/DBusExecutionException.html}}.
+This will be sent back to the caller as an error message, and the error name is
+taken from the class name of the exception. For example, if you wanted to
+report an unknown method you would define an exception as in figure
+\ref{fig:exceptiondef} and then throw it in your method as in figure
+\ref{fig:exceptioncall}.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+package org.freedesktop.DBus.Error;
+import org.freedesktop.dbus.DBusExecutionException;
+
+public class UnknownMethod extends DBusExecutionException
+{
+   public UnknownMethod(String message)
+   {
+      super(message);
+   }
+}
+\end{verbatim}
+\end{center}
+\caption{An Exception}
+\label{fig:exceptiondef}
+\end{figure}
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+...
+public void throwme() throws org.freedesktop.DBus.Error.UnknownMethod
+{
+   throw new org.freedesktop.DBus.Error.UnknownMethod("hi");
+}
+...
+\end{verbatim}
+\end{center}
+\caption{Throwing An Exception}
+\label{fig:exceptiondef}
+\end{figure}
+
+If you are calling a remote method and you want to handle such an error you can
+simply catch the exception as in figure \ref{fig:exceptioncatch}. 
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+...
+try {
+   remote.throwme();
+} catch (org.freedesktop.DBus.Error.UnknownMethod UM) {
+   ...
+}
+...
+\end{verbatim}
+\end{center}
+\caption{Catching An Exception}
+\label{fig:exceptioncatch}
 \end{figure}
 
 \section{DBusSigHandler}

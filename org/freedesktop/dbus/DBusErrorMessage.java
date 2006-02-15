@@ -1,12 +1,14 @@
 package org.freedesktop.dbus;
 
+import java.lang.reflect.Constructor;
+
 /**
  * Represents an error message sent over the Bus.
  * Any errors not associated with a method call are queued by the Bus 
  * and may be retrieved by calling DBusConnection.getError().
  * @see DBusConnection#getError()
  */
-public abstract class DBusErrorMessage extends DBusMessage
+class DBusErrorMessage extends DBusMessage
 {
    /** The Destination. */
    protected String destination;
@@ -21,35 +23,86 @@ public abstract class DBusErrorMessage extends DBusMessage
     */
    DBusErrorMessage(String source, String destination, String name, Object[] parameters, long serial, long replyserial)
    {
-      super(source, null, name, parameters, serial, replyserial);
+      super(source, name, name, parameters, serial, replyserial);
       this.destination = destination;
    }
    /**
     * Create an error message.
     * @param m The message this is a reply to.
-    * @param parameters The error parameters (usually a String message).
+    * @param ex Exception that caused this message
     */
-   protected DBusErrorMessage(DBusMessage m, Object... parameters)
+   protected DBusErrorMessage(DBusMessage m, DBusExecutionException ex)
+   {
+      super(null, null, null, new Object[] { ex.getMessage() }, 0, m.getSerial());
+      this.type = ex.getClass().getName().replaceAll("[$]", ".");
+      this.name = ex.getClass().getName().replaceAll("[$]", ".");
+      this.destination = m.getSource();
+   }
+   /**
+    * Create an error message.
+    * @param m The message this is a reply to.
+    * @param parameters The error parameters (usually a String message).
+    * @param ex Exception that caused this message
+    */
+   protected DBusErrorMessage(DBusMessage m, DBusException ex, Object... parameters)
    {
       super(null, null, null, parameters, 0, m.getSerial());
-      this.type = getClass().getName();
-      this.name = getClass().getName();
+      this.type = ex.getClass().getName().replaceAll("[$]", ".");
+      this.name = ex.getClass().getName().replaceAll("[$]", ".");
       this.destination = m.getSource();
    }
    /**
     * Create an error message.
     * @param destination The destination for the error message.
     * @param parameters The error parameters (usually a String message).
+    * @param ex Exception that caused this message
     */
-  protected DBusErrorMessage(String destination, Object... parameters)
+  protected DBusErrorMessage(String destination, DBusException ex, Object... parameters)
    {
       super(null, null, null, parameters, 0);
-      this.type = getClass().getName();
-      this.name = getClass().getName();
+      this.type = ex.getClass().getName().replaceAll("[$]", ".");
+      this.name = ex.getClass().getName().replaceAll("[$]", ".");
       this.destination = destination;
    }
    /**
     * Returns the destination of the error, if any.
     */
    public String getDestination() { return destination; }
+   private static native Class createExceptionClass(String name);
+   /**
+    * Turns this into an exception of the correct type
+    */
+   public DBusExecutionException getException()
+   {
+      try {
+         Class<? extends DBusExecutionException> c = (Class<? extends DBusExecutionException>) createExceptionClass(type);
+         if (null == c) c = DBusExecutionException.class;
+         Constructor<? extends DBusExecutionException> con = c.getConstructor(String.class);
+         if (null == parameters || 0 == parameters.length)
+            return con.newInstance("");
+         else {
+            String s = "";
+            for (Object o: parameters)
+               s += o + " ";
+            return con.newInstance(s.trim());
+         }
+      } catch (Exception e) {
+         e.printStackTrace();
+         if (null == parameters || 0 == parameters.length)
+            return new DBusExecutionException("");
+         else {
+            String s = "";
+            for (Object o: parameters)
+               s += o + " ";
+            return new DBusExecutionException(s.trim());
+         }
+      }
+   }
+   /**
+    * Throw this as an exception of the correct type
+    */
+   public void throwException() throws DBusExecutionException
+   {
+      throw getException();
+   }
 }
