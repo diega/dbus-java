@@ -69,7 +69,7 @@ public class CreateInterface
       }
       return sig;
    }
-   String parseMethod(Element meth, Set<String> imports, Map<String,Integer> tuples, Map<String, Integer> structs) throws DBusException
+   String parseMethod(Element meth, Set<String> imports, Map<String,Integer> tuples, Map<String, Integer> structs, Set<String> exceptions) throws DBusException
    {
       Vector<Element> in = new Vector<Element>();
       Vector<Element> out = new Vector<Element>();
@@ -102,6 +102,7 @@ public class CreateInterface
                   throwses = e.getAttribute("value");
                else
                   throwses += ", " + e.getAttribute("value");
+               exceptions.add(e.getAttribute("value"));
             } else
                annotations += parseAnnotation(e, imports);
          }
@@ -190,7 +191,7 @@ public class CreateInterface
       return s += ")\n";
    }
 
-   void parseInterface(Element iface, PrintStream out, Map<String,Integer> tuples, Map<String, Integer> structs) throws DBusException
+   void parseInterface(Element iface, PrintStream out, Map<String,Integer> tuples, Map<String, Integer> structs, Set<String> exceptions) throws DBusException
    {
       if (null == iface.getAttribute("name") ||
             "".equals(iface.getAttribute("name"))) {
@@ -212,7 +213,7 @@ public class CreateInterface
          checkNode(meth, "method", "signal", "property", "annotation");
 
          if ("method".equals(meth.getNodeName()))
-            methods += parseMethod((Element) meth, imports, tuples, structs) + "\n";
+            methods += parseMethod((Element) meth, imports, tuples, structs, exceptions) + "\n";
          else if ("signal".equals(meth.getNodeName()))
             signals += parseSignal((Element) meth, imports, structs);
          else if ("property".equals(meth.getNodeName()))
@@ -233,7 +234,19 @@ public class CreateInterface
       out.println(methods);
       out.println("}");
    }
-
+   void createException(String name, String pack, PrintStream out) throws DBusException
+   {
+      out.println("package "+pack+";");
+      out.println("import org.freedesktop.dbus.DBusExecutionException;");
+      out.print("public class "+name);
+      out.println("extends DBusExecutionException");
+      out.println("{");
+      out.println("   public "+name+"(String message)");
+      out.println("   {");
+      out.println("      super(message);");
+      out.println("   }");
+      out.println("}");
+   }
    void createTuple(String name, int num, String pack, PrintStream out, String superclass) throws DBusException
    {
       out.println("package "+pack+";");
@@ -283,15 +296,17 @@ public class CreateInterface
 
             Map<String, Integer> tuples = new HashMap<String, Integer>();
             Map<String, Integer> structs = new HashMap<String, Integer>();
+            Set<String> exceptions = new TreeSet<String>();
             String name = ((Element) iface).getAttribute("name");
             String file = name.replaceAll("\\.","/")+".java";
             String path = file.replaceAll("/[^/]*$", "");
 
             factory.init(file, path);
             parseInterface((Element) iface, 
-                  factory.createPrintStream(file), tuples, structs);
+                  factory.createPrintStream(file), tuples, structs, exceptions);
             createTuples(tuples, "Tuple", name, path);
             createTuples(structs, "Struct", name, path);
+            createExceptions(exceptions, name, path);
          }
          else if ("node".equals(iface.getNodeName())) 
             parseRoot((Element) iface);
@@ -301,14 +316,12 @@ public class CreateInterface
          }
       }
    }
-   /**
-    * @param typeMap
-    * @param type
-    * @param name
-    * @param path
-    * @throws DBusException
-    * @throws IOException
-    */
+   private void createExceptions(Set<String> exceptions, String name, String path) throws DBusException, IOException
+   {
+      for (String ex: exceptions) 
+         createException(ex, name.replaceAll("\\.[^.]*$",""),
+               factory.createPrintStream(path, ex));
+   }
    private void createTuples(Map<String, Integer> typeMap, String type, String name, String path) throws DBusException, IOException
    {
       for (String tname: typeMap.keySet()) 

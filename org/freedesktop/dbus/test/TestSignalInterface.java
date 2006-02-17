@@ -5,11 +5,15 @@ import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.Variant;
+import org.freedesktop.DBus.Description;
+
 /**
  * A sample signal with two parameters
  */
+@Description("Test interface containing signals")
 public interface TestSignalInterface extends DBusInterface
 {
+   @Description("Test basic signal")
    public static class TestSignal extends DBusSignal
    {
       public final String value;
@@ -24,6 +28,7 @@ public interface TestSignalInterface extends DBusInterface
          this.number = number;
       }
    }
+   @Description("Test signal with arrays")
    public static class TestArraySignal extends DBusSignal
    {
       public final TestStruct2<String[],Variant> v;
