@@ -19,7 +19,7 @@ BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
 
-VERSION = 1.2a
+VERSION = 1.3a
  
 all: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 
@@ -86,9 +86,6 @@ doc/dbus-java/index.html: dbus-java.tex .doc
 doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java .doc
 	javadoc -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java
 
-dbus-java.tar.gz: org *.c Makefile *.tex debian tmp-session.conf
-	(tar -zcf dbus-java.tar.gz $^)
-
 %.1: %.sgml
 	docbook-to-man $< > $@
 	
@@ -142,7 +139,7 @@ install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-jav
 	install -m 644 DBusViewer.1 $(MANPREFIX)/DBusViewer.1
 
 dist: .dist
-.dist: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml changelog
+.dist: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog
 	-mkdir libdbus-java-$(VERSION)
 	cp -fa $^ libdbus-java-$(VERSION)
 	touch .dist
