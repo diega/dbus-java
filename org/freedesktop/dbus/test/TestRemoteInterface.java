@@ -2,6 +2,8 @@ package org.freedesktop.dbus.test;
 
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.UInt16;
+import org.freedesktop.DBus.Description;
+import org.freedesktop.DBus.Method.NoReply;
 
 import java.util.Map;
 import java.util.List;
@@ -15,6 +17,6 @@ public interface TestRemoteInterface extends DBusInterface
     */
    public String getName();
    public <T> int frobnicate(List<Long> n, Map<String,Map<UInt16,Short>> m, T v);
-   @org.freedesktop.DBus.Description("Throws a TestException when called");
+   @Description("Throws a TestException when called")
    public void throwme() throws TestException;
 }

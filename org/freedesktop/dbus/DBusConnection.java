@@ -1,13 +1,8 @@
 package org.freedesktop.dbus;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
 import java.lang.annotation.Annotation;
+
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
@@ -18,6 +13,14 @@ import java.lang.reflect.Proxy;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Vector;
 
 import org.freedesktop.DBus;
 
@@ -64,7 +67,7 @@ class MethodTuple
 }
 class ExportedObject
 {
-   private String getAnnotations(Method c)
+   private String getAnnotations(AnnotatedElement c)
    {
       String ans = "";
       for (Annotation a: c.getDeclaredAnnotations()) {
@@ -77,24 +80,7 @@ class ExportedObject
          } catch (InvocationTargetException ITe) {
          } catch (IllegalAccessException IAe) {}
 
-         ans += "  <annotation name=\""+t.getName()+"\" value=\""+value+"\">\n";
-      }
-      return ans;
-   }
-   private String getAnnotations(Class c)
-   {
-      String ans = "";
-      for (Annotation a: c.getDeclaredAnnotations()) {
-         Class t = a.annotationType();
-         String value = "";
-         try {
-            Method m = t.getMethod("value");
-            value = m.invoke(a).toString();
-         } catch (NoSuchMethodException NSMe) {
-         } catch (InvocationTargetException ITe) {
-         } catch (IllegalAccessException IAe) {}
-
-         ans += "  <annotation name=\""+t.getName()+"\" value=\""+value+"\">\n";
+         ans += "  <annotation name=\""+t.getName().replaceAll("[$]",".")+"\" value=\""+value+"\" />\n";
       }
       return ans;
    }
@@ -112,6 +98,10 @@ class ExportedObject
                   m.put(new MethodTuple(c.getName().replaceAll("[$]","."), meth.getName()), meth);
                   introspectiondata += "  <method name=\""+meth.getName()+"\" >\n";
                   introspectiondata += getAnnotations(meth);
+                  for (Class ex: meth.getExceptionTypes())
+                     if (DBusExecutionException.class.isAssignableFrom(ex))
+                        introspectiondata +=
+                           "   <annotation type=\"org.freedesktop.DBus.Method.Error\" value=\""+ex.getName().replaceAll("[$]",".")+"\" />\n";
                   for (Type pt: meth.getGenericParameterTypes())
                      introspectiondata +=
                         "   <arg type=\""+DBusConnection.getDBusType(pt)+"\" direction=\"in\"/>\n";

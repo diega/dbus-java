@@ -1,5 +1,10 @@
 package org.freedesktop;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
@@ -163,7 +168,9 @@ public interface DBus extends DBusInterface
     */
    public void ReloadConfig();
 
-         
+   /**
+    * Signal sent when the owner of a name changes
+    */
    public class NameOwnerChanged extends DBusSignal
    {
       public final String name;
@@ -177,6 +184,9 @@ public interface DBus extends DBusInterface
          this.new_owner = new_owner;
       }
    }
+   /**
+    * Signal sent to a connection when it loses a name
+    */
    public class NameLost extends DBusSignal
    {
       public final String name;
@@ -186,6 +196,9 @@ public interface DBus extends DBusInterface
          this.name = name;
       }
    }
+   /**
+    * Signal sent to a connection when it aquires a name
+    */
    public class NameAquired extends DBusSignal
    {
       public final String name;
@@ -195,8 +208,14 @@ public interface DBus extends DBusInterface
          this.name = name;
       }
    }
+   /**
+    * Contains standard errors that can be thrown from methods.
+    */
    public interface Error 
    {
+      /**
+       * Thrown if the method called was unknown on the remote object
+       */
       public class UnknownMethod extends DBusExecutionException
       {
          public UnknownMethod(String message)
@@ -204,6 +223,9 @@ public interface DBus extends DBusInterface
             super(message);
          }
       }
+      /**
+       * Thrown if the object was unknown on a remote connection
+       */
       public class UnknownObject extends DBusExecutionException
       {
          public UnknownObject(String message)
@@ -211,6 +233,9 @@ public interface DBus extends DBusInterface
             super(message);
          }
       }
+      /**
+       * Thrown if the requested service was not available
+       */
       public class ServiceUnknown extends DBusExecutionException
       {
          public ServiceUnknown(String message)
@@ -219,8 +244,38 @@ public interface DBus extends DBusInterface
          }
       }
    }
+   /**
+    * Description of the interface or method, returned in the introspection data
+    */
+   @Retention(RetentionPolicy.RUNTIME)
    public @interface Description
    {
       String value();
+   }
+   /**
+    * Indicates that a DBus interface or method is deprecated
+    */
+   @Retention(RetentionPolicy.RUNTIME)
+   public @interface Deprecated {}
+   /**
+    * Contains method-specific annotations
+    */
+   public interface Method
+   {
+      /**
+       * Methods annotated with this do not send a reply
+       */
+      @Target(ElementType.METHOD)
+      @Retention(RetentionPolicy.RUNTIME)
+      public @interface NoReply {}
+      /**
+       * Give an error that the method can return
+       */
+      @Target(ElementType.METHOD)
+      @Retention(RetentionPolicy.RUNTIME)
+      public @interface Error 
+      {
+         String value();
+      }
    }
 }
