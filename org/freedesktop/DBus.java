@@ -219,4 +219,8 @@ public interface DBus extends DBusInterface
          }
       }
    }
+   public @interface Description
+   {
+      String value();
+   }
 }

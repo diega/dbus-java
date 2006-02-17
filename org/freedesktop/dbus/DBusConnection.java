@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
@@ -63,6 +64,40 @@ class MethodTuple
 }
 class ExportedObject
 {
+   private String getAnnotations(Method c)
+   {
+      String ans = "";
+      for (Annotation a: c.getDeclaredAnnotations()) {
+         Class t = a.annotationType();
+         String value = "";
+         try {
+            Method m = t.getMethod("value");
+            value = m.invoke(a).toString();
+         } catch (NoSuchMethodException NSMe) {
+         } catch (InvocationTargetException ITe) {
+         } catch (IllegalAccessException IAe) {}
+
+         ans += "  <annotation name=\""+t.getName()+"\" value=\""+value+"\">\n";
+      }
+      return ans;
+   }
+   private String getAnnotations(Class c)
+   {
+      String ans = "";
+      for (Annotation a: c.getDeclaredAnnotations()) {
+         Class t = a.annotationType();
+         String value = "";
+         try {
+            Method m = t.getMethod("value");
+            value = m.invoke(a).toString();
+         } catch (NoSuchMethodException NSMe) {
+         } catch (InvocationTargetException ITe) {
+         } catch (IllegalAccessException IAe) {}
+
+         ans += "  <annotation name=\""+t.getName()+"\" value=\""+value+"\">\n";
+      }
+      return ans;
+   }
    private Map<MethodTuple,Method> getExportedMethods(Class c) throws DBusException
    {
       if (DBusInterface.class.equals(c)) return new HashMap<MethodTuple,Method>();
@@ -71,10 +106,12 @@ class ExportedObject
          if (DBusInterface.class.equals(i)) {
             // add this class's public methods
             introspectiondata += " <interface name=\""+c.getName()+"\">\n";
+            introspectiondata += getAnnotations(c);
             for (Method meth: c.getDeclaredMethods()) 
                if (Modifier.isPublic(meth.getModifiers())) {
                   m.put(new MethodTuple(c.getName().replaceAll("[$]","."), meth.getName()), meth);
                   introspectiondata += "  <method name=\""+meth.getName()+"\" >\n";
+                  introspectiondata += getAnnotations(meth);
                   for (Type pt: meth.getGenericParameterTypes())
                      introspectiondata +=
                         "   <arg type=\""+DBusConnection.getDBusType(pt)+"\" direction=\"in\"/>\n";
@@ -94,6 +131,7 @@ class ExportedObject
             for (Class sig: c.getDeclaredClasses()) 
                if (DBusSignal.class.isAssignableFrom(sig)) {
                   introspectiondata += "  <signal name=\""+sig.getSimpleName()+"\">\n";
+                  introspectiondata += getAnnotations(sig);
                   for (TypeVariable tv: sig.getTypeParameters())
                      for (Type t: tv.getBounds())
                         introspectiondata += "   <arg type=\""+DBusConnection.getDBusType(t)+"\" direction=\"out\" />\n";

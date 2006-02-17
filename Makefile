@@ -19,14 +19,14 @@ BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
 
-VERSION = 1.3a
+VERSION = 1.2a
  
 all: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 
 clean:
 	-rm -rf doc
 	-rm -rf classes
-	-rm *.1 *.o *.so *.h .classes .testclasses .doc *.jar *.log pid address tmp-session-bus
+	-rm *.1 *.o *.so *.h .classes .testclasses .doc *.jar *.log pid address tmp-session-bus *.gz
 	
 classes: .classes
 testclasses: .testclasses

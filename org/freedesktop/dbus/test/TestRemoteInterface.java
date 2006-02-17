@@ -15,5 +15,6 @@ public interface TestRemoteInterface extends DBusInterface
     */
    public String getName();
    public <T> int frobnicate(List<Long> n, Map<String,Map<UInt16,Short>> m, T v);
+   @org.freedesktop.DBus.Description("Throws a TestException when called");
    public void throwme() throws TestException;
 }

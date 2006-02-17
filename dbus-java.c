@@ -473,7 +473,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    
    jclass sigclass; 
    jclass callclass = (*env)->FindClass(env, "org/freedesktop/dbus/MethodCall");
-   jclass errclass = (*env)->FindClass(env, "org/freedesktop/dbus/InternalErrorMessage");
+   jclass errclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusErrorMessage");
    jclass replyclass = (*env)->FindClass(env, "org/freedesktop/dbus/MethodReply");
    jclass dsigclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusSignal");
    
