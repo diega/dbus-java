@@ -78,6 +78,8 @@ public class CreateInterface
          System.err.println("ERROR: Interface name was blank, failed");
          System.exit(1);
       }
+      String annotations = "";
+      String throwses = null;
 
       for (Node a: new IterableNodeList(meth.getChildNodes())) {
 
@@ -93,8 +95,16 @@ public class CreateInterface
             else
                out.add(arg);
          }
-         else if ("annotation".equals(meth.getNodeName()))
-            System.err.println("WARNING: Ignoring annotation");
+         else if ("annotation".equals(a.getNodeName())) {
+            Element e = (Element) a;
+            if (e.getAttribute("name").equals("org.freedesktop.DBus.Method.Error")) {
+               if (null == throwses)
+                  throwses = e.getAttribute("value");
+               else
+                  throwses += ", " + e.getAttribute("value");
+            } else
+               annotations += parseAnnotation(e, imports);
+         }
       }
 
       String sig = "";
@@ -112,7 +122,9 @@ public class CreateInterface
          params += type+" "+name+", ";         
       }
       return ("".equals(comment) ? "" : "   /**\n" + comment + "   */\n")
-         + "  public " + sig + params.replaceAll("..$", "")+");";
+         + annotations + "  public " + sig + 
+         params.replaceAll("..$", "")+")"+
+         (null == throwses? "": " throws "+throwses)+";";
    }
    String parseSignal(Element signal, Set<String> imports, Map<String, Integer> structs) throws DBusException
    {
@@ -120,6 +132,7 @@ public class CreateInterface
       char defaultname = 'a';
       imports.add("org.freedesktop.dbus.DBusSignal");
       imports.add("org.freedesktop.dbus.DBusException");
+      String annotations = "";
       for (Node a: new IterableNodeList(signal.getChildNodes())) {
 
          if (Node.ELEMENT_NODE != a.getNodeType()) continue;
@@ -127,7 +140,7 @@ public class CreateInterface
          checkNode(a, "arg", "annotation");
 
          if ("annotation".equals(a.getNodeName()))
-            System.err.println("WARNING: Ignoring annotation");
+            annotations += parseAnnotation((Element) a, imports);
          else {
             Element arg = (Element) a;
             String type = DBusConnection.getJavaType(arg.getAttribute("type"), imports, structs, false, false);
@@ -139,6 +152,7 @@ public class CreateInterface
 
       String out = "";
       char t = 'A';
+      out += annotations;
       out += "   public static class "+signal.getAttribute("name");
       if (params.size() > 0) {
          out += '<';
@@ -167,6 +181,15 @@ public class CreateInterface
       return out;
    }
 
+   String parseAnnotation(Element ann, Set<String> imports)
+   {
+      String s = "  @"+ann.getAttribute("name")+"(";
+      if (null != ann.getAttribute("value")
+            && !"".equals(ann.getAttribute("value")))
+         s += '"'+ann.getAttribute("value")+'"';
+      return s += ")\n";
+   }
+
    void parseInterface(Element iface, PrintStream out, Map<String,Integer> tuples, Map<String, Integer> structs) throws DBusException
    {
       if (null == iface.getAttribute("name") ||
@@ -179,6 +202,7 @@ public class CreateInterface
 
       String methods = "";
       String signals = "";
+      String annotations = "";
       Set<String> imports = new TreeSet<String>();
       imports.add("org.freedesktop.dbus.DBusInterface");
       for (Node meth: new IterableNodeList(iface.getChildNodes())) {
@@ -194,14 +218,14 @@ public class CreateInterface
          else if ("property".equals(meth.getNodeName()))
             System.err.println("WARNING: Ignoring property");
          else if ("annotation".equals(meth.getNodeName()))
-            System.err.println("WARNING: Ignoring annotation");
-
+            annotations += parseAnnotation((Element) meth, imports);
       }
 
       if (imports.size() > 0) 
          for (String i: imports)
             out.println("import "+i+";");
 
+      out.print(annotations);
       out.print("public interface "+iface.getAttribute("name").replaceAll("^.*\\.([^.]*)$","$1"));
       out.println(" extends DBusInterface");
       out.println("{");
