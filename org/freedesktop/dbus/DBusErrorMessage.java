@@ -78,24 +78,29 @@ class DBusErrorMessage extends DBusMessage
          Class<? extends DBusExecutionException> c = (Class<? extends DBusExecutionException>) createExceptionClass(type);
          if (null == c) c = DBusExecutionException.class;
          Constructor<? extends DBusExecutionException> con = c.getConstructor(String.class);
+         DBusExecutionException ex;
          if (null == parameters || 0 == parameters.length)
-            return con.newInstance("");
+            ex = con.newInstance("");
          else {
             String s = "";
             for (Object o: parameters)
                s += o + " ";
-            return con.newInstance(s.trim());
+            ex = con.newInstance(s.trim());
          }
+         ex.setType(type);
+         return ex;
       } catch (Exception e) {
-         e.printStackTrace();
+         DBusExecutionException ex;
          if (null == parameters || 0 == parameters.length)
-            return new DBusExecutionException("");
+            ex = new DBusExecutionException("");
          else {
             String s = "";
             for (Object o: parameters)
                s += o + " ";
-            return new DBusExecutionException(s.trim());
+            ex = new DBusExecutionException(s.trim());
          }
+         ex.setType(type);
+         return ex;
       }
    }
    /**
