@@ -108,8 +108,8 @@ class ExportedObject
                   if (!Void.TYPE.equals(meth.getGenericReturnType())) {
                      if (Tuple.class.isAssignableFrom((Class) meth.getReturnType())) {
                         for (Type t: ((ParameterizedType) meth.getGenericReturnType()).getActualTypeArguments())
-                        introspectiondata +=
-                           "   <arg type=\""+DBusConnection.getDBusType(t)+"\" direction=\"out\"/>\n";
+                           introspectiondata +=
+                              "   <arg type=\""+DBusConnection.getDBusType(t)+"\" direction=\"out\"/>\n";
                      } else if (Object[].class.equals(meth.getGenericReturnType())) {
                         throw new DBusException("Return type of Object[] cannot be introspected properly");
                      } else
@@ -121,10 +121,12 @@ class ExportedObject
             for (Class sig: c.getDeclaredClasses()) 
                if (DBusSignal.class.isAssignableFrom(sig)) {
                   introspectiondata += "  <signal name=\""+sig.getSimpleName()+"\">\n";
+                  Constructor con = sig.getConstructors()[0];
+                  //Constructor con = org.freedesktop.dbus.test.TestSignalInterface.TestSignal.class.getConstructors()[0];
+                  Type[] ts = con.getGenericParameterTypes();
+                  for (int j = 1; j < ts.length; j++)
+                     introspectiondata += "   <arg type=\""+DBusConnection.getDBusType(ts[j])+"\" direction=\"out\" />\n";
                   introspectiondata += getAnnotations(sig);
-                  for (TypeVariable tv: sig.getTypeParameters())
-                     for (Type t: tv.getBounds())
-                        introspectiondata += "   <arg type=\""+DBusConnection.getDBusType(t)+"\" direction=\"out\" />\n";
                   introspectiondata += "  </signal>\n";
 
                }
