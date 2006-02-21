@@ -161,6 +161,32 @@ String data = intro.Introspect();
 The Runtime Exception {\tt DBusExecutionException} may be thrown
 by any remote method if any part of the execution failed.
 
+\subsection{Asynchronous Calls}
+
+Calling a method on a remote object is synchronous, that is the thread will
+block until it has a reply. If you do not want to block you can use an
+asynchronous call. These are called using the {\tt callMethodAsync} function on
+the connection object. This returns a {\tt
+DBusAsyncReply\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/DBusAsyncReply.html}}
+object which can be used to check for a reply and get the return value. This is demonstrated in figure \ref{fig:async}.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+DBusAsyncReply<Boolean> stuffreply = 
+   conn.callMethodAsync(remote, "stuff", arg1, arg2);
+...
+if (stuffreply.hasReply()) {
+   Boolean b = stuffreply.getReply();
+   ...
+}
+\end{verbatim}
+\end{center}
+\caption{Calling an asynchronous method}
+\label{fig:async}
+\end{figure}
+
+
 \section{DBusInterface}
 
 To call methods or expose methods on DBus you need to define them
@@ -579,6 +605,49 @@ CreateInterface [--create-files] <introspection-file.xml>
 The Java interfaces will be written to the standard ouput. If the
 {\tt --create-files} option is specified the correct files in the
 correct directory structure will be created.
+
+\section{Annotations}
+
+You can annotate your dbus methods as in figure \ref{fig:annotation} to provide hints to other users of your API. Common annotations are listed in table \ref{tab:annotations}.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+package org.freedesktop;
+import org.freedesktop.dbus.UInt32;
+import org.freedesktop.dbus.DBusInterface;
+
+@org.freedesktop.DBus.Description("Some Methods");
+public interface DBus extends DBusInterface
+{
+   @org.freedesktop.DBus.Description("Check if the name has an owner")
+   public boolean NameHasOwner(String name);
+   @org.freedesktop.DBus.Description("Request a name")
+   @org.freedesktop.DBus.Deprecated()
+   public UInt32 RequestName(String name, UInt32 flags);
+}
+\end{verbatim}
+\end{center}
+\caption{An annotated method}
+\label{fig:annotation}
+\end{figure}
+
+
+\begin{table}[htb]
+\begin{tabular}{l|l}
+{\bf Name} & {\bf Meaning} \\
+\hline
+org.freedesktop.DBus.Description & Provide a short 1-line description \\
+      & of the method or interface. \\
+org.freedesktop.DBus.Deprecated & This method or interface is Deprecated. \\
+org.freedesktop.DBus.Method.NoReply & This method may be called and returned \\
+   & without waiting for a reply. \\
+org.freedesktop.DBus.Method.Error & This method may throw the listed Exception\\
+   & in addition to the standard ones. \\
+\end{tabular}
+\caption{Common Annotations}
+\label{tab:annotations}
+\end{table}
 
 \section{Examples}
 
