@@ -25,6 +25,7 @@ class RemoteInvocationHandler implements InvocationHandler
          throw new DBusExecutionException(e.getMessage());
       }
       MethodCall call = new MethodCall(ro.service, ro.objectpath, ro.iface, m.getName(), args);
+      if (m.isAnnotationPresent(DBus.Method.NoReply.class)) call.setFlags(MethodCall.NO_REPLY);
       synchronized (conn.outgoing) {
          conn.outgoing.add(call);
       }

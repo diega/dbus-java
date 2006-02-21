@@ -316,7 +316,7 @@ public class DBusConnection
    private native DBusMessage dbus_read_write_pop(int connid, int timeoutms);
    private native int dbus_send_signal(int connid, String objectpath, String type, String name, Object... parameters);
    private native int dbus_send_error_message(int connid, String destination, String name, long replyserial, Object... params);
-   private native int dbus_call_method(int connid, String service, String objectpath, String type, String name, Object... params);
+   private native int dbus_call_method(int connid, String service, String objectpath, String type, String name, boolean noreply, Object... params);
    private native int dbus_reply_to_call(int connid, String destination, String type, String objectpath, String name, long replyserial, Object... params);
    static {
       System.loadLibrary("dbus-1");
@@ -995,6 +995,7 @@ public class DBusConnection
       final Method me = meth;
       final Object ob = o;
       final LinkedList<DBusMessage> outqueue = outgoing;
+      final boolean noreply = (1 == (m.getFlags() & MethodCall.NO_REPLY));
       new Thread() 
       { 
          public void run() 
@@ -1006,10 +1007,12 @@ public class DBusConnection
                } catch (InvocationTargetException ITe) {
                   throw ITe.getCause();
                }
-               result = convertParameters(new Object[] { result }, new Type[] { me.getGenericReturnType() })[0];
-               MethodReply reply = new MethodReply(m, result);
-               synchronized (outqueue) {
-                  outqueue.addLast(reply);
+               if (!noreply) {
+                  result = convertParameters(new Object[] { result }, new Type[] { me.getGenericReturnType() })[0];
+                  MethodReply reply = new MethodReply(m, result);
+                  synchronized (outqueue) {
+                     outqueue.addLast(reply);
+                  }
                }
             } catch (DBusExecutionException DBEe) {
                synchronized (outqueue) {
@@ -1078,9 +1081,11 @@ public class DBusConnection
       else if (m instanceof MethodCall) {
          try {
             synchronized (pendingCalls) {
-               m.setSerial(dbus_call_method(connid, ((MethodCall) m).getService(), ((MethodCall) m).getObjectPath(), m.getType(), m.getName(), m.getParameters()));
+               int flags = ((MethodCall) m).getFlags();
+               m.setSerial(dbus_call_method(connid, ((MethodCall) m).getService(), ((MethodCall) m).getObjectPath(), m.getType(), m.getName(), 1 == (flags & MethodCall.NO_REPLY), m.getParameters()));
                if (0 < m.getSerial()) {
-                  pendingCalls.put(m.getSerial(),(MethodCall) m);
+                  if (0 == (flags & MethodCall.NO_REPLY))
+                     pendingCalls.put(m.getSerial(),(MethodCall) m);
                }
                else
                   ((MethodCall) m).setReply(new DBusErrorMessage(m, new InternalMessageException("Message Failed to Send")));

@@ -3,6 +3,7 @@ package org.freedesktop.dbus.test;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.UInt16;
 import org.freedesktop.DBus.Description;
+import org.freedesktop.DBus.Method;
 
 import java.util.Map;
 import java.util.List;
@@ -20,4 +21,7 @@ public interface TestRemoteInterface extends DBusInterface
    public <T> int frobnicate(List<Long> n, Map<String,Map<UInt16,Short>> m, T v);
    @Description("Throws a TestException when called")
    public void throwme() throws TestException;
+   @Description("Waits then doesn't return")
+   @Method.NoReply()
+   public void waitawhile();
 }

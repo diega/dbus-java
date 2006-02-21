@@ -48,13 +48,18 @@ $(CLASSDIR)/DBusConnection.class: $(SRCDIR)/dbus/DBusConnection.java
 	make classes
 $(CLASSDIR)/DBusErrorMessage.class: $(SRCDIR)/dbus/DBusErrorMessage.java
 	make classes
+$(CLASSDIR)/MethodCall.class: $(SRCDIR)/dbus/MethodCall.java
+	make classes
 org_freedesktop_dbus_DBusConnection.h: $(CLASSDIR)/DBusConnection.class
 	$(JAVAH) -classpath classes:$(CLASSPATH) -d . org.freedesktop.dbus.DBusConnection
 	touch $@
 org_freedesktop_dbus_DBusErrorMessage.h: $(CLASSDIR)/DBusErrorMessage.class
 	$(JAVAH) -classpath classes:$(CLASSPATH) -d . org.freedesktop.dbus.DBusErrorMessage
 	touch $@
-dbus-java.o: dbus-java.c org_freedesktop_dbus_DBusConnection.h org_freedesktop_dbus_DBusErrorMessage.h
+org_freedesktop_dbus_MethodCall.h: $(CLASSDIR)/MethodCall.class
+	$(JAVAH) -classpath classes:$(CLASSPATH) -d . org.freedesktop.dbus.MethodCall
+	touch $@
+dbus-java.o: dbus-java.c org_freedesktop_dbus_DBusConnection.h org_freedesktop_dbus_DBusErrorMessage.h org_freedesktop_dbus_MethodCall.h
 	$(CC) $(CFLAGS) -fpic -c $< -o $@
 
 libdbus-java.so: dbus-java.o

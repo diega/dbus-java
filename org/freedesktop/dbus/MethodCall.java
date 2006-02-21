@@ -2,10 +2,13 @@ package org.freedesktop.dbus;
 
 class MethodCall extends DBusMessage
 {
+   public static final int NO_REPLY = 1;
+   public static final int ASYNC = 2;
    static long REPLY_WAIT_TIMEOUT = 20000;
    String service;
    String objectpath;
    DBusMessage reply = null;
+   int flags = 0;
    public MethodCall(String service, String objectpath, String iface, String name, Object[] args)
    {
       super(null, iface, name, args, 0);
@@ -32,5 +35,17 @@ class MethodCall extends DBusMessage
    {
       this.reply = reply;
       notifyAll();
+   }
+   void setFlags(int flags)
+   {
+      this.flags |= flags;
+   }
+   void clearFlags(int flags)
+   {
+      this.flags &= (~flags);
+   }
+   int getFlags()
+   {
+      return this.flags;
    }
 }

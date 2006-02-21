@@ -23,6 +23,14 @@ import org.freedesktop.DBus.Introspectable;
 
 class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignalInterface
 {
+   public void waitawhile()
+   {
+      System.out.println("Sleeping.");
+      try {
+         Thread.sleep(15000);
+      } catch (InterruptedException Ie) {}
+      System.out.println("Done sleeping.");
+   }
    public <A> TestTuple<String, Integer, Boolean> show(A in)
    {
       System.out.println("Showing Stuff: "+in.getClass()+"("+in+")");
@@ -245,6 +253,8 @@ public class test implements DBusSigHandler
       System.out.println("Got Remote Name: "+rname);
       if (!"This Is A Name!!".equals(rname))
          fail("getName return value incorrect");
+      System.out.println("sending it to sleep");
+      tri.waitawhile();
       System.out.println("frobnicating");
       List<Long> ls = new Vector<Long>();
       ls.add(2L);

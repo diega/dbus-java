@@ -1,5 +1,6 @@
 #include "org_freedesktop_dbus_DBusConnection.h"
 #include "org_freedesktop_dbus_DBusErrorMessage.h"
+#include "org_freedesktop_dbus_MethodCall.h"
 #define DBUS_API_SUBJECT_TO_CHANGE
 #include <dbus/dbus.h>
 #include <stdbool.h>
@@ -470,6 +471,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    jsize len, typelen;
    int i; 
    DBusConnection* conn;
+   jint flags;
    
    jclass sigclass; 
    jclass callclass = (*env)->FindClass(env, "org/freedesktop/dbus/MethodCall");
@@ -530,6 +532,11 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
          jmsg = (*env)->NewObject(env, callclass, mid, source, service, objectpath, type, name, params, serial);
          if (NULL != params)
             (*env)->DeleteLocalRef(env, params);
+         if (dbus_message_get_no_reply(msg)) {
+            mid = (*env)->GetMethodID(env, callclass, "setFlags", "(I)V");
+            flags = org_freedesktop_dbus_MethodCall_NO_REPLY;
+            (*env)->CallVoidMethod(env, jmsg, mid, flags);
+         }
          break;
       case DBUS_MESSAGE_TYPE_METHOD_RETURN:
          mid = (*env)->GetMethodID(env, replyclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;JJ)V");
@@ -956,7 +963,7 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1erro
  * Signature: ([Ljava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1method
-  (JNIEnv * env, jobject connobj, jint cidx, jstring service, jstring objectpath, jstring type, jstring name, jobjectArray params)
+  (JNIEnv * env, jobject connobj, jint cidx, jstring service, jstring objectpath, jstring type, jstring name, jboolean noreply, jobjectArray params)
 {
    int rv;
    dbus_uint32_t serial = 0; // unique number to associate replies with requests
@@ -982,6 +989,8 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1meth
          cobjectpath, // object name of the method
          ctype, // interface name of the method
          cname); // name of the method
+
+   if (noreply) dbus_message_set_no_reply(msg, TRUE);
    
    if (NULL != cname) (*env)->ReleaseStringUTFChars(env, name, cname);
    if (NULL != ctype) (*env)->ReleaseStringUTFChars(env, type, ctype);
