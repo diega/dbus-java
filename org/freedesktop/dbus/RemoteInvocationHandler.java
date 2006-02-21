@@ -14,35 +14,10 @@ import org.freedesktop.DBus;
 
 class RemoteInvocationHandler implements InvocationHandler
 {
-
-   public static Object executeRemoteMethod(RemoteObject ro, Method m, DBusConnection conn, Class<? extends DBusInterface> iface, Object... args) throws DBusExecutionException
+   public static Object convertRV(Object[] rp, Method m)
    {
-      Type[] ts = m.getGenericParameterTypes();
-      try {
-         args = DBusConnection.convertParameters(args, ts);
-      } catch (Exception e) {
-         e.printStackTrace();
-         throw new DBusExecutionException(e.getMessage());
-      }
-      MethodCall call = new MethodCall(ro.service, ro.objectpath, ro.iface, m.getName(), args);
-      if (m.isAnnotationPresent(DBus.Method.NoReply.class)) call.setFlags(MethodCall.NO_REPLY);
-      synchronized (conn.outgoing) {
-         conn.outgoing.add(call);
-      }
-
       Class c = m.getReturnType();
 
-      // get reply
-      if (m.isAnnotationPresent(DBus.Method.NoReply.class)) return null;
-
-      DBusMessage reply = call.getReply();
-      if (null == reply) throw new DBusExecutionException("No reply within specified time");
-               
-      Object[] rp = reply.getParameters();
-
-      if (reply instanceof DBusErrorMessage)
-         ((DBusErrorMessage) reply).throwException();
-         
       if (null == rp) { 
          if(null == c || Void.TYPE.equals(c)) return null;
          else throw new DBusExecutionException("Wrong return type (expected void)");
@@ -73,7 +48,7 @@ class RemoteInvocationHandler implements InvocationHandler
             ParameterizedType p = (ParameterizedType) m.getGenericReturnType();
             
             // check we have the correct number of args
-            ts = p.getActualTypeArguments();
+            Type[] ts = p.getActualTypeArguments();
             if (ts.length != rp.length) 
                throw new DBusExecutionException("Incorrect number of return values. Expected "+ts.length+" got "+rp.length);
 
@@ -94,6 +69,34 @@ class RemoteInvocationHandler implements InvocationHandler
                throw new DBusExecutionException("Wrong return type (failed to create Tuple, contents probably invalid)");
             }
       }
+   }
+   public static Object executeRemoteMethod(RemoteObject ro, Method m, DBusConnection conn, Class<? extends DBusInterface> iface, boolean async, Object... args) throws DBusExecutionException
+   {
+      Type[] ts = m.getGenericParameterTypes();
+      try {
+         args = DBusConnection.convertParameters(args, ts);
+      } catch (Exception e) {
+         e.printStackTrace();
+         throw new DBusExecutionException(e.getMessage());
+      }
+      MethodCall call = new MethodCall(ro.service, ro.objectpath, ro.iface.getName().replaceAll("[$]", "."), m.getName(), args);
+      if (m.isAnnotationPresent(DBus.Method.NoReply.class)) call.setFlags(MethodCall.NO_REPLY);
+      synchronized (conn.outgoing) {
+         conn.outgoing.add(call);
+      }
+
+      if (async) return new DBusAsyncReply(call, m);
+
+      // get reply
+      if (m.isAnnotationPresent(DBus.Method.NoReply.class)) return null;
+
+      DBusMessage reply = call.getReply();
+      if (null == reply) throw new DBusExecutionException("No reply within specified time");
+               
+      if (reply instanceof DBusErrorMessage)
+         ((DBusErrorMessage) reply).throwException();
+
+      return convertRV(reply.getParameters(), m);
    }
 
    DBusConnection conn;
@@ -140,7 +143,7 @@ class RemoteInvocationHandler implements InvocationHandler
       else if (method.getName().equals("toString"))
          return remote.service+":"+remote.objectpath+":"+remote.iface;
 
-      return executeRemoteMethod(remote, method, conn, iface, args);
+      return executeRemoteMethod(remote, method, conn, iface, false, args);
    }
 }
 

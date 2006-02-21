@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import org.freedesktop.dbus.DBusAsyncReply;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusExecutionException;
@@ -27,7 +28,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    {
       System.out.println("Sleeping.");
       try {
-         Thread.sleep(15000);
+         Thread.sleep(5000);
       } catch (InterruptedException Ie) {}
       System.out.println("Done sleeping.");
    }
@@ -41,6 +42,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    public <T> T dostuff(TestStruct<String, UInt32, Variant<T>> foo)
    {
       System.out.println("Doing Stuff "+foo);
+      System.out.println(" -- ("+foo.a.getClass()+", "+foo.b.getClass()+", "+foo.c.getClass()+")");
       if (!(foo instanceof TestStruct) ||
             !(foo.a instanceof String) ||
             !(foo.b instanceof UInt32) ||
@@ -317,11 +319,9 @@ public class test implements DBusSigHandler
          fail("show return value incorrect");
 
       
-      Boolean b = (Boolean) tri2.dostuff(new TestStruct("bar", new UInt32(52), new Variant<Boolean>(new Boolean(true))));
-      System.out.println("Do stuff replied "+b);
-      if (true != b.booleanValue())
-         fail("dostuff return value incorrect");
-      
+      System.out.println("Doing stuff asynchronously");
+      DBusAsyncReply<Boolean> stuffreply = conn.callMethodAsync(tri2, "dostuff", new TestStruct("bar", new UInt32(52), new Variant<Boolean>(new Boolean(true))));
+         
       List<String> l = new Vector<String>();
       l.add("hi");
       l.add("hello");
@@ -344,7 +344,11 @@ public class test implements DBusSigHandler
       System.out.println("Get This");
       if (!tclass.equals(tri2.getThis(tri2)))
          fail("Didn't get the correct this");
-            
+      
+      Boolean b = stuffreply.getReply();
+      System.out.println("Do stuff replied "+b);
+      if (true != b.booleanValue())
+         fail("dostuff return value incorrect");
       
       System.out.print("Sending Array Signal...");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */

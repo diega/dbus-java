@@ -300,7 +300,7 @@ public class DBusConnection
    static final String OBJECT_REGEX = "^/([-_a-zA-Z0-9]+(/[-_a-zA-Z0-9]+)*)?$";
 
    private Map<String,ExportedObject> exportedObjects;
-   private Map<DBusInterface,String> importedObjects;
+   private Map<DBusInterface,RemoteObject> importedObjects;
    private Map<SignalTuple,Vector<DBusSigHandler>> handledSignals;
    private Map<Long,MethodCall> pendingCalls;
    private Vector<String> servicenames;
@@ -646,8 +646,8 @@ public class DBusConnection
       for (int i = 0; i < parameters.length; i++) {
          
          // its a wrapped variant, unwrap it
-         if (types[i] instanceof TypeVariable &&
-               parameters[i] instanceof Variant) {
+         if (types[i] instanceof TypeVariable 
+               && parameters[i] instanceof Variant) {
             parameters[i] = ((Variant)parameters[i]).getValue();
          }
 
@@ -709,7 +709,7 @@ public class DBusConnection
    private DBusConnection() throws DBusException
    {
       exportedObjects = new HashMap<String,ExportedObject>();
-      importedObjects = new HashMap<DBusInterface,String>();
+      importedObjects = new HashMap<DBusInterface,RemoteObject>();
       exportedObjects.put(null, new ExportedObject(new _globalhandler()));
       handledSignals = new HashMap<SignalTuple,Vector<DBusSigHandler>>();
       pendingCalls = new HashMap<Long,MethodCall>();
@@ -772,7 +772,7 @@ public class DBusConnection
          if (exportedObjects.get(s).object.equals(i))
             return s;
 
-      String s = importedObjects.get(i);
+      String s = importedObjects.get(i).objectpath;
       if (null != s) return s;
 
       throw new DBusException("Not an object exported or imported by this connection"); 
@@ -861,10 +861,10 @@ public class DBusConnection
       if (!service.matches(SERVICE_REGEX)) throw new DBusException("Invalid service name");
       if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path");
       if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Interface");
-      RemoteObject ro = new RemoteObject(service, objectpath, type.getName().replaceAll("[$]","."));
+      RemoteObject ro = new RemoteObject(service, objectpath, type);
       DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
             new Class[] { type }, new RemoteInvocationHandler(this, ro, type));
-      importedObjects.put(i, objectpath);
+      importedObjects.put(i, ro);
       return i;
    }
    /** 
@@ -941,6 +941,31 @@ public class DBusConnection
          if (pendingErrors.size() == 0) return null;
          else 
             return pendingErrors.removeFirst().getException();
+      }
+   }
+
+   /**
+    * Call a method asynchronously and get a handle with which to get the reply.
+    * @param object The remote object on which to call the method.
+    * @param m The name of the method on the interface to call.
+    * @param rtype The return type of the method.
+    * @param parameters The parameters to call the method with.
+    * @return A handle to the call.
+    */
+   public DBusAsyncReply callMethodAsync(DBusInterface object, String m, Object... parameters)
+   {
+      Class[] types = new Class[parameters.length];
+      for (int i = 0; i < parameters.length; i++) 
+         types[i] = parameters[i].getClass();
+      RemoteObject ro = importedObjects.get(object);
+
+      try {
+         Method me = ro.iface.getMethod(m, types);
+         return (DBusAsyncReply) RemoteInvocationHandler.executeRemoteMethod(ro, me, this, ro.iface, true, parameters);
+      } catch (DBusExecutionException DBEe) {
+         throw DBEe;
+      } catch (Exception e) {
+         throw new DBusExecutionException(e.getMessage());
       }
    }
    

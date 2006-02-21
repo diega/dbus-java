@@ -23,6 +23,10 @@ class MethodCall extends DBusMessage
    }
    public String getService() { return service; }
    public String getObjectPath() { return objectpath; }
+   public synchronized boolean hasReply()
+   {
+      return null != reply;
+   }
    public synchronized DBusMessage getReply()
    {
       if (null != reply) return reply;

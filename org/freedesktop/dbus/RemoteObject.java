@@ -4,8 +4,8 @@ class RemoteObject
 {
    String service;
    String objectpath;
-   String iface;
-   public RemoteObject(String service, String objectpath, String iface)
+   Class iface;
+   public RemoteObject(String service, String objectpath, Class iface)
    {
       this.service = service;
       this.objectpath = objectpath;
