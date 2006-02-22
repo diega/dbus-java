@@ -337,7 +337,7 @@ public class CreateInterface
       /**
        * @param path
        * @param tname
-       * @return
+       * @return PrintStream
        * @throws IOException
        */
       public PrintStream createPrintStream(String path, String tname) throws IOException
@@ -348,7 +348,7 @@ public class CreateInterface
 
       /**
        * @param file
-       * @return
+       * @return PrintStream
        * @throws IOException
        */
       public abstract PrintStream createPrintStream(final String file) throws IOException;

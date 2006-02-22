@@ -948,7 +948,6 @@ public class DBusConnection
     * Call a method asynchronously and get a handle with which to get the reply.
     * @param object The remote object on which to call the method.
     * @param m The name of the method on the interface to call.
-    * @param rtype The return type of the method.
     * @param parameters The parameters to call the method with.
     * @return A handle to the call.
     */

@@ -156,7 +156,7 @@ public interface DBus extends DBusInterface
     * @param connection_name The name of the connection
     * @return The PID of the connection.
     */
-   public UInt32 GetConnectionUnixProcessID(String a);
+   public UInt32 GetConnectionUnixProcessID(String connection_name);
 
    /**
     * Does something undocumented.

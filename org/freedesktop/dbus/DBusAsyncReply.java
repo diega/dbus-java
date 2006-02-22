@@ -12,7 +12,7 @@ public class DBusAsyncReply<ReturnType>
 {
    /**
     * Check if any of a set of asynchronous calls have had a reply.
-    * @param A Collection of handles to replies to check.
+    * @param replies A Collection of handles to replies to check.
     * @return A Collection only containing those calls which have had replies.
     */
    public static Collection<DBusAsyncReply> hasReply(Collection<DBusAsyncReply> replies)
