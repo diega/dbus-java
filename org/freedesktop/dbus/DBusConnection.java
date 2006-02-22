@@ -323,6 +323,7 @@ public class DBusConnection
       System.loadLibrary("dbus-java");
    }
    private static final Map<Object,DBusConnection> conn = new HashMap<Object,DBusConnection>();
+   private static final Map<Thread,DBusCallInfo> infomap = new HashMap<Thread,DBusCallInfo>();
    private int _refcount = 0;
    private Object _reflock = new Object();
    private Object connkey;
@@ -785,6 +786,18 @@ public class DBusConnection
       else return o.object;
    }
 
+   /**
+    * Returns a structure with information on the current method call.
+    * @return the DBusCallInfo for this method call, or null if we are not in a method call.
+    */
+   public static DBusCallInfo getCallInfo() 
+   {
+      DBusCallInfo info;
+      synchronized (infomap) {
+         info = infomap.get(Thread.currentThread());
+      }
+      return info;
+   }
 
    /** 
     * Register a service.
@@ -1020,16 +1033,23 @@ public class DBusConnection
       final Object ob = o;
       final LinkedList<DBusMessage> outqueue = outgoing;
       final boolean noreply = (1 == (m.getFlags() & MethodCall.NO_REPLY));
+      final DBusCallInfo info = new DBusCallInfo(m);
       new Thread() 
       { 
          public void run() 
          { 
             try { 
+               synchronized (infomap) {
+                  infomap.put(Thread.currentThread(), info);
+               }
                Object result;
                try {
                   result = me.invoke(ob, m.parameters);
                } catch (InvocationTargetException ITe) {
                   throw ITe.getCause();
+               }
+               synchronized (infomap) {
+                  infomap.remove(Thread.currentThread());
                }
                if (!noreply) {
                   result = convertParameters(new Object[] { result }, new Type[] { me.getGenericReturnType() })[0];

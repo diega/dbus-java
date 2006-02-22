@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.freedesktop.dbus.DBusAsyncReply;
+import org.freedesktop.dbus.DBusCallInfo;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusExecutionException;
@@ -37,7 +38,8 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
       System.out.println("Showing Stuff: "+in.getClass()+"("+in+")");
       if (!(in instanceof Integer) || ((Integer) in).intValue() != 234)
          test.fail("show received the wrong arguments");
-      return new TestTuple("hi", 28165, true);
+      DBusCallInfo info = DBusConnection.getCallInfo();
+      return new TestTuple(info.getSource(), 28165, true);
    }
    public <T> T dostuff(TestStruct<String, UInt32, Variant<T>> foo)
    {
@@ -313,7 +315,7 @@ public class test implements DBusSigHandler
       /** Call the remote object and get a response. */
       TestTuple<String, Integer, Boolean> rv = tri2.show(234);
       System.out.println("Show Response = "+rv);
-      if (!"hi".equals(rv.a) ||
+      if (!":1.0".equals(rv.a) ||
             28165 != rv.b.intValue() ||
             true != rv.c.booleanValue())
          fail("show return value incorrect");
