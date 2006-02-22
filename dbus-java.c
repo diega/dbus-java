@@ -217,7 +217,7 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
    jstring sig, cname;
 
    char cbyteval;
-   bool cboolval;
+   dbus_bool_t cboolval;
    double cdoubleval;
    uint32_t cuintval;
    uint16_t cushortval;
@@ -485,7 +485,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
       jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/NotConnected");
       (*env)->ThrowNew(env, dbeclass, "Disconnected");
       (*env)->DeleteLocalRef(env, dbeclass);
-      return -1;
+      return NULL;
    }
    // blocking for timeout ms read of the next available message
    dbus_connection_read_write(conn, timeout);
@@ -620,7 +620,7 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
    int slen;
 
    char cbyteval;
-   bool cboolval;
+   dbus_bool_t cboolval;
    double cdoubleval;
    int16_t cshortval;
    int32_t cintval;

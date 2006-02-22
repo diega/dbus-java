@@ -101,6 +101,10 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    {
       return "This Is A Name!!";
    }
+   public boolean check()
+   {
+      return false;
+   }
    public <T> int frobnicate(List<Long> n, Map<String,Map<UInt16,Short>> m, T v)
    {
       if (null == n)
@@ -323,6 +327,8 @@ public class test implements DBusSigHandler
       
       System.out.println("Doing stuff asynchronously");
       DBusAsyncReply<Boolean> stuffreply = conn.callMethodAsync(tri2, "dostuff", new TestStruct("bar", new UInt32(52), new Variant<Boolean>(new Boolean(true))));
+
+      if (tri2.check()) fail("bools are broken");
          
       List<String> l = new Vector<String>();
       l.add("hi");

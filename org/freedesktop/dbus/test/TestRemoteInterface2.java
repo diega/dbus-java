@@ -18,4 +18,6 @@ public interface TestRemoteInterface2 extends DBusInterface
    public List<Integer> sampleArray(List<String> l, Integer[] is, long[] ls);
    @Description("Test passing objects as object paths.")
    public DBusInterface getThis(DBusInterface t);
+   @Description("Test bools work")
+   public boolean check();
 }
