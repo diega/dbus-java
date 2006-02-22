@@ -1,6 +1,7 @@
 Version 1.4:
 
-	* provide call infor to called methods
+	* provide call info to called methods
+	* check for disconnections and throw
 
 Version 1.3:
 

@@ -197,31 +197,44 @@ public class DBusConnection
       }
       public void run()
       {
-         DBusMessage m = null;
-         while (_run) {
-            m = null;
-
-            // read from the wire
-            m = readIncoming(TIMEOUT);
-            if (m != null) {
-               synchronized (this) { notifyAll(); }
-
-               if (m instanceof DBusSignal)
-                  handleMessage((DBusSignal) m);
-               else if (m instanceof MethodCall)
-                  handleMessage((MethodCall) m);
-               else if (m instanceof MethodReply)
-                  handleMessage((MethodReply) m);
-               else if (m instanceof DBusErrorMessage)
-                  handleMessage((DBusErrorMessage) m);
-
+         try {
+            DBusMessage m = null;
+            while (_run) {
                m = null;
-            }
 
-            // write to the wire
+               // read from the wire
+               m = readIncoming(TIMEOUT);
+               if (m != null) {
+                  synchronized (this) { notifyAll(); }
+
+                  if (m instanceof DBusSignal)
+                     handleMessage((DBusSignal) m);
+                  else if (m instanceof MethodCall)
+                     handleMessage((MethodCall) m);
+                  else if (m instanceof MethodReply)
+                     handleMessage((MethodReply) m);
+                  else if (m instanceof DBusErrorMessage)
+                     handleMessage((DBusErrorMessage) m);
+
+                  m = null;
+               }
+
+               // write to the wire
+               synchronized (outgoing) {
+                  if (outgoing.size() > 0)
+                     m = outgoing.removeFirst(); }
+               while (null != m) {
+                  sendMessage(m);
+                  m = null;
+                  synchronized (outgoing) {
+                     if (outgoing.size() > 0)
+                        m = outgoing.removeFirst(); }
+               }
+            }
             synchronized (outgoing) {
                if (outgoing.size() > 0)
-                  m = outgoing.removeFirst(); }
+                  m = outgoing.removeFirst(); 
+            }
             while (null != m) {
                sendMessage(m);
                m = null;
@@ -229,19 +242,8 @@ public class DBusConnection
                   if (outgoing.size() > 0)
                      m = outgoing.removeFirst(); }
             }
-         }
-         synchronized (outgoing) {
-            if (outgoing.size() > 0)
-               m = outgoing.removeFirst(); 
-         }
-         while (null != m) {
-            sendMessage(m);
-            m = null;
-            synchronized (outgoing) {
-               if (outgoing.size() > 0)
-                  m = outgoing.removeFirst(); }
-         }
-         synchronized (this) { notifyAll(); }
+            synchronized (this) { notifyAll(); }
+         } catch (NotConnected NC) {}
       }
    }
    private class _globalhandler implements org.freedesktop.DBus.Peer, org.freedesktop.DBus.Introspectable

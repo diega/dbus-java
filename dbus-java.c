@@ -64,6 +64,7 @@ DBusConnection* getconn(JNIEnv * env, jint cidx)
       snprintf(id, 20, "%d", cidx);
       char* fmessage = strncat((char*)message, id, 70);
       (*env)->ThrowNew(env, dbeclass, fmessage);
+      (*env)->DeleteLocalRef(env, dbeclass);
       return NULL;
    }
 }
@@ -202,7 +203,7 @@ JNIEXPORT void JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1disconnect
 {
    DBusConnection* conn;
    conn = getconn(env, cidx);
-   if (NULL == conn) return;
+   if (NULL == conn || !dbus_connection_get_is_connected(conn)) return;
    removeconn(cidx);
    dbus_connection_close(conn);
 }
@@ -480,7 +481,12 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    jclass dsigclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusSignal");
    
    conn = getconn(env, cidx);
-   if (NULL == conn) return NULL;
+   if (NULL == conn || !dbus_connection_get_is_connected(conn)) {
+      jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/NotConnected");
+      (*env)->ThrowNew(env, dbeclass, "Disconnected");
+      (*env)->DeleteLocalRef(env, dbeclass);
+      return -1;
+   }
    // blocking for timeout ms read of the next available message
    dbus_connection_read_write(conn, timeout);
    msg = dbus_connection_pop_message(conn);
@@ -883,7 +889,12 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
    }
    
    conn = getconn(env, cidx);
-   if (NULL == conn) return -1;
+   if (NULL == conn || !dbus_connection_get_is_connected(conn)) {
+      jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/NotConnected");
+      (*env)->ThrowNew(env, dbeclass, "Disconnected");
+      (*env)->DeleteLocalRef(env, dbeclass);
+      return -1;
+   }
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);
@@ -940,7 +951,12 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1erro
    }
    
    conn = getconn(env, cidx);
-   if (NULL == conn) return -1;
+   if (NULL == conn || !dbus_connection_get_is_connected(conn)) {
+      jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/NotConnected");
+      (*env)->ThrowNew(env, dbeclass, "Disconnected");
+      (*env)->DeleteLocalRef(env, dbeclass);
+      return -1;
+   }
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);
@@ -1006,7 +1022,12 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1meth
    if (0 != rv) return rv;
    
    conn = getconn(env, cidx);
-   if (NULL == conn) return -1;
+   if (NULL == conn || !dbus_connection_get_is_connected(conn)) {
+      jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/NotConnected");
+      (*env)->ThrowNew(env, dbeclass, "Disconnected");
+      (*env)->DeleteLocalRef(env, dbeclass);
+      return -1;
+   }
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);
@@ -1072,7 +1093,12 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1reply_1to_
    }
    
    conn = getconn(env, cidx);
-   if (NULL == conn) return -1;
+   if (NULL == conn || !dbus_connection_get_is_connected(conn)) {
+      jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/NotConnected");
+      (*env)->ThrowNew(env, dbeclass, "Disconnected");
+      (*env)->DeleteLocalRef(env, dbeclass);
+      return -1;
+   }
    // send the message and flush the connection
    if (!dbus_connection_send(conn, msg, &serial)) {
       dbus_message_unref(msg);
