@@ -20,6 +20,7 @@ DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
 
 VERSION = 1.4a
+RELEASEVERSION = 1.3
  
 all: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 
@@ -156,8 +157,12 @@ distclean:
 	-rm .dist
 
 libdbus-java-$(VERSION): .dist
-	
+
 libdbus-java-$(VERSION).tar.gz: .dist
 	tar zcf $@ libdbus-java-$(VERSION)
 	
+libdbus-java-$(RELEASEVERSION).tar.gz: .dist
+	-mkdir libdbus-java-$(RELEASEVERSION)/
+	cp -a libdbus-java-$(VERSION)/* libdbus-java-$(RELEASEVERSION)/
+	tar zcf $@ libdbus-java-$(RELEASEVERSION)
 
