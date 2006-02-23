@@ -199,7 +199,8 @@ public class DBusViewer
 			entry.setName(name);
 			try
 			{
-				String objectpath = '/' + name.replace('.', '/');
+				//String objectpath = '/' + name.replace('.', '/');
+            String objectpath = "/";
 				Introspectable introspectable = (Introspectable) conn
 						.getRemoteObject(name, objectpath, Introspectable.class);
 				entry.setIntrospectable(introspectable);

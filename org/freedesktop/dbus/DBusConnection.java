@@ -299,6 +299,7 @@ public class DBusConnection
    private static final int TIMEOUT = 100;
 
    static final String SERVICE_REGEX = "^[-_a-zA-Z][-_a-zA-Z0-9]*(\\.[-_a-zA-Z][-_a-zA-Z0-9]*)*$";
+   static final String CONNID_REGEX = "^:[0-9]*\\.[0-9]*$";
    static final String OBJECT_REGEX = "^/([-_a-zA-Z0-9]+(/[-_a-zA-Z0-9]+)*)?$";
 
    private Map<String,ExportedObject> exportedObjects;
@@ -873,7 +874,7 @@ public class DBusConnection
     */
    public DBusInterface getRemoteObject(String service, String objectpath, Class<? extends DBusInterface> type) throws DBusException
    {
-      if (!service.matches(SERVICE_REGEX)) throw new DBusException("Invalid service name");
+      if (!service.matches(SERVICE_REGEX) && !service.matches(CONNID_REGEX)) throw new DBusException("Invalid service name");
       if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path");
       if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Interface");
       RemoteObject ro = new RemoteObject(service, objectpath, type);
