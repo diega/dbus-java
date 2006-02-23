@@ -203,21 +203,23 @@ public class DBusConnection
                m = null;
 
                // read from the wire
-               m = readIncoming(TIMEOUT);
-               if (m != null) {
-                  synchronized (this) { notifyAll(); }
+               try {
+                  m = readIncoming(TIMEOUT);
+                  if (m != null) {
+                     synchronized (this) { notifyAll(); }
 
-                  if (m instanceof DBusSignal)
-                     handleMessage((DBusSignal) m);
-                  else if (m instanceof MethodCall)
-                     handleMessage((MethodCall) m);
-                  else if (m instanceof MethodReply)
-                     handleMessage((MethodReply) m);
-                  else if (m instanceof DBusErrorMessage)
-                     handleMessage((DBusErrorMessage) m);
+                     if (m instanceof DBusSignal)
+                        handleMessage((DBusSignal) m);
+                     else if (m instanceof MethodCall)
+                        handleMessage((MethodCall) m);
+                     else if (m instanceof MethodReply)
+                        handleMessage((MethodReply) m);
+                     else if (m instanceof DBusErrorMessage)
+                        handleMessage((DBusErrorMessage) m);
 
-                  m = null;
-               }
+                     m = null;
+                  }
+               } catch (Exception e) { }
 
                // write to the wire
                synchronized (outgoing) {
@@ -615,10 +617,9 @@ public class DBusConnection
             ParameterizedType p = (ParameterizedType) types[i];
             Class r = (Class) p.getRawType();
 
-            // its a list, delist it
+            // its a list, wrap it in our typed container class
             if (List.class.isAssignableFrom(r)) {
-               Class contained = (Class) p.getActualTypeArguments()[0];
-               parameters[i] = ArrayFrob.delist((List) parameters[i], contained);
+               parameters[i] = new ListContainer((List) parameters[i], p);
             }
             // its a map, wrap it in our typed container class
             else if (Map.class.isAssignableFrom(r)) {
@@ -658,6 +659,10 @@ public class DBusConnection
          // its a wrapped map, unwrap it
          if (parameters[i] instanceof MapContainer)
             parameters[i] = ((MapContainer) parameters[i]).getMap(types[i]);
+         
+         // its a wrapped list, unwrap it
+         if (parameters[i] instanceof ListContainer)
+            parameters[i] = ((ListContainer) parameters[i]).getList(types[i]);
 
          // it should be a struct. create it
          if (parameters[i] instanceof Object[] && 
@@ -1062,10 +1067,12 @@ public class DBusConnection
                   }
                }
             } catch (DBusExecutionException DBEe) {
+               DBEe.printStackTrace();
                synchronized (outqueue) {
                   outqueue.addLast(new DBusErrorMessage(m, DBEe)); 
                }
             } catch (Throwable e) {
+               e.printStackTrace();
                synchronized (outqueue) {
                   outqueue.addLast(new DBusErrorMessage(m, new DBusExecutionException("Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage()))); 
                }
@@ -1148,6 +1155,7 @@ public class DBusConnection
          try {
             m.setSerial(dbus_reply_to_call(connid, call.getSource(), call.getType(), call.getObjectPath(), call.getName(), call.getSerial(), m.getParameters()));
          } catch (Exception e) {
+            e.printStackTrace();
             dbus_send_error_message(connid, call.getSource(), DBusExecutionException.class.getName(), call.getSerial(), new Object[] { "Error sending reply: "+e.getMessage() });
          }
       }

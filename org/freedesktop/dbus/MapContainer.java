@@ -6,6 +6,7 @@ import java.lang.reflect.Type;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 class MapContainer
@@ -30,6 +31,8 @@ class MapContainer
          cs[1] = Class.forName(name);
          if (Map.class.isAssignableFrom(cs[1])) 
             cs[1] = MapContainer.class;
+         if (List.class.isAssignableFrom(cs[1])) 
+            cs[1] = ListContainer.class;
          this.values = (Object[]) Array.newInstance(cs[1], content.length);
       } catch (ClassNotFoundException CNFe) {
          throw new DBusException("Map contains invalid type: "+CNFe.getMessage());
@@ -67,6 +70,8 @@ class MapContainer
 
       if (Map.class.isAssignableFrom(c))
          c = MapContainer.class;
+      if (List.class.isAssignableFrom(c)) 
+         c = ListContainer.class;
 
       values = (Object[]) Array.newInstance(c, m.size());
 

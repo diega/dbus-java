@@ -532,6 +532,25 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    } else
       params = NULL;
 
+   if ((*env)->ExceptionOccurred(env)) {
+      (*env)->ExceptionDescribe(env);
+      (*env)->ExceptionClear(env);
+      char* cname = "org.freedesktop.dbus.DBusExecutionException";
+      jstring name = (*env)->NewStringUTF(env, cname);
+      jclass fooclass = (*env)->FindClass(env, "java/lang/String");
+      jobjectArray args = (*env)->NewObjectArray(env, 1, fooclass, NULL);
+      char* cerror = "An exception occurred during message reciept.";
+      jstring error = (*env)->NewStringUTF(env, cerror);
+      (*env)->SetObjectArrayElement(env, args, 1, error);
+      (*env)->DeleteLocalRef(env, fooclass);
+      (*env)->DeleteLocalRef(env, error);
+      Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1error_1message
+      (env, connobj, cidx, source, name, serial, args);
+      (*env)->DeleteLocalRef(env, name);
+      (*env)->DeleteLocalRef(env, args);
+      return NULL;
+   }
+
    switch (dbus_message_get_type(msg)) {
       case DBUS_MESSAGE_TYPE_METHOD_CALL:
          mid = (*env)->GetMethodID(env, callclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;J)V");
@@ -645,7 +664,7 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
    for (i = 0; i < len; i++) { 
       item = (*env)->GetObjectArrayElement(env, params, i);
       if (NULL == item) {
-         fprintf(stderr, "Item number %d is NULL!!\n", i);
+         //fprintf(stderr, "Item number %d is NULL!!\n", i);
          continue;
       }
       clazz = (*env)->GetObjectClass(env, item);
