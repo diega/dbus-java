@@ -19,7 +19,7 @@ class ListContainer
       Class c;
       try {
          sig = sig.substring(1);
-         name = DBusConnection.getJavaType(sig, null, null, true, true);
+         String name = DBusConnection.getJavaType(sig, null, null, true, true);
          c = Class.forName(name);
          if (Map.class.isAssignableFrom(c)) 
             c = MapContainer.class;
@@ -31,7 +31,7 @@ class ListContainer
       }
       this.sig = sig;
       for (int i = 0; i < content.length; i++) {
-         this.values[i] = content[i][1];
+         this.values[i] = content[i];
       }
    }
    public ListContainer(List l, ParameterizedType t) throws DBusException
@@ -44,17 +44,18 @@ class ListContainer
          c = (Class) ts[0];
       else if (ts[0] instanceof ParameterizedType)
          c = (Class) ((ParameterizedType) ts[0]).getRawType();
+      else c = null;
 
       if (Map.class.isAssignableFrom(c))
          c = MapContainer.class;
       if (List.class.isAssignableFrom(c)) 
          c = ListContainer.class;
 
-      values = (Object[]) Array.newInstance(c, m.size());
+      values = (Object[]) Array.newInstance(c, l.size());
 
       try {
-         for (int i = 0; i < m.size(); i++) {
-            values[i] = DBusConnection.convertParameters( new Object[] { m.get(i) }, new Type[] { ts[0] })[0];
+         for (int i = 0; i < l.size(); i++) {
+            values[i] = DBusConnection.convertParameters( new Object[] { l.get(i) }, new Type[] { ts[0] })[0];
          }
       } catch (Exception e) {
          e.printStackTrace();

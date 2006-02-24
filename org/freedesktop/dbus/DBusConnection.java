@@ -905,12 +905,12 @@ public class DBusConnection
     * @throws DBusException If listening for the signal on the bus failed.
     * @throws ClassCastException If type is not a sub-type of DBusSignal.
     */
-   public void addSigHandler(Class<? extends DBusSignal> type, DBusSigHandler handler) throws DBusException
+   public <T extends DBusSignal> void addSigHandler(Class<T> type, DBusSigHandler<T> handler) throws DBusException
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       addSigHandler(new DBusMatchRule(type), handler);
    }
-   private void addSigHandler(DBusMatchRule rule, DBusSigHandler handler) throws DBusException
+   private <T extends DBusSignal> void addSigHandler(DBusMatchRule rule, DBusSigHandler<T> handler) throws DBusException
    {
          try {
             _dbus.AddMatch(rule.toString());

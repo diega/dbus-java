@@ -3,7 +3,7 @@ package org.freedesktop.dbus;
  *  All Signal handlers are run in their own Thread. 
  *  Application writers are responsible for managing any concurrency issues.
  */
-public interface DBusSigHandler
+public interface DBusSigHandler<T extends DBusSignal>
 {
    /**
     * Handle a signal.
@@ -11,5 +11,5 @@ public interface DBusSigHandler
     * signal will be an instance of the class with the correct type signature.
     * Otherwise it will be an instance of DBusSignal
     */
-   public void handle(DBusSignal s);
+   public void handle(T s);
 }

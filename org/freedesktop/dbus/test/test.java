@@ -150,63 +150,51 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    }
 }
 
+class signalhandler implements DBusSigHandler<TestSignalInterface.TestSignal>
+{
+   /** Handling a signal */
+   public void handle(TestSignalInterface.TestSignal t)
+   {
+      System.out.println("SignalHandler 1 Running");
+      System.out.println("string("+t.value+") int("+t.number+")");
+      if (!"Bar".equals(t.value) || !(new UInt32(42)).equals(t.number))
+         test.fail("Incorrect TestSignal parameters");
+   }
+}
+
+class arraysignalhandler implements DBusSigHandler<TestSignalInterface.TestArraySignal>
+{
+   /** Handling a signal */
+   public void handle(TestSignalInterface.TestSignal t)
+   {
+      System.out.println("SignalHandler 2 Running");
+      System.out.println("Got a test array signal with Parameters: ");
+      for (String str: t.v.a)
+         System.out.println("--"+str);
+      System.out.println(t.v.b.getType());
+      System.out.println(t.v.b.getValue());
+      if (!(t.v.b.getValue() instanceof UInt64) ||
+            567L != ((UInt64) t.v.b.getValue()).longValue() ||
+            t.v.a.length != 5 ||
+            !"hi".equals(t.v.a[0]) ||
+            !"hello".equals(t.v.a[1]) ||
+            !"hej".equals(t.v.a[2]) ||
+            !"hey".equals(t.v.a[3]) ||
+            !"aloha".equals(t.v.a[4]))
+         test.fail("Incorrect TestArraySignal parameters");
+   }
+}
+
 /**
  * This is a test program which sends and recieves a signal, implements, exports and calls a remote method.
  */
-public class test implements DBusSigHandler
+public class test
 {
    public static void fail(String message)
    {
       System.err.println("Test Failed: "+message);
       if (null != conn) conn.disconnect();
       System.exit(1);
-   }
-   /** Handling a signal */
-   public void handle(DBusSignal s)
-   {
-      System.out.println("SignalHandler Running");
-
-      /** Known signals which we have a class for will be instantiated to that class. */
-      if (s instanceof TestSignalInterface.TestSignal) {
-         System.out.print("Got a test signal with Parameters: ");
-         /** Use the test signal interface to get the parameters. */
-         TestSignalInterface.TestSignal t = (TestSignalInterface.TestSignal) s;
-         System.out.println("string("+t.value+") int("+t.number+")");
-         if (!"Bar".equals(t.value) || !(new UInt32(42)).equals(t.number))
-            fail("Incorrect TestSignal parameters");
-      } 
-      /** Known signals which we have a class for will be instantiated to that class. */
-      else if (s instanceof TestSignalInterface.TestArraySignal) {
-         System.out.println("Got a test array signal with Parameters: ");
-         /** Use the test signal interface to get the parameters. */
-         TestSignalInterface.TestArraySignal t = (TestSignalInterface.TestArraySignal) s;
-         for (String str: t.v.a)
-            System.out.println("--"+str);
-         System.out.println(t.v.b.getType());
-         System.out.println(t.v.b.getValue());
-         if (!(t.v.b.getValue() instanceof UInt64) ||
-             567L != ((UInt64) t.v.b.getValue()).longValue() ||
-             t.v.a.length != 5 ||
-             !"hi".equals(t.v.a[0]) ||
-             !"hello".equals(t.v.a[1]) ||
-             !"hej".equals(t.v.a[2]) ||
-             !"hey".equals(t.v.a[3]) ||
-             !"aloha".equals(t.v.a[4]))
-            fail("Incorrect TestArraySignal parameters");
-      } 
-      /** Other signals. (should never happen, we are registered for only TestSignals) */
-      else {
-         System.out.println("Got an unknown signal: "+s);
-         /** Use the generic signal interface to get the details. */
-         System.out.println("Class: "+s.getClass());
-         System.out.println("Type: "+s.getType());
-         System.out.println("Name: "+s.getName());
-         System.out.print("Parameters:");
-         for (Object o: s.getParameters())
-            System.out.print(" "+o);
-         System.out.println();
-         fail("Incorrect Signal Type");
-      }
    }
    static DBusConnection conn = null;
    public static void main(String[] args) 
@@ -220,9 +208,8 @@ public class test implements DBusSigHandler
       System.out.print("Listening for signals...");
       try {
          /** This registers an instance of the test class as the signal handler for the TestSignal class. */
-         test t = new test();
-         conn.addSigHandler(TestSignalInterface.TestSignal.class, t);
-         conn.addSigHandler(TestSignalInterface.TestArraySignal.class, t);
+         conn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler);
+         conn.addSigHandler(TestSignalInterface.TestArraySignal.class, new arraysignalhandler);
          System.out.println("done");
       } catch (DBusException DBe) {
          test.fail("Failed to add handlers");
