@@ -591,6 +591,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
       case DBUS_MESSAGE_TYPE_SIGNAL:
 
          if (NULL != ctype) {
+            // create a new type string with /, not .
             typelen = strlen(ctype);
             cclassname = malloc(typelen+2+strlen(cname));
             memset(cclassname, 0, typelen+2+strlen(cname));
@@ -599,13 +600,26 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
                   cclassname[i] = '/';
                else
                   cclassname[i] = ctype[i];
+
+            // append name as a member class
             cclassname[typelen] = '$';
             for (i = 0; i < strlen(cname); i++)
                if ('.' == cname[i]) 
                   cclassname[i+1+typelen] = '/';
                else
                   cclassname[i+1+typelen] = cname[i];
-            sigclass = (*env)->FindClass(env, cclassname);
+            i += typelen;
+
+            // iterate back trying member classes in turn
+            sigclass = NULL;
+            do {
+               sigclass = (*env)->FindClass(env, cclassname);
+               (*env)->ExceptionClear(env);
+               if (NULL == sigclass) {
+                  while (i > 0 && cclassname[i] != '/') i--;
+                  if (i > 0) cclassname[i] = '$';
+               }
+            } while (NULL == sigclass && i > 0);
             free(cclassname);
             (*env)->ExceptionClear(env);
          } else 

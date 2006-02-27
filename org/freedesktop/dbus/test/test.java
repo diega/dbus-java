@@ -41,7 +41,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
       DBusCallInfo info = DBusConnection.getCallInfo();
       return new TestTuple(info.getSource(), 28165, true);
    }
-   public <T> T dostuff(TestStruct<String, UInt32, Variant<T>> foo)
+   public <T> T dostuff(TestStruct foo)
    {
       System.out.println("Doing Stuff "+foo);
       System.out.println(" -- ("+foo.a.getClass()+", "+foo.b.getClass()+", "+foo.c.getClass()+")");
@@ -54,7 +54,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
             !(foo.c.getValue() instanceof Boolean) ||
             ((Boolean) foo.c.getValue()).booleanValue() != true)
          test.fail("dostuff received the wrong arguments");
-      return foo.c.getValue();
+      return (T) foo.c.getValue();
    }
    /** Local classes MUST implement this to return false */
    public boolean isRemote() { return false; }
@@ -103,6 +103,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    }
    public boolean check()
    {
+      System.out.println("Being checked");
       return false;
    }
    public <T> int frobnicate(List<Long> n, Map<String,Map<UInt16,Short>> m, T v)
@@ -182,12 +183,12 @@ class arraysignalhandler implements DBusSigHandler
       System.out.println(t.v.b.getValue());
       if (!(t.v.b.getValue() instanceof UInt64) ||
             567L != ((UInt64) t.v.b.getValue()).longValue() ||
-            t.v.a.length != 5 ||
-            !"hi".equals(t.v.a[0]) ||
-            !"hello".equals(t.v.a[1]) ||
-            !"hej".equals(t.v.a[2]) ||
-            !"hey".equals(t.v.a[3]) ||
-            !"aloha".equals(t.v.a[4]))
+            t.v.a.size() != 5 ||
+            !"hi".equals(t.v.a.get(0)) ||
+            !"hello".equals(t.v.a.get(1)) ||
+            !"hej".equals(t.v.a.get(2)) ||
+            !"hey".equals(t.v.a.get(3)) ||
+            !"aloha".equals(t.v.a.get(4)))
          test.fail("Incorrect TestArraySignal parameters");
    }
 }
@@ -322,6 +323,7 @@ public class test
       System.out.println("Doing stuff asynchronously");
       DBusAsyncReply<Boolean> stuffreply = conn.callMethodAsync(tri2, "dostuff", new TestStruct("bar", new UInt32(52), new Variant<Boolean>(new Boolean(true))));
 
+      System.out.println("Checking bools");
       if (tri2.check()) fail("bools are broken");
          
       List<String> l = new Vector<String>();
@@ -354,7 +356,7 @@ public class test
       
       System.out.print("Sending Array Signal...");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
-      conn.sendSignal(new TestSignalInterface.TestArraySignal("/foo/bar/com/Wibble", new TestStruct2(l.toArray(new String[0]), new Variant(new UInt64(567)))));
+      conn.sendSignal(new TestSignalInterface.TestArraySignal("/foo/bar/com/Wibble", new TestStruct2(l, new Variant(new UInt64(567)))));
       
       System.out.println("done");
 

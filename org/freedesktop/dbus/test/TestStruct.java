@@ -1,16 +1,21 @@
 package org.freedesktop.dbus.test;
 
 import org.freedesktop.dbus.DBusException;
+import org.freedesktop.dbus.Position;
 import org.freedesktop.dbus.Struct;
+import org.freedesktop.dbus.UInt32;
+import org.freedesktop.dbus.Variant;
 
-public final class TestStruct<A, B, C> extends Struct
+public final class TestStruct extends Struct
 {
-   public final A a;
-   public final B b;
-   public final C c;
-   public TestStruct(A a, B b, C c) throws DBusException
+   @Position(0)
+   public final String a;
+   @Position(1)
+   public final UInt32 b;
+   @Position(2)
+   public final Variant c;
+   public TestStruct(String a, UInt32 b, Variant c) throws DBusException
    {
-      super(a, b, c);
       this.a = a;
       this.b = b;
       this.c = c;

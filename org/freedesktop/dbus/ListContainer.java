@@ -68,7 +68,6 @@ class ListContainer
    public String getSig() { return sig; }
    public List getList(Type t) throws Exception
    { 
-      System.err.println("Getting list");
       if (null != list) return list;
       Type[] ts;
       if (t instanceof ParameterizedType)
@@ -77,13 +76,11 @@ class ListContainer
          ts = new Type[1];
          ts[0] = ((GenericArrayType) t).getGenericComponentType();
       } else {
-         System.err.println(t+" is a "+t.getClass().getName());         
          return null;
       }
 
       this.list = new Vector();
       for (int i = 0; i < values.length; i++) {
-         System.err.println("Converting "+this.values[i].getClass()+" to "+ts[0]);
          this.list.add(DBusConnection.deSerialiseParameters(new Object[] { this.values[i] }, new Type[] { ts[0] })[0]);
       }
       return list; 

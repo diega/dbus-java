@@ -13,7 +13,7 @@ public interface TestRemoteInterface2 extends DBusInterface
    @Description("Test multiple return values and implicit variant parameters.")
    public <A> TestTuple<String, Integer, Boolean> show(A in);
    @Description("Test passing structs and explicit variants, returning implicit variants")
-   public <T> T dostuff(TestStruct<String, UInt32, Variant<T>> foo);
+   public <T> T dostuff(TestStruct foo);
    @Description("Test arrays, boxed arrays and lists.")
    public List<Integer> sampleArray(List<String> l, Integer[] is, long[] ls);
    @Description("Test passing objects as object paths.")

@@ -7,6 +7,8 @@ import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.DBus.Description;
 
+import java.util.List;
+
 /**
  * A sample signal with two parameters
  */
@@ -31,8 +33,8 @@ public interface TestSignalInterface extends DBusInterface
    @Description("Test signal with arrays")
    public static class TestArraySignal extends DBusSignal
    {
-      public final TestStruct2<String[],Variant> v;
-      public TestArraySignal(String path, TestStruct2<String[],Variant> v) throws DBusException
+      public final TestStruct2 v;
+      public TestArraySignal(String path, TestStruct2 v) throws DBusException
       {
          super(path, v);
          this.v = v;

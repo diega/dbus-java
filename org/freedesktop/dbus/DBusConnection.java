@@ -5,6 +5,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -428,12 +429,7 @@ public class DBusConnection
             out.append('a');
             for (Type t: p.getActualTypeArguments())
                out.append(getDBusType(t, false));
-         } else if (Struct.class.isAssignableFrom((Class) p.getRawType())) {
-            out.append('(');
-            for (Type t: p.getActualTypeArguments())
-               out.append(getDBusType(t, false));
-            out.append(')');
-         }
+         } 
          else if (p.getRawType().equals(Variant.class)) {
             out.append('v');
          }
@@ -466,6 +462,20 @@ public class DBusConnection
       else if (c instanceof Class && ((Class) c).isArray()) {
          out.append('a');
          out.append(getDBusType(((Class) c).getComponentType(), false));
+      } else if (c instanceof Class && 
+            Struct.class.isAssignableFrom((Class) c)) {
+         out.append('(');
+         Field[] fs = ((Class) c).getDeclaredFields();
+         Type[] ts = new Type[fs.length];
+         for (Field f : fs) {
+            Position pos = f.getAnnotation(Position.class);
+            if (null == pos) throw new DBusException("Struct not annotated with field order");
+            ts[pos.value()] = f.getGenericType();
+         }
+
+         for (Type t: ts)
+            out.append(getDBusType(t, false));
+         out.append(')');
       }
       else {
          throw new DBusException("Exporting non-exportable type "+c);
@@ -628,8 +638,14 @@ public class DBusConnection
             // its a struct, recurse over it
             else if (Struct.class.isAssignableFrom(r)) {
                Constructor con = r.getDeclaredConstructors()[0];
+               Field[] fs = r.getDeclaredFields();
+               Type[] ts = new Type[fs.length];
+               for (Field f : fs) {
+                  Position pos = f.getAnnotation(Position.class);
+                  if (null == pos) throw new DBusException("Struct not annotated with field order");
+                  ts[pos.value()] = f.getGenericType();
+               }
                Object[] oldparams = ((Struct) parameters[i]).getParameters();
-               Type[] ts = p.getActualTypeArguments();
                Object[] newparams = convertParameters(oldparams, ts);
                parameters[i] = con.newInstance(newparams);
             }
@@ -650,7 +666,6 @@ public class DBusConnection
       if (null == parameters) return null;
       for (int i = 0; i < parameters.length; i++) {
          
-         System.err.println(i+": "+parameters[i].getClass()+" - "+types[i]);
          // its a wrapped variant, unwrap it
          if (types[i] instanceof TypeVariable 
                && parameters[i] instanceof Variant) {
@@ -663,21 +678,21 @@ public class DBusConnection
         
          // its a wrapped list, unwrap it
          if (parameters[i] instanceof ListContainer) {
-            System.err.println("From list "+parameters[i].getClass());
             parameters[i] = ((ListContainer) parameters[i]).getList(types[i]);
-            System.err.println("now: "+parameters[i].getClass());
          }
 
          // it should be a struct. create it
          if (parameters[i] instanceof Object[] && 
-               types[i] instanceof ParameterizedType &&
-               Struct.class.isAssignableFrom((Class) ((ParameterizedType) types[i]).getRawType())) {
-            Constructor con = ((Class) ((ParameterizedType) types[i]).getRawType()).getConstructors()[0];
-            Type[] gpts = con.getGenericParameterTypes();
-            Type[] ts = new Type[gpts.length];
-            for (int j = 0; j < gpts.length; j++)
-               ts[j] = ((TypeVariable) gpts[j]).getBounds()[0];
-               
+               types[i] instanceof Class &&
+               Struct.class.isAssignableFrom((Class) types[i])) {
+            Constructor con = ((Class) types[i]).getDeclaredConstructors()[0];
+            Field[] fs = ((Class) types[i]).getDeclaredFields();
+            Type[] ts = new Type[fs.length];
+            for (Field f : fs) {
+               Position p = f.getAnnotation(Position.class);
+               ts[p.value()] = f.getGenericType();
+            }
+
             // recurse over struct contents
             parameters[i] = deSerialiseParameters((Object[]) parameters[i], ts);
             parameters[i] = con.newInstance((Object[]) parameters[i]);
@@ -698,7 +713,6 @@ public class DBusConnection
                parameters[i] = ArrayFrob.convert(parameters[i],
                      (Class) ((ParameterizedType) types[i]).getRawType());
             else if (types[i] instanceof GenericArrayType) {
-               System.err.println("Converting array from "+parameters[i].getClass()+" to "+types[i]);
                Type ct = ((GenericArrayType) types[i]).getGenericComponentType();
                Class cc = null;
                if (ct instanceof Class)
@@ -1057,6 +1071,10 @@ public class DBusConnection
                }
                Object result;
                try {
+                  String s = "";
+                  if (null != m.parameters)
+                     for (Object o: m.parameters)
+                        s += o +", ";
                   result = me.invoke(ob, m.parameters);
                } catch (InvocationTargetException ITe) {
                   throw ITe.getCause();
@@ -1092,8 +1110,9 @@ public class DBusConnection
       }
       if (null == v) return;
       new Thread() { public void run() {
-         for (DBusSigHandler h: v)
+         for (DBusSigHandler h: v) {
             h.handle(s); 
+         }
       } }.start();
    }
    private void handleMessage(final DBusErrorMessage err)
