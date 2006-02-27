@@ -150,6 +150,9 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    }
 }
 
+/**
+ * Typed signal handler
+ */
 class signalhandler implements DBusSigHandler<TestSignalInterface.TestSignal>
 {
    /** Handling a signal */
@@ -162,11 +165,15 @@ class signalhandler implements DBusSigHandler<TestSignalInterface.TestSignal>
    }
 }
 
-class arraysignalhandler implements DBusSigHandler<TestSignalInterface.TestArraySignal>
+/**
+ * Untyped signal handler
+ */
+class arraysignalhandler implements DBusSigHandler
 {
    /** Handling a signal */
-   public void handle(TestSignalInterface.TestSignal t)
+   public void handle(DBusSignal s)
    {
+      TestSignalInterface.TestArraySignal t = (TestSignalInterface.TestArraySignal) s;
       System.out.println("SignalHandler 2 Running");
       System.out.println("Got a test array signal with Parameters: ");
       for (String str: t.v.a)
@@ -208,8 +215,8 @@ public class test
       System.out.print("Listening for signals...");
       try {
          /** This registers an instance of the test class as the signal handler for the TestSignal class. */
-         conn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler);
-         conn.addSigHandler(TestSignalInterface.TestArraySignal.class, new arraysignalhandler);
+         conn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler());
+         conn.addSigHandler(TestSignalInterface.TestArraySignal.class, new arraysignalhandler());
          System.out.println("done");
       } catch (DBusException DBe) {
          test.fail("Failed to add handlers");

@@ -383,8 +383,18 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
                (*env)->SetObjectArrayElement(env, params, i, jval);
                (*env)->DeleteLocalRef(env, jval);
                (*env)->DeleteLocalRef(env, fooclass);
+            } 
+            // it's an array
+            else {
+               fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/ListContainer");
+               mid = (*env)->GetMethodID(env, fooclass, "<init>", "([Ljava/lang/Object;Ljava/lang/String;)V");
+               jval = (*env)->NewObject(env, fooclass, mid, members, sig);
+               if (NULL == jval) break;
+               (*env)->SetObjectArrayElement(env, params, i, jval);
+               (*env)->DeleteLocalRef(env, jval);
+               (*env)->DeleteLocalRef(env, fooclass);
             }
-
+/*
             // its an array
             else {
                fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusConnection");
@@ -419,7 +429,7 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
                (*env)->ReleaseStringUTFChars(env, cname, cstringval);
                (*env)->DeleteLocalRef(env, cname);
                (*env)->DeleteLocalRef(env, fooclass);
-            }
+            }*/
             (*env)->DeleteLocalRef(env, members);
             (*env)->DeleteLocalRef(env, sig);
             break;
@@ -431,8 +441,8 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
             (*env)->DeleteLocalRef(env, jval);
             break;
          default:
-            fprintf(stderr, "Ignoring invalid type signature (%c)\n", 
-                  dbus_message_iter_get_arg_type(args));
+            fprintf(stderr, "Ignoring invalid type signature (%c = %d)\n", 
+                  dbus_message_iter_get_arg_type(args),dbus_message_iter_get_arg_type(args));
             break;
       }
       i++;
@@ -657,7 +667,7 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
    jclass dbcclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusConnection");
    jclass dbiclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusInterface");
    jclass structclass = (*env)->FindClass(env, "org/freedesktop/dbus/Struct");
-   jclass listclass = (*env)->FindClass(env, "java/util/List");
+   jclass listclass = (*env)->FindClass(env, "org/freedesktop/dbus/ListContainer");
    jclass mapclass = (*env)->FindClass(env, "org/freedesktop/dbus/MapContainer");
 
    
@@ -736,7 +746,6 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          (*env)->ReleaseStringUTFChars(env, item, cstringval);
       }
       else if ((*env)->IsInstanceOf(env, item, mapclass)) {
-         
          // get sig
          mid = (*env)->GetMethodID(env, mapclass, "getSig", "()Ljava/lang/String;");
          sig = (*env)->CallObjectMethod(env, item, mid);
@@ -780,6 +789,27 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          (*env)->DeleteLocalRef(env, keys);
          (*env)->DeleteLocalRef(env, values);
          (*env)->DeleteLocalRef(env, members);
+      }
+      else if ((*env)->IsInstanceOf(env, item, listclass)) {
+         // get sig
+         mid = (*env)->GetMethodID(env, listclass, "getSig", "()Ljava/lang/String;");
+         sig = (*env)->CallObjectMethod(env, item, mid);
+         cstringval = (*env)->GetStringUTFChars(env, sig, 0);
+         
+         // get members
+         mid = (*env)->GetMethodID(env, listclass, "getValues", "()[Ljava/lang/Object;");
+         values = (*env)->CallObjectMethod(env, item, mid);
+         slen = (*env)->GetArrayLength(env, values);
+         
+         dbus_message_iter_open_container(args, DBUS_TYPE_ARRAY, cstringval, &sub);
+
+         if (0 > append_args(env, &sub, values, connobj)) return -1;
+
+         dbus_message_iter_close_container(args, &sub);
+         
+         (*env)->ReleaseStringUTFChars(env, sig, cstringval);
+         (*env)->DeleteLocalRef(env, sig);
+         (*env)->DeleteLocalRef(env, values);
       }
       else if ((*env)->CallBooleanMethod(env, clazz, isarray)) {
          mid = (*env)->GetMethodID(env, clazzclass, "getComponentType", "()Ljava/lang/Class;");

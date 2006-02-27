@@ -80,7 +80,6 @@ class MapContainer
             values[i] = DBusConnection.convertParameters( new Object[] { m.get(keys[i]) }, new Type[] { ts[1] })[0];
          }
       } catch (Exception e) {
-         e.printStackTrace();
          throw new DBusException(e.getMessage());
       }
 

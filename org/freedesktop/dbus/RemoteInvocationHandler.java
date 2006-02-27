@@ -76,7 +76,6 @@ class RemoteInvocationHandler implements InvocationHandler
       try {
          args = DBusConnection.convertParameters(args, ts);
       } catch (Exception e) {
-         e.printStackTrace();
          throw new DBusExecutionException(e.getMessage());
       }
       MethodCall call = new MethodCall(ro.service, ro.objectpath, ro.iface.getName().replaceAll("[$]", "."), m.getName(), args);

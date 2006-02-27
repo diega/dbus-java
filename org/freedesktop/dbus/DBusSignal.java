@@ -75,7 +75,6 @@ public abstract class DBusSignal extends DBusMessage
             parameters = DBusConnection.convertParameters(parameters, types);
 
       } catch (Exception e) {
-         e.printStackTrace();
          throw new DBusException("Failed to correctly determine DBusSignal type: "+e);
       }
    }

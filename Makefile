@@ -120,8 +120,8 @@ install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-jav
 	install -d $(JARPREFIX)
 	install -m 644 libdbus-java-$(VERSION).jar $(JARPREFIX)/dbus-$(VERSION).jar
 	install -m 644 dbus-java-viewer-$(VERSION).jar $(JARPREFIX)/dbus-viewer-$(VERSION).jar
-	ln -s dbus-$(VERSION).jar $(JARPREFIX)/dbus.jar
-	ln -s dbus-viewer-$(VERSION).jar $(JARPREFIX)/dbus-viewer.jar
+	ln -sf dbus-$(VERSION).jar $(JARPREFIX)/dbus.jar
+	ln -sf dbus-viewer-$(VERSION).jar $(JARPREFIX)/dbus-viewer.jar
 	install -d $(LIBPREFIX)
 	install libdbus-java.so $(LIBPREFIX)
 	install -d $(BINPREFIX)

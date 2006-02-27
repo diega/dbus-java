@@ -1,6 +1,7 @@
 package org.freedesktop.dbus;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
@@ -18,7 +19,6 @@ class ListContainer
    {
       Class c;
       try {
-         sig = sig.substring(1);
          String name = DBusConnection.getJavaType(sig, null, null, true, true);
          c = Class.forName(name);
          if (Map.class.isAssignableFrom(c)) 
@@ -38,7 +38,6 @@ class ListContainer
    {
       Type[] ts = t.getActualTypeArguments();
       Class c;
-      sig = "a";
 
       if (ts[0] instanceof Class)
          c = (Class) ts[0];
@@ -58,11 +57,10 @@ class ListContainer
             values[i] = DBusConnection.convertParameters( new Object[] { l.get(i) }, new Type[] { ts[0] })[0];
          }
       } catch (Exception e) {
-         e.printStackTrace();
          throw new DBusException(e.getMessage());
       }
 
-      sig += DBusConnection.getDBusType(ts[0]);
+      sig = DBusConnection.getDBusType(ts[0]);
 
       this.list = l;
    }
@@ -70,11 +68,22 @@ class ListContainer
    public String getSig() { return sig; }
    public List getList(Type t) throws Exception
    { 
+      System.err.println("Getting list");
       if (null != list) return list;
-      Type[] ts = ((ParameterizedType) t).getActualTypeArguments();
+      Type[] ts;
+      if (t instanceof ParameterizedType)
+         ts = ((ParameterizedType) t).getActualTypeArguments();
+      else if (t instanceof GenericArrayType) {
+         ts = new Type[1];
+         ts[0] = ((GenericArrayType) t).getGenericComponentType();
+      } else {
+         System.err.println(t+" is a "+t.getClass().getName());         
+         return null;
+      }
 
       this.list = new Vector();
       for (int i = 0; i < values.length; i++) {
+         System.err.println("Converting "+this.values[i].getClass()+" to "+ts[0]);
          this.list.add(DBusConnection.deSerialiseParameters(new Object[] { this.values[i] }, new Type[] { ts[0] })[0]);
       }
       return list; 

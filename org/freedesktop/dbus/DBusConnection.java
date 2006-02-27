@@ -650,6 +650,7 @@ public class DBusConnection
       if (null == parameters) return null;
       for (int i = 0; i < parameters.length; i++) {
          
+         System.err.println(i+": "+parameters[i].getClass()+" - "+types[i]);
          // its a wrapped variant, unwrap it
          if (types[i] instanceof TypeVariable 
                && parameters[i] instanceof Variant) {
@@ -659,10 +660,13 @@ public class DBusConnection
          // its a wrapped map, unwrap it
          if (parameters[i] instanceof MapContainer)
             parameters[i] = ((MapContainer) parameters[i]).getMap(types[i]);
-         
+        
          // its a wrapped list, unwrap it
-         if (parameters[i] instanceof ListContainer)
+         if (parameters[i] instanceof ListContainer) {
+            System.err.println("From list "+parameters[i].getClass());
             parameters[i] = ((ListContainer) parameters[i]).getList(types[i]);
+            System.err.println("now: "+parameters[i].getClass());
+         }
 
          // it should be a struct. create it
          if (parameters[i] instanceof Object[] && 
@@ -694,6 +698,7 @@ public class DBusConnection
                parameters[i] = ArrayFrob.convert(parameters[i],
                      (Class) ((ParameterizedType) types[i]).getRawType());
             else if (types[i] instanceof GenericArrayType) {
+               System.err.println("Converting array from "+parameters[i].getClass()+" to "+types[i]);
                Type ct = ((GenericArrayType) types[i]).getGenericComponentType();
                Class cc = null;
                if (ct instanceof Class)
@@ -1067,12 +1072,10 @@ public class DBusConnection
                   }
                }
             } catch (DBusExecutionException DBEe) {
-               DBEe.printStackTrace();
                synchronized (outqueue) {
                   outqueue.addLast(new DBusErrorMessage(m, DBEe)); 
                }
             } catch (Throwable e) {
-               e.printStackTrace();
                synchronized (outqueue) {
                   outqueue.addLast(new DBusErrorMessage(m, new DBusExecutionException("Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage()))); 
                }
@@ -1155,7 +1158,6 @@ public class DBusConnection
          try {
             m.setSerial(dbus_reply_to_call(connid, call.getSource(), call.getType(), call.getObjectPath(), call.getName(), call.getSerial(), m.getParameters()));
          } catch (Exception e) {
-            e.printStackTrace();
             dbus_send_error_message(connid, call.getSource(), DBusExecutionException.class.getName(), call.getSerial(), new Object[] { "Error sending reply: "+e.getMessage() });
          }
       }
