@@ -75,6 +75,9 @@ class ListContainer
       else if (t instanceof GenericArrayType) {
          ts = new Type[1];
          ts[0] = ((GenericArrayType) t).getGenericComponentType();
+      } else if (t instanceof Class && ((Class) t).isArray()) {
+         ts = new Type[1];
+         ts[0] = ((Class) t).getComponentType();
       } else {
          return null;
       }

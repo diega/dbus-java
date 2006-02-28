@@ -12,14 +12,18 @@ public abstract class Struct
    private void setup() throws DBusException
    {
       Field[] fs = getClass().getDeclaredFields();
-      this.parameters = new Object[fs.length];
+      Object[] args = new Object[fs.length];
       Type[] ts = new Type[fs.length];
+      int diff = 0;
       for (Field f : fs) {
          Position p = f.getAnnotation(Position.class);
-         if (null == p) throw new DBusException("Struct not annotated with field order");
+         if (null == p) {
+            diff++;
+            continue;
+         }
          ts[p.value()] = f.getGenericType();
          try {
-            parameters[p.value()] = DBusConnection.convertParameters(
+            args[p.value()] = DBusConnection.convertParameters(
                   new Object[] { f.get(this) },
                   new Type[] { ts[p.value()] })[0];
          } catch (Exception e) {
@@ -29,7 +33,12 @@ public abstract class Struct
          
       sig = "";
       for (Type t: ts)
-         sig += DBusConnection.getDBusType(t);
+         if (null != t)
+            sig += DBusConnection.getDBusType(t);
+
+      this.parameters = new Object[args.length - diff];
+      for (int i = 0; i < parameters.length; i++)
+         parameters[i] = args[i];
    }
    public final Object[] getParameters() throws DBusException
    {

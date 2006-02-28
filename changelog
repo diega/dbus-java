@@ -2,6 +2,7 @@ Version 1.4:
 
 	* provide call info to called methods
 	* check for disconnections and throw
+	* complete rewrite of Structs
 
 Version 1.3:
 

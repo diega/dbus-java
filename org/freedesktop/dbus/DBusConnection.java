@@ -469,12 +469,13 @@ public class DBusConnection
          Type[] ts = new Type[fs.length];
          for (Field f : fs) {
             Position pos = f.getAnnotation(Position.class);
-            if (null == pos) throw new DBusException("Struct not annotated with field order");
+            if (null == pos) continue;
             ts[pos.value()] = f.getGenericType();
          }
 
          for (Type t: ts)
-            out.append(getDBusType(t, false));
+            if (t != null)
+               out.append(getDBusType(t, false));
          out.append(')');
       }
       else {
@@ -642,7 +643,7 @@ public class DBusConnection
                Type[] ts = new Type[fs.length];
                for (Field f : fs) {
                   Position pos = f.getAnnotation(Position.class);
-                  if (null == pos) throw new DBusException("Struct not annotated with field order");
+                  if (null == pos) continue;
                   ts[pos.value()] = f.getGenericType();
                }
                Object[] oldparams = ((Struct) parameters[i]).getParameters();
@@ -690,6 +691,7 @@ public class DBusConnection
             Type[] ts = new Type[fs.length];
             for (Field f : fs) {
                Position p = f.getAnnotation(Position.class);
+               if (null == p) continue;
                ts[p.value()] = f.getGenericType();
             }
 
@@ -1051,6 +1053,7 @@ public class DBusConnection
          Type[] ts = meth.getGenericParameterTypes();
          m.parameters = deSerialiseParameters(m.parameters, ts);
       } catch (Exception e) {
+         e.printStackTrace();
          synchronized (outgoing) {
             outgoing.addLast(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serialising message ("+e+")"))); }
       }
@@ -1146,6 +1149,7 @@ public class DBusConnection
    }
    private void sendMessage(DBusMessage m)
    {
+      System.err.println("Sending "+m);
       if (m instanceof DBusSignal) 
          try {
             m.setSerial(dbus_send_signal(connid, ((DBusSignal) m).getObjectPath(), m.getType(), m.getName(), m.getParameters()));

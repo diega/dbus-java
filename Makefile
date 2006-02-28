@@ -90,7 +90,7 @@ doc/dbus-java.pdf: doc/dbus-java.dvi .doc
 doc/dbus-java/index.html: dbus-java.tex .doc
 	latex2html -dir doc/dbus-java dbus-java.tex
 doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java .doc
-	javadoc -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java
+	$(JAVA_HOME)/bin/javadoc -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java
 
 %.1: %.sgml
 	docbook-to-man $< > $@
