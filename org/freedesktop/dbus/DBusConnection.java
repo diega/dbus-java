@@ -686,7 +686,6 @@ public class DBusConnection
          if (parameters[i] instanceof Object[] && 
                types[i] instanceof Class &&
                Struct.class.isAssignableFrom((Class) types[i])) {
-            Constructor con = ((Class) types[i]).getDeclaredConstructors()[0];
             Field[] fs = ((Class) types[i]).getDeclaredFields();
             Type[] ts = new Type[fs.length];
             for (Field f : fs) {
@@ -697,7 +696,15 @@ public class DBusConnection
 
             // recurse over struct contents
             parameters[i] = deSerialiseParameters((Object[]) parameters[i], ts);
-            parameters[i] = con.newInstance((Object[]) parameters[i]);
+            for (Object o: (Object[]) parameters[i])
+               System.err.println(o.getClass());
+            for (Constructor con: ((Class) types[i]).getDeclaredConstructors()) {
+               System.err.println(con);
+               try {
+                  parameters[i] = con.newInstance((Object[]) parameters[i]);
+                  break;
+               } catch (IllegalArgumentException IAe) {}
+            }
          }
 
          // recurse over arrays

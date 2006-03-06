@@ -688,8 +688,10 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
    for (i = 0; i < len; i++) { 
       item = (*env)->GetObjectArrayElement(env, params, i);
       if (NULL == item) {
-         //fprintf(stderr, "Item number %d is NULL!!\n", i);
-         continue;
+         jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusExecutionException");
+         (*env)->ThrowNew(env, dbeclass, "Cannot send NULL pointers over DBus");
+         (*env)->DeleteLocalRef(env, dbeclass);
+         return -1;
       }
       clazz = (*env)->GetObjectClass(env, item);
       clazzclass = (*env)->GetObjectClass(env, clazz);
