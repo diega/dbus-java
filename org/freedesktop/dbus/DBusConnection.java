@@ -696,10 +696,7 @@ public class DBusConnection
 
             // recurse over struct contents
             parameters[i] = deSerialiseParameters((Object[]) parameters[i], ts);
-            for (Object o: (Object[]) parameters[i])
-               System.err.println(o.getClass());
             for (Constructor con: ((Class) types[i]).getDeclaredConstructors()) {
-               System.err.println(con);
                try {
                   parameters[i] = con.newInstance((Object[]) parameters[i]);
                   break;
@@ -1081,10 +1078,6 @@ public class DBusConnection
                }
                Object result;
                try {
-                  String s = "";
-                  if (null != m.parameters)
-                     for (Object o: m.parameters)
-                        s += o +", ";
                   result = me.invoke(ob, m.parameters);
                } catch (InvocationTargetException ITe) {
                   throw ITe.getCause();
@@ -1093,8 +1086,13 @@ public class DBusConnection
                   infomap.remove(Thread.currentThread());
                }
                if (!noreply) {
-                  result = convertParameters(new Object[] { result }, new Type[] { me.getGenericReturnType() })[0];
-                  MethodReply reply = new MethodReply(m, result);
+                  MethodReply reply;
+                  if (Void.TYPE.equals(me.getReturnType())) 
+                     reply = new MethodReply(m);
+                  else {
+                     result = convertParameters(new Object[] { result }, new Type[] { me.getGenericReturnType() })[0];
+                     reply = new MethodReply(m, result);
+                  }
                   synchronized (outqueue) {
                      outqueue.addLast(reply);
                   }
@@ -1156,7 +1154,6 @@ public class DBusConnection
    }
    private void sendMessage(DBusMessage m)
    {
-      System.err.println("Sending "+m);
       if (m instanceof DBusSignal) 
          try {
             m.setSerial(dbus_send_signal(connid, ((DBusSignal) m).getObjectPath(), m.getType(), m.getName(), m.getParameters()));

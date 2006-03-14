@@ -684,7 +684,6 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
    jclass listclass = (*env)->FindClass(env, "org/freedesktop/dbus/ListContainer");
    jclass mapclass = (*env)->FindClass(env, "org/freedesktop/dbus/MapContainer");
 
-   
    for (i = 0; i < len; i++) { 
       item = (*env)->GetObjectArrayElement(env, params, i);
       if (NULL == item) {
