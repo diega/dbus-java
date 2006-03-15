@@ -57,7 +57,7 @@ public class DBusAsyncReply<ReturnType>
    {
       if (null != rval || null != error) return true;
       checkReply();
-      return null == rval && null == error;
+      return null != rval || null != error;
    }
    
    /**
@@ -66,7 +66,7 @@ public class DBusAsyncReply<ReturnType>
     * @throws DBusExecutionException if the reply to the method was an error.
     * @throws NoReply if the method hasn't had a reply yet
     */
-   public ReturnType getReply()
+   public ReturnType getReply() throws DBusExecutionException
    {
       if (null != rval) return rval;
       else if (null != error) throw error;
