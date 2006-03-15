@@ -584,7 +584,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
          }
          break;
       case DBUS_MESSAGE_TYPE_METHOD_RETURN:
-         if (debug) fprintf(stderr, "=> REPLY: %s%s[%s.%s]() {%d,%d}\n",csource, cservice,cobjectpath,ctype,cname,serial,replyserial);
+         if (debug) fprintf(stderr, "=> REPLY: (%s)%s[%s.%s]() {%d,%d}\n",csource,cobjectpath,ctype,cname,serial,replyserial);
          mid = (*env)->GetMethodID(env, replyclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;JJ)V");
          jmsg = (*env)->NewObject(env, replyclass, mid, source, objectpath, type, name, params, serial, replyserial);
          if (NULL != params)
@@ -1180,7 +1180,7 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1reply_1to_
       dbus_message_unref(msg);
       return -1;
    }
-   if (debug) fprintf(stderr, "<= REPLY: [%s.%s]() {%d,%d}\n", cobjectpath,ctype,cname,serial,replyserial);
+   if (debug) fprintf(stderr, "<= REPLY: %s%s[%s.%s]() {%d,%d}\n", cdestination, cobjectpath,ctype,cname,serial,replyserial);
 
    if (NULL != cname) (*env)->ReleaseStringUTFChars(env, name, cname);
    if (NULL != ctype) (*env)->ReleaseStringUTFChars(env, type, ctype);

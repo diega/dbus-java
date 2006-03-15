@@ -75,5 +75,10 @@ public class DBusAsyncReply<ReturnType>
       else if (null != error) throw error;
       else throw new NoReply("Async call has not had a reply");
    }
+
+   public String toString()
+   {
+      return "Waiting for: "+mc;
+   }
 }
 
