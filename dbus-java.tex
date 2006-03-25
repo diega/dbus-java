@@ -649,6 +649,12 @@ org.freedesktop.DBus.Method.Error & This method may throw the listed Exception\\
 \label{tab:annotations}
 \end{table}
 
+\section{Debugging}
+
+Since version 1.4 of the bindings there has been a facility to print all the
+messages the bindings are sending or receiving on the bus. To enable this, set
+the {\tt DBUS\_JAVA\_DEBUG} environment variable before running your program.
+
 \section{Examples}
 
 As an example here are a complete set of interfaces for the
