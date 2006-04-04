@@ -2,7 +2,8 @@ JAVAC?=javac
 JAVA?=java
 JAVAH?=javah
 JAR?=jar
-CFLAGS?=`pkg-config --cflags --libs dbus-1`
+CFLAGS?=`pkg-config --cflags dbus-1`
+LDFLAGS?=`pkg-config --libs dbus-1`
 CC?=gcc
 LD?=ld
 DBUSLIB?=/usr/lib/libdbus-1.a
@@ -19,7 +20,7 @@ BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
 
-VERSION = 1.4
+VERSION = 1.5a
 RELEASEVERSION = 1.4
  
 all: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
@@ -64,7 +65,7 @@ dbus-java.o: dbus-java.c org_freedesktop_dbus_DBusConnection.h org_freedesktop_d
 	$(CC) $(CFLAGS) -fpic -c $< -o $@
 
 libdbus-java.so: dbus-java.o
-	$(LD) $(LDFLAGS) -fpic -shared -o $@ $^ $(DBUSLIB)
+	$(LD) $(LDFLAGS) -fpic -shared -o $@ $^
 libdbus-java-$(VERSION).jar: .classes
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/Hal/*.class)
 dbus-java-test-$(VERSION).jar: .testclasses

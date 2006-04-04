@@ -1,3 +1,7 @@
+Version 1.5:
+	
+	* Remove static library dependency
+
 Version 1.4:
 
 	* provide call info to called methods
