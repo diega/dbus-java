@@ -149,10 +149,12 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    {
       throw new TestException("test");
    }
-   public void testSerializable(TestSerializable s)
+   public void testSerializable(byte b, TestSerializable s, int i)
    {
       System.out.println("Recieving TestSerializable: "+s);
-      if (  !(s.getInt() == 1)
+      if (  b != 12
+         || i != 13
+         || !(s.getInt() == 1)
          || !(s.getString().equals("woo"))
          || !(s.getVector().size() == 3)
          || !((Integer) s.getVector().get(0) == 1)
@@ -377,7 +379,7 @@ public class test
       v.add(2);
       v.add(3);
       TestSerializable s = new TestSerializable(1, "woo", v);
-      tri2.testSerializable(s);
+      tri2.testSerializable((byte) 12, s, 13);
       
       System.out.println("done");
 
