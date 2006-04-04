@@ -20,4 +20,6 @@ public interface TestRemoteInterface2 extends DBusInterface
    public DBusInterface getThis(DBusInterface t);
    @Description("Test bools work")
    public boolean check();
+   @Description("Test Serializable Object")
+   public void testSerializable(TestSerializable s);
 }

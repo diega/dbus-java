@@ -4,6 +4,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import org.freedesktop.dbus.Position;
 
+/**
+ * This class should be extended to create Structs.
+ * Any such class may be sent over DBus to a method which takes a Struct.
+ * All fields in the Struct which you wish to be serialized and sent to the
+ * remote method should be annotated with the org.freedesktop.dbus.Position
+ * annotation, in the order they should appear in to Struct to DBus.
+ */
 public abstract class Struct
 {
    private String sig = null;
@@ -34,24 +41,34 @@ public abstract class Struct
       sig = "";
       for (Type t: ts)
          if (null != t)
-            sig += DBusConnection.getDBusType(t);
+            for (String s: DBusConnection.getDBusType(t))
+               sig += s;
 
       this.parameters = new Object[args.length - diff];
       for (int i = 0; i < parameters.length; i++)
          parameters[i] = args[i];
    }
+   /**
+    * Returns the struct contents in order.
+    * @throws DBusException If there is  a problem doing this.
+    */
    public final Object[] getParameters() throws DBusException
    {
       if (null != parameters) return parameters;
       setup();
       return parameters;
    }
+   /**
+    * Returns the DBus signatures of the struct contents.
+    * @throws DBusException If there is  a problem doing this.
+    */
    public final String getSig() throws DBusException
    {
       if (null != sig) return sig;
       setup();
       return sig;
    }
+   /** Returns this struct as a string. */
    public final String toString()
    {
       String s = getClass().getName()+"<";

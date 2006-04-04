@@ -104,18 +104,18 @@ class ExportedObject
                         introspectiondata +=
                            "   <annotation type=\"org.freedesktop.DBus.Method.Error\" value=\""+ex.getName().replaceAll("[$]",".")+"\" />\n";
                   for (Type pt: meth.getGenericParameterTypes())
-                     introspectiondata +=
-                        "   <arg type=\""+DBusConnection.getDBusType(pt)+"\" direction=\"in\"/>\n";
+                     for (String s: DBusConnection.getDBusType(pt))
+                        introspectiondata += "   <arg type=\""+s+"\" direction=\"in\"/>\n";
                   if (!Void.TYPE.equals(meth.getGenericReturnType())) {
                      if (Tuple.class.isAssignableFrom((Class) meth.getReturnType())) {
                         for (Type t: ((ParameterizedType) meth.getGenericReturnType()).getActualTypeArguments())
-                           introspectiondata +=
-                              "   <arg type=\""+DBusConnection.getDBusType(t)+"\" direction=\"out\"/>\n";
+                           for (String s: DBusConnection.getDBusType(t))
+                              introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
                      } else if (Object[].class.equals(meth.getGenericReturnType())) {
                         throw new DBusException("Return type of Object[] cannot be introspected properly");
                      } else
-                        introspectiondata +=
-                        "   <arg type=\""+DBusConnection.getDBusType(meth.getGenericReturnType())+"\" direction=\"out\"/>\n";
+                        for (String s: DBusConnection.getDBusType(meth.getGenericReturnType()))
+                        introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
                   }
                   introspectiondata += "  </method>\n";
                }
@@ -126,7 +126,8 @@ class ExportedObject
                   //Constructor con = org.freedesktop.dbus.test.TestSignalInterface.TestSignal.class.getConstructors()[0];
                   Type[] ts = con.getGenericParameterTypes();
                   for (int j = 1; j < ts.length; j++)
-                     introspectiondata += "   <arg type=\""+DBusConnection.getDBusType(ts[j])+"\" direction=\"out\" />\n";
+                     for (String s: DBusConnection.getDBusType(ts[j]))
+                        introspectiondata += "   <arg type=\""+s+"\" direction=\"out\" />\n";
                   introspectiondata += getAnnotations(sig);
                   introspectiondata += "  </signal>\n";
 
@@ -387,7 +388,7 @@ public class DBusConnection
     * @return The DBus type.
     * @throws DBusException If the given type cannot be converted to a DBus type.
     */
-   public static String getDBusType(Type c) throws DBusException
+   public static String[] getDBusType(Type c) throws DBusException
    {
       return getDBusType(c, false);
    }
@@ -400,7 +401,7 @@ public class DBusConnection
     * @return The DBus type.
     * @throws DBusException If the given type cannot be converted to a DBus type.
     */
-   public static String getDBusType(Type c, boolean basic) throws DBusException
+   public static String[] getDBusType(Type c, boolean basic) throws DBusException
    {
       StringBuffer out = new StringBuffer();
 
@@ -410,7 +411,9 @@ public class DBusConnection
       if (c instanceof TypeVariable) out.append('v');
       else if (c instanceof GenericArrayType) {
          out.append('a');
-         out.append(getDBusType(((GenericArrayType) c).getGenericComponentType()));
+         String[] s = getDBusType(((GenericArrayType) c).getGenericComponentType());
+         if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
+         out.append(s[0]);
       }
       else if (c instanceof ParameterizedType) {
          ParameterizedType p = (ParameterizedType) c;
@@ -418,8 +421,12 @@ public class DBusConnection
             out.append("a{");
             Type[] t = p.getActualTypeArguments();
             try {
-               out.append(getDBusType(t[0], true));
-               out.append(getDBusType(t[1], false));
+               String[] s = getDBusType(t[0], true);
+               if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
+               out.append(s[0]);
+               s = getDBusType(t[1], false);
+               if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
+               out.append(s[0]);
             } catch (ArrayIndexOutOfBoundsException AIOOBe) {
                throw new DBusException("Map must have 2 parameters");
             }
@@ -427,8 +434,11 @@ public class DBusConnection
          }
          else if (List.class.isAssignableFrom((Class) p.getRawType())) {
             out.append('a');
-            for (Type t: p.getActualTypeArguments())
-               out.append(getDBusType(t, false));
+            for (Type t: p.getActualTypeArguments()) {
+               String[] s = getDBusType(t, false);
+               if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
+               out.append(s[0]);
+            }
          } 
          else if (p.getRawType().equals(Variant.class)) {
             out.append('v');
@@ -461,7 +471,9 @@ public class DBusConnection
             DBusInterface.class.isAssignableFrom((Class) c)) out.append('o');
       else if (c instanceof Class && ((Class) c).isArray()) {
          out.append('a');
-         out.append(getDBusType(((Class) c).getComponentType(), false));
+         String[] s = getDBusType(((Class) c).getComponentType(), false);
+         if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
+         out.append(s[0]);
       } else if (c instanceof Class && 
             Struct.class.isAssignableFrom((Class) c)) {
          out.append('(');
@@ -475,14 +487,39 @@ public class DBusConnection
 
          for (Type t: ts)
             if (t != null)
-               out.append(getDBusType(t, false));
+               for (String s: getDBusType(t, false))
+                  out.append(s);
          out.append(')');
-      }
-      else {
+      } else if ((c instanceof Class && 
+            DBusSerializable.class.isAssignableFrom((Class) c)) ||
+            (c instanceof ParameterizedType &&
+             DBusSerializable.class.isAssignableFrom((Class) ((ParameterizedType) c).getRawType()))) {
+         // it's a custom serializable type
+         Type[] newtypes = null;
+         if (c instanceof Class)  {
+            for (Method m: ((Class) c).getDeclaredMethods()) 
+               if (m.getName().equals("deserialize")) 
+                  newtypes = m.getGenericParameterTypes();
+         }
+         else 
+            for (Method m: ((Class) ((ParameterizedType) c).getRawType()).getDeclaredMethods()) 
+               if (m.getName().equals("deserialize")) 
+                  newtypes = m.getGenericParameterTypes();
+
+         if (null == newtypes) throw new DBusException("Serializable classes must implement a deserialize method");
+
+         String[] sigs = new String[newtypes.length];
+         for (int j = 0; j < sigs.length; j++) {
+            String[] ss = getDBusType(newtypes[j], false);
+            if (1 != ss.length) throw new DBusException("Serializable classes must serialize to native DBus types");
+            sigs[j] = ss[0];
+         }
+         return sigs;
+      } else {
          throw new DBusException("Exporting non-exportable type "+c);
       }
 
-      return out.toString();
+      return new String[] { out.toString() };
    }
    /**
     * Converts a dbus type string into a Java type name, 
@@ -612,10 +649,30 @@ public class DBusConnection
          throw new DBusException("Failed to parse DBus type signature: "+dbus);
       }
    }
-   static Object[] convertParameters(Object[] parameters, Type[] types) throws Exception
+   /**
+    * Recursively converts types for serialization onto DBus.
+    * @param parameters The parameters to convert.
+    * @param types The (possibly generic) types of the parameters.
+    * @return The converted parameters.
+    * @throws DBusException Thrown if there is an error in converting the objects.
+    */
+   public static Object[] convertParameters(Object[] parameters, Type[] types) throws DBusException
    {
       if (null == parameters) return null;
       for (int i = 0; i < parameters.length; i++) {
+
+         if (types[i] instanceof Class &&
+               DBusSerializable.class.isAssignableFrom((Class) types[i])) {
+            for (Method m: ((Class) types[i]).getDeclaredMethods()) 
+               if (m.getName().equals("deserialize")) {
+                  Type[] newtypes = m.getGenericParameterTypes();
+                  Type[] expand = new Type[types.length + newtypes.length - 1];
+                  System.arraycopy(types, 0, expand, 0, i); 
+                  System.arraycopy(newtypes, 0, expand, i, newtypes.length); 
+                  System.arraycopy(types, i+1, expand, i+newtypes.length, types.length-i-1); 
+                  types = expand;
+               }
+         }
          
          // its an unwrapped variant, wrap it
          if (types[i] instanceof TypeVariable &&
@@ -648,7 +705,11 @@ public class DBusConnection
                }
                Object[] oldparams = ((Struct) parameters[i]).getParameters();
                Object[] newparams = convertParameters(oldparams, ts);
-               parameters[i] = con.newInstance(newparams);
+               try {
+                  parameters[i] = con.newInstance(newparams);
+               } catch (Exception e) {
+                  throw new DBusException("Failure in serializing parameters: "+e.getMessage());
+               }
             }
          }
          else if (types[i] instanceof GenericArrayType &&
@@ -662,10 +723,32 @@ public class DBusConnection
       }
       return parameters;
    }
-   static Object[] deSerialiseParameters(Object[] parameters, Type[] types) throws Exception
+   static Object[] deSerializeParameters(Object[] parameters, Type[] types) throws Exception
    {
       if (null == parameters) return null;
       for (int i = 0; i < parameters.length; i++) {
+
+         if (types[i] instanceof Class &&
+               DBusSerializable.class.isAssignableFrom((Class) types[i])) {
+            for (Method m: ((Class) types[i]).getDeclaredMethods()) 
+               if (m.getName().equals("deserialize")) {
+                  Type[] newtypes = m.getGenericParameterTypes();
+                  try {
+                     Object[] sub = new Object[newtypes.length];
+                     System.arraycopy(parameters, i, sub, 0, newtypes.length); 
+                     sub = deSerializeParameters(sub, newtypes);
+                     DBusSerializable sz = (DBusSerializable) ((Class) types[i]).newInstance();
+                     m.invoke(sz, sub);
+                     Object[] compress = new Object[parameters.length - newtypes.length + 1];
+                     System.arraycopy(parameters, 0, compress, 0, i);
+                     compress[i] = sz;
+                     System.arraycopy(parameters, i + newtypes.length, compress, i+1, parameters.length - i - newtypes.length);
+                     parameters = compress;
+                  } catch (ArrayIndexOutOfBoundsException AIOOBe) {
+                     throw new DBusException("Not enough elements to create custom object from serialized data ("+(parameters.length-i)+" < "+(newtypes.length)+")");
+                  }
+               }
+         }
          
          // its a wrapped variant, unwrap it
          if (types[i] instanceof TypeVariable 
@@ -695,7 +778,7 @@ public class DBusConnection
             }
 
             // recurse over struct contents
-            parameters[i] = deSerialiseParameters((Object[]) parameters[i], ts);
+            parameters[i] = deSerializeParameters((Object[]) parameters[i], ts);
             for (Constructor con: ((Class) types[i]).getDeclaredConstructors()) {
                try {
                   parameters[i] = con.newInstance((Object[]) parameters[i]);
@@ -708,7 +791,7 @@ public class DBusConnection
          if (parameters[i] instanceof Object[]) {
             Type[] ts = new Type[((Object[]) parameters[i]).length];
             Arrays.fill(ts, parameters[i].getClass().getComponentType());
-            parameters[i] = deSerialiseParameters((Object[]) parameters[i],
+            parameters[i] = deSerializeParameters((Object[]) parameters[i],
                   ts);
          }
 
@@ -1055,11 +1138,10 @@ public class DBusConnection
 
       try {
          Type[] ts = meth.getGenericParameterTypes();
-         m.parameters = deSerialiseParameters(m.parameters, ts);
+         m.parameters = deSerializeParameters(m.parameters, ts);
       } catch (Exception e) {
-         e.printStackTrace();
          synchronized (outgoing) {
-            outgoing.addLast(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serialising message ("+e+")"))); }
+            outgoing.addLast(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); }
       }
 
       // now execute it

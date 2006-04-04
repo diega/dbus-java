@@ -61,7 +61,9 @@ class MapContainer
       c = (Class) ts[0];
       keys = m.keySet().toArray((Object[]) Array.newInstance(c, 0));
 
-      sig += DBusConnection.getDBusType(ts[0]);
+      String[] s = DBusConnection.getDBusType(ts[0]);
+      if (1 != s.length) throw new DBusException("List Contents not single type");
+      sig += s[0];
 
       if (ts[1] instanceof Class)
          c = (Class) ts[1];
@@ -83,7 +85,9 @@ class MapContainer
          throw new DBusException(e.getMessage());
       }
 
-      sig += DBusConnection.getDBusType(ts[1]);
+      s = DBusConnection.getDBusType(ts[1]);
+      if (1 != s.length) throw new DBusException("List Contents not single type");
+      sig += s[0];
       sig += '}';
 
       this.map = m;
@@ -99,8 +103,8 @@ class MapContainer
       this.map = new HashMap();
       for (int i = 0; i < keys.length; i++) {
          this.map.put(
-               DBusConnection.deSerialiseParameters(new Object[] { this.keys[i] }, new Type[] { ts[0] })[0],
-               DBusConnection.deSerialiseParameters(new Object[] { this.values[i] }, new Type[] { ts[1] })[0]);
+               DBusConnection.deSerializeParameters(new Object[] { this.keys[i] }, new Type[] { ts[0] })[0],
+               DBusConnection.deSerializeParameters(new Object[] { this.values[i] }, new Type[] { ts[1] })[0]);
       }
       return map; 
    }

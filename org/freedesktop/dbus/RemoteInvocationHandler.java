@@ -31,11 +31,11 @@ class RemoteInvocationHandler implements InvocationHandler
          case 1:
 
             try { 
-               rp = DBusConnection.deSerialiseParameters(rp, 
+               rp = DBusConnection.deSerializeParameters(rp, 
                      new Type[] { m.getGenericReturnType() });
             }
             catch (Exception e) { 
-               throw new DBusExecutionException("Wrong return type (failed to de-serialise correct types: "+e.getMessage()+")");
+               throw new DBusExecutionException("Wrong return type (failed to de-serialize correct types: "+e.getMessage()+")");
             }
 
             return rp[0];
@@ -55,7 +55,7 @@ class RemoteInvocationHandler implements InvocationHandler
             Constructor con;
             try { 
                // convert everything to the correct types
-               rp = DBusConnection.deSerialiseParameters(rp, ts);
+               rp = DBusConnection.deSerializeParameters(rp, ts);
 
                con = ((Class) p.getRawType()).getDeclaredConstructors()[0]; 
             }

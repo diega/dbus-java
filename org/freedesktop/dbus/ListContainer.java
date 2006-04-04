@@ -60,7 +60,9 @@ class ListContainer
          throw new DBusException(e.getMessage());
       }
 
-      sig = DBusConnection.getDBusType(ts[0]);
+      String[] s = DBusConnection.getDBusType(ts[0]);
+      if (1 != s.length) throw new DBusException("List Contents not single type");
+      sig = s[0];
 
       this.list = l;
    }
@@ -84,7 +86,7 @@ class ListContainer
 
       this.list = new Vector();
       for (int i = 0; i < values.length; i++) {
-         this.list.add(DBusConnection.deSerialiseParameters(new Object[] { this.values[i] }, new Type[] { ts[0] })[0]);
+         this.list.add(DBusConnection.deSerializeParameters(new Object[] { this.values[i] }, new Type[] { ts[0] })[0]);
       }
       return list; 
    }

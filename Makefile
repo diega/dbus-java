@@ -41,7 +41,7 @@ viewerclasses: .viewerclasses
 	-mkdir classes
 	$(JAVAC) -d classes $(JCFLAGS) $(SRCDIR)/dbus/viewer/*.java
 	touch .viewerclasses 
-.classes: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java
+.classes: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java  
 	-mkdir classes
 	$(JAVAC) -d classes $(JCFLAGS) $^
 	touch .classes

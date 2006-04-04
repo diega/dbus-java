@@ -149,6 +149,17 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    {
       throw new TestException("test");
    }
+   public void testSerializable(TestSerializable s)
+   {
+      System.out.println("Recieving TestSerializable: "+s);
+      if (  !(s.getInt() == 1)
+         || !(s.getString().equals("woo"))
+         || !(s.getVector().size() == 3)
+         || !((Integer) s.getVector().get(0) == 1)
+         || !((Integer) s.getVector().get(1) == 2)
+         || !((Integer) s.getVector().get(2) == 3)    )
+         test.fail("Error in recieving custom synchronisation");
+   }
 }
 
 /**
@@ -357,6 +368,16 @@ public class test
       System.out.print("Sending Array Signal...");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
       conn.sendSignal(new TestSignalInterface.TestArraySignal("/foo/bar/com/Wibble", new TestStruct2(l, new Variant(new UInt64(567)))));
+      
+      System.out.println("done");
+
+      System.out.print("testing custom serialization...");
+      Vector v = new Vector();
+      v.add(1);
+      v.add(2);
+      v.add(3);
+      TestSerializable s = new TestSerializable(1, "woo", v);
+      tri2.testSerializable(s);
       
       System.out.println("done");
 

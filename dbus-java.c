@@ -646,7 +646,6 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
             mid = (*env)->GetStaticMethodID(env, dsigclass, "createSignal", "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;J[Ljava/lang/Object;)Lorg/freedesktop/dbus/DBusSignal;");
             jmsg = (*env)->CallStaticObjectMethod(env, dsigclass, mid, sigclass, source, objectpath, serial, params);
          }
-         (*env)->ExceptionDescribe(env);
          
          if (NULL != params)
             (*env)->DeleteLocalRef(env, params);
@@ -696,6 +695,7 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
    jclass structclass = (*env)->FindClass(env, "org/freedesktop/dbus/Struct");
    jclass listclass = (*env)->FindClass(env, "org/freedesktop/dbus/ListContainer");
    jclass mapclass = (*env)->FindClass(env, "org/freedesktop/dbus/MapContainer");
+   jclass serialclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusSerializable");
 
    for (i = 0; i < len; i++) { 
       item = (*env)->GetObjectArrayElement(env, params, i);
@@ -845,9 +845,12 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          mid = (*env)->GetMethodID(env, clazzclass, "isPrimitive", "()Z");
          if ((*env)->CallBooleanMethod(env, vitem, mid))
             return -1;
-         mid = (*env)->GetStaticMethodID(env, dbcclass, "getDBusType", "(Ljava/lang/reflect/Type;)Ljava/lang/String;");
-         sig = (*env)->CallStaticObjectMethod(env, dbcclass, mid, vitem);
+         mid = (*env)->GetStaticMethodID(env, dbcclass, "getDBusType", "(Ljava/lang/reflect/Type;)[Ljava/lang/String;");
+         values = (*env)->CallStaticObjectMethod(env, dbcclass, mid, vitem);
          if ((*env)->ExceptionOccurred(env)) return -1;
+         if (1 != (*env)->GetArrayLength(env, values)) return -1;
+         sig = (*env)->GetObjectArrayElement(env, values, 0);
+         
          cstringval = (*env)->GetStringUTFChars(env, sig, 0);
          
          dbus_message_iter_open_container(args, DBUS_TYPE_ARRAY, cstringval, &sub);
@@ -857,6 +860,7 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          (*env)->DeleteLocalRef(env, vitem);
          (*env)->ReleaseStringUTFChars(env, sig, cstringval);
          (*env)->DeleteLocalRef(env, sig);
+         (*env)->DeleteLocalRef(env, values);
       }
       else if ((*env)->IsInstanceOf(env, item, structclass)) {
          mid = (*env)->GetMethodID(env, clazz, "getParameters", "()[Ljava/lang/Object;");
@@ -892,9 +896,11 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          // get its type
          (*env)->DeleteLocalRef(env, clazz);
          clazz = (*env)->GetObjectClass(env, vitem);
-         mid = (*env)->GetStaticMethodID(env, dbcclass, "getDBusType", "(Ljava/lang/reflect/Type;)Ljava/lang/String;");
-         sig = (*env)->CallStaticObjectMethod(env, dbcclass, mid, clazz);
+         mid = (*env)->GetStaticMethodID(env, dbcclass, "getDBusType", "(Ljava/lang/reflect/Type;)[Ljava/lang/String;");
+         values = (*env)->CallStaticObjectMethod(env, dbcclass, mid, clazz);
          if ((*env)->ExceptionOccurred(env)) return -1;
+         if (1 != (*env)->GetArrayLength(env, values)) return -1;
+         sig = (*env)->GetObjectArrayElement(env, values, 0);
          cstringval = (*env)->GetStringUTFChars(env, sig, 0);
 
          // add container
@@ -906,6 +912,7 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          (*env)->DeleteLocalRef(env, sig);
          (*env)->ReleaseStringUTFChars(env, sig, cstringval);
          (*env)->DeleteLocalRef(env, members);
+         (*env)->DeleteLocalRef(env, values);
       }
       else if ((*env)->IsInstanceOf(env, item, dbiclass)) {
          mid = (*env)->GetMethodID(env, dbcclass, "getExportedObject", "(Lorg/freedesktop/dbus/DBusInterface;)Ljava/lang/String;");
@@ -916,6 +923,16 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
             return -1;
          (*env)->ReleaseStringUTFChars(env, vitem, cstringval);
          (*env)->DeleteLocalRef(env, vitem);
+      }
+      else if ((*env)->IsInstanceOf(env, item, serialclass)) {
+         
+         // get members
+         mid = (*env)->GetMethodID(env, serialclass, "serialize", "()[Ljava/lang/Object;");
+         values = (*env)->CallObjectMethod(env, item, mid);
+         
+         if (0 > append_args(env, args, values, connobj)) return -1;
+
+         (*env)->DeleteLocalRef(env, values);
       }
       else {
          fprintf(stderr, "Unknown type %s\n", ctype);
@@ -929,6 +946,10 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
    (*env)->DeleteLocalRef(env, structclass);
    (*env)->DeleteLocalRef(env, listclass);
    (*env)->DeleteLocalRef(env, mapclass);
+   (*env)->DeleteLocalRef(env, serialclass);
+   (*env)->DeleteLocalRef(env, objectclass);
+   (*env)->DeleteLocalRef(env, dbcclass);
+   (*env)->DeleteLocalRef(env, dbiclass);
    return 0;
 }
 

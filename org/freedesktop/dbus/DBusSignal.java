@@ -35,7 +35,7 @@ public abstract class DBusSignal extends DBusMessage
             types[i-1] = ts[i];
 
       try {
-         parameters = DBusConnection.deSerialiseParameters(parameters, types);
+         parameters = DBusConnection.deSerializeParameters(parameters, types);
          if (null == parameters) return con.newInstance(objectpath);
          else {
             Object[] args = new Object[parameters.length + 1];
