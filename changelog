@@ -1,6 +1,7 @@
 Version 1.6:
 
 	* Custom serializable objects
+	* Thread pool model
 
 Version 1.5:
 	

@@ -289,6 +289,27 @@ public class DBusConnection
          "</node>";
       }
    }
+   private class _workerthread extends Thread
+   {
+      private boolean _run = true;
+      public void halt()
+      {
+         _run = false;
+      }
+      public void run()
+      {
+        while (_run) {
+           Runnable r = null;
+           synchronized (runnables) {
+              while (runnables.size() == 0 && _run) 
+                 try { runnables.wait(); } catch (InterruptedException Ie) {}
+              if (runnables.size() > 0)
+                 r = runnables.removeFirst();
+           }
+           if (null != r) r.run();
+        }
+      }
+   }
    /**
     * System Bus
     */
@@ -305,12 +326,15 @@ public class DBusConnection
    static final String SERVICE_REGEX = "^[-_a-zA-Z][-_a-zA-Z0-9]*(\\.[-_a-zA-Z][-_a-zA-Z0-9]*)*$";
    static final String CONNID_REGEX = "^:[0-9]*\\.[0-9]*$";
    static final String OBJECT_REGEX = "^/([-_a-zA-Z0-9]+(/[-_a-zA-Z0-9]+)*)?$";
+   static final byte THREADCOUNT = 4;
 
    private Map<String,ExportedObject> exportedObjects;
    private Map<DBusInterface,RemoteObject> importedObjects;
    private Map<SignalTuple,Vector<DBusSigHandler>> handledSignals;
    private Map<Long,MethodCall> pendingCalls;
    private Vector<String> servicenames;
+   private LinkedList<Runnable> runnables;
+   private LinkedList<_workerthread> workers;
    private boolean _run;
    private int connid;
    LinkedList<DBusMessage> outgoing;
@@ -833,6 +857,15 @@ public class DBusConnection
       servicenames = new Vector<String>();
       outgoing = new LinkedList<DBusMessage>();
       pendingErrors = new LinkedList<DBusErrorMessage>();
+      runnables = new LinkedList<Runnable>();
+      workers = new LinkedList<_workerthread>();
+      synchronized (workers) {
+         for (int i = 0; i < THREADCOUNT; i++) {
+            _workerthread t = new _workerthread();
+            t.start();
+            workers.add(t);
+         }
+      }
       _run = true;
       synchronized (_reflock) {
          _refcount = 1; 
@@ -881,6 +914,38 @@ public class DBusConnection
       }
       // register disconnect handlers
       addSigHandler(org.freedesktop.DBus.Local.Disconnected.class, new _sighandler());
+   }
+
+   /**
+    * Change the number of worker threads to receive method calls and handle signals.
+    * Default is 4 threads
+    * @param newcount The new number of worker Threads to use.
+    */
+   public void changeThreadCount(byte newcount)
+   {
+      synchronized (workers) {
+         if (workers.size() > newcount) {
+            int n = workers.size() - newcount;
+            for (int i = 0; i < n; i++) {
+               _workerthread t = workers.removeFirst();
+               t.halt();
+            }
+         } else if (workers.size() < newcount) {
+            int n = newcount-workers.size();
+            for (int i = 0; i < n; i++) {
+               _workerthread t = new _workerthread();
+               t.start();
+               workers.add(t);
+            }
+         }
+      }
+   }
+   private void addRunnable(Runnable r)
+   {
+      synchronized(runnables) {
+         runnables.add(r);
+         runnables.notifyAll();
+      }
    }
 
    String getExportedObject(DBusInterface i) throws DBusException
@@ -1046,12 +1111,23 @@ public class DBusConnection
       synchronized (conn) {
          synchronized (_reflock) {
             if (0 == --_refcount) {
+               while (runnables.size() > 0)
+                  synchronized (runnables) {
+                     runnables.notifyAll();
+                  }
                _run = false;
                try {
                   synchronized (thread) { thread.wait(); }
                } catch (InterruptedException Ie) {}
                dbus_disconnect(connid);
                conn.remove(connkey);
+               synchronized(workers) {
+                  for (_workerthread t: workers)
+                     t.halt();
+               }
+               synchronized (runnables) {
+                  runnables.notifyAll();
+               }
             }
          }
       }
@@ -1150,7 +1226,7 @@ public class DBusConnection
       final LinkedList<DBusMessage> outqueue = outgoing;
       final boolean noreply = (1 == (m.getFlags() & MethodCall.NO_REPLY));
       final DBusCallInfo info = new DBusCallInfo(m);
-      new Thread() 
+      addRunnable(new Runnable() 
       { 
          public void run() 
          { 
@@ -1189,21 +1265,22 @@ public class DBusConnection
                }
             } 
          }
-      }.start();
+      });
    }
 
    private void handleMessage(final DBusSignal s)
    {
-      final Vector<DBusSigHandler> v;
+      Vector<DBusSigHandler> v;
       synchronized(handledSignals) {
          v = handledSignals.get(new SignalTuple(s.getType(), s.getName()));
       }
       if (null == v) return;
-      new Thread() { public void run() {
-         for (DBusSigHandler h: v) {
-            h.handle(s); 
-         }
-      } }.start();
+      for (final DBusSigHandler h: v)
+         addRunnable(new Runnable() { public void run() {
+            {
+               h.handle(s); 
+            }
+         } });
    }
    private void handleMessage(final DBusErrorMessage err)
    {
