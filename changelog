@@ -2,6 +2,7 @@ Version 1.6:
 
 	* Custom serializable objects
 	* Thread pool model
+	* CreateInterfaces updated to handle new Structs, annotations, Signals etc
 
 Version 1.5:
 	

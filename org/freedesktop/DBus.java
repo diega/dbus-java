@@ -278,4 +278,19 @@ public interface DBus extends DBusInterface
          String value();
       }
    }
+   /**
+    * Contains GLib-specific annotations
+    */
+   public interface GLib
+   {
+      /**
+       * Define a C symbol to map to this method. Used by GLib only
+       */
+      @Target(ElementType.METHOD)
+      @Retention(RetentionPolicy.RUNTIME)
+      public @interface CSymbol
+      {
+         String value();
+      }
+   }
 }

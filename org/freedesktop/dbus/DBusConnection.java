@@ -102,7 +102,7 @@ class ExportedObject
                   for (Class ex: meth.getExceptionTypes())
                      if (DBusExecutionException.class.isAssignableFrom(ex))
                         introspectiondata +=
-                           "   <annotation type=\"org.freedesktop.DBus.Method.Error\" value=\""+ex.getName().replaceAll("[$]",".")+"\" />\n";
+                           "   <annotation name=\"org.freedesktop.DBus.Method.Error\" value=\""+ex.getName().replaceAll("[$]",".")+"\" />\n";
                   for (Type pt: meth.getGenericParameterTypes())
                      for (String s: DBusConnection.getDBusType(pt))
                         introspectiondata += "   <arg type=\""+s+"\" direction=\"in\"/>\n";
@@ -556,52 +556,22 @@ public class DBusConnection
     * @param container Indicates this is a container type and no primitive types should be used.
     * @param fullnames Will return fully qualified type names if true.
     */
-   public static String getJavaType(String dbus, Set<String> imports, Map<String,Integer> structs, boolean container, boolean fullnames) throws DBusException
+   public static String getJavaType(String dbus, Set<String> imports, Map<StructStruct,String> structs, boolean container, boolean fullnames) throws DBusException
    {
       if (null == dbus || "".equals(dbus)) return "";
       
       try {
          switch(dbus.charAt(0)) {
             case '(':
-               int elements = 0;
-               String types="<";
-               String s = dbus.substring(1, dbus.length()-1);
-               for (int i = 0; i < s.length(); i++) {
-                  switch (s.charAt(i)) {
-                     case 'a':
-                        if ('{' == s.charAt(i+1)) {
-                           int j, c;
-                           for (j = i+2, c = 1; c > 0; j++)
-                              if ('{' == s.charAt(j)) c++; 
-                              else if ('}' == s.charAt(j)) c--;
-                           types += getJavaType(s.substring(i,j+1), imports, structs, true, false) +  ", ";
-                           i=j;
-                        } else {
-                           types += getJavaType(s.substring(i,i+2), imports, structs, true, false) + ", ";
-                           i++;
-                        }
-                        elements++;
-                        break;
-                        
-                     case '(':
-                        int j, c;
-                        for (j = i+1, c = 1; c > 0; j++)
-                           if ('(' == s.charAt(j)) c++;
-                           else if (')' == s.charAt(j)) c--;
-                        types += getJavaType(s.substring(i,j+1), imports, structs, true, false) +  ", ";                    
-                        elements++;
-                        i=j;
-                        break;
-
-                     default:
-                        types += getJavaType(s.substring(i,i+1), imports, structs, true, false) + ", ";
-                        elements++;
-                  }
+               String name = "Struct";
+               if (null != structs) {
+                  int num = 1;
+                  while (null != structs.get(new StructStruct(name+num))) num++;
+                  name = name+num;
+                  structs.put(new StructStruct(name), dbus.substring(1, dbus.length()-1));
                }
-               String name = "Struct"+elements;
-               if (null != structs) structs.put(name, elements);
                if (fullnames) return "org.freedesktop.dbus.Struct";
-               else return name + types.replaceAll(", $", ">");
+               else return name;
             case 'a':
                if ('{' == dbus.charAt(1)) {
                   if (null != imports) imports.add("java.utils.Map");

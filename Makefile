@@ -20,8 +20,8 @@ BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
 
-VERSION = 1.5
-RELEASEVERSION = 1.5
+VERSION = 1.6
+RELEASEVERSION = 1.6
  
 all: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 
