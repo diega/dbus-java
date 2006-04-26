@@ -22,4 +22,6 @@ public interface TestRemoteInterface2 extends DBusInterface
    public boolean check();
    @Description("Test Serializable Object")
    public void testSerializable(byte b, TestSerializable s, int i);
+   @Description("Call another method on itself from within a call")
+   public String recursionTest();
 }

@@ -25,6 +25,11 @@ import org.freedesktop.DBus.Introspectable;
 
 class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignalInterface
 {
+   private DBusConnection conn;
+   public testclass(DBusConnection conn)
+   {
+      this.conn = conn;
+   }
    public void waitawhile()
    {
       System.out.println("Sleeping.");
@@ -39,7 +44,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
       if (!(in instanceof Integer) || ((Integer) in).intValue() != 234)
          test.fail("show received the wrong arguments");
       DBusCallInfo info = DBusConnection.getCallInfo();
-      return new TestTuple(info.getSource(), 28165, true);
+      return new TestTuple<String, Integer, Boolean>(info.getSource(), 28165, true);
    }
    public <T> T dostuff(TestStruct foo)
    {
@@ -162,6 +167,16 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
          || !((Integer) s.getVector().get(2) == 3)    )
          test.fail("Error in recieving custom synchronisation");
    }
+   public String recursionTest()
+   {
+      try {
+         TestRemoteInterface tri = (TestRemoteInterface) conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface.class);
+         return tri.getName();
+      } catch (DBusException DBe) {
+         test.fail("Failed with error: "+DBe);
+         return "";
+      }
+   }
 }
 
 /**
@@ -237,7 +252,7 @@ public class test
       }
       
       System.out.println("Listening for Method Calls");
-      testclass tclass = new testclass();
+      testclass tclass = new testclass(conn);
       /** This exports an instance of the test class as the object /Test. */
       conn.exportObject("/Test", tclass);
       
@@ -334,7 +349,7 @@ public class test
 
       
       System.out.println("Doing stuff asynchronously");
-      DBusAsyncReply<Boolean> stuffreply = conn.callMethodAsync(tri2, "dostuff", new TestStruct("bar", new UInt32(52), new Variant<Boolean>(new Boolean(true))));
+      DBusAsyncReply<Boolean> stuffreply = (DBusAsyncReply<Boolean>) conn.callMethodAsync(tri2, "dostuff", new TestStruct("bar", new UInt32(52), new Variant<Boolean>(new Boolean(true))));
 
       System.out.println("Checking bools");
       if (tri2.check()) fail("bools are broken");
@@ -369,17 +384,23 @@ public class test
       
       System.out.print("Sending Array Signal...");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
-      conn.sendSignal(new TestSignalInterface.TestArraySignal("/foo/bar/com/Wibble", new TestStruct2(l, new Variant(new UInt64(567)))));
+      conn.sendSignal(new TestSignalInterface.TestArraySignal("/foo/bar/com/Wibble", new TestStruct2(l, new Variant<UInt64>(new UInt64(567)))));
       
       System.out.println("done");
 
       System.out.print("testing custom serialization...");
-      Vector v = new Vector();
+      Vector<Integer> v = new Vector<Integer>();
       v.add(1);
       v.add(2);
       v.add(3);
-      TestSerializable s = new TestSerializable(1, "woo", v);
+      TestSerializable<String> s = new TestSerializable<String>(1, "woo", v);
       tri2.testSerializable((byte) 12, s, 13);
+      
+      System.out.println("done");
+      
+      System.out.print("testing recursion...");
+      
+      if (!"This Is A Name!!".equals(tri2.recursionTest())) fail("recursion test failed");
       
       System.out.println("done");
 
