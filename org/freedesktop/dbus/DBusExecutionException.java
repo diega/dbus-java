@@ -3,6 +3,7 @@ package org.freedesktop.dbus;
 /**
  * An exception while running a remote method within DBus.
  */
+@SuppressWarnings("serial")
 public class DBusExecutionException extends RuntimeException
 {
    private String type;

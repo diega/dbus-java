@@ -3,6 +3,7 @@ package org.freedesktop.dbus;
 /**
  * An exception within DBus.
  */
+@SuppressWarnings("serial")
 public class DBusException extends Exception
 {
    /**

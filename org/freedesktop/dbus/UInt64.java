@@ -9,6 +9,7 @@ package org.freedesktop.dbus;
  * is not a problem since if you could there would
  * be no way of getting the number out again anyway.
  */
+@SuppressWarnings("serial")
 public class UInt64 extends Number implements Comparable<UInt64>
 {
    /** Maximum allowed value */

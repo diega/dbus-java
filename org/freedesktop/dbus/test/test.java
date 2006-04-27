@@ -46,6 +46,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
       DBusCallInfo info = DBusConnection.getCallInfo();
       return new TestTuple<String, Integer, Boolean>(info.getSource(), 28165, true);
    }
+   @SuppressWarnings("unchecked")
    public <T> T dostuff(TestStruct foo)
    {
       System.out.println("Doing Stuff "+foo);
@@ -233,6 +234,7 @@ public class test
       System.exit(1);
    }
    static DBusConnection conn = null;
+   @SuppressWarnings("unchecked")
    public static void main(String[] args) 
    { try {
       System.out.println("Creating Connection");

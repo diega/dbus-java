@@ -3,6 +3,7 @@ package org.freedesktop.dbus;
 /**
  * Class to represent 16-bit unsigned integers.
  */
+@SuppressWarnings("serial")
 public class UInt16 extends Number implements Comparable<UInt16>
 {
    /** Maximum possible value. */

@@ -3,6 +3,7 @@ package org.freedesktop.dbus;
 /**
  * Class to represent unsigned 32-bit numbers.
  */
+@SuppressWarnings("serial")
 public class UInt32 extends Number implements Comparable<UInt32>
 {
    /** Maximum allowed value */

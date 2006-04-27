@@ -14,7 +14,7 @@ class ListContainer
 {
    private Object[] values;
    private String sig;
-   private List list;
+   private List<Object> list;
    public ListContainer(Object[] content, String sig) throws DBusException
    {
       Class c;
@@ -34,7 +34,7 @@ class ListContainer
          this.values[i] = content[i];
       }
    }
-   public ListContainer(List l, ParameterizedType t) throws DBusException
+   public ListContainer(List<Object> l, ParameterizedType t) throws DBusException
    {
       Type[] ts = t.getActualTypeArguments();
       Class c;
@@ -84,7 +84,7 @@ class ListContainer
          return null;
       }
 
-      this.list = new Vector();
+      this.list = new Vector<Object>();
       for (int i = 0; i < values.length; i++) {
          this.list.add(DBusConnection.deSerializeParameters(new Object[] { this.values[i] }, new Type[] { ts[0] })[0]);
       }

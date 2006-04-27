@@ -24,7 +24,7 @@ public abstract class DBusSignal extends DBusMessage
    }
    static DBusSignal createSignal(Class<? extends DBusSignal> c, String source, String objectpath, long serial, Object... parameters) throws DBusException
    {
-      Constructor<? extends DBusSignal> con = c.getDeclaredConstructors()[0];
+      Constructor con = c.getDeclaredConstructors()[0];
       Type[] ts = con.getGenericParameterTypes();
       Type[] types = new Type[ts.length-1];
       for (int i = 1; i < ts.length; i++)
@@ -36,14 +36,14 @@ public abstract class DBusSignal extends DBusMessage
 
       try {
          parameters = DBusConnection.deSerializeParameters(parameters, types);
-         if (null == parameters) return con.newInstance(objectpath);
+         if (null == parameters) return (DBusSignal) con.newInstance(objectpath);
          else {
             Object[] args = new Object[parameters.length + 1];
             args[1] = objectpath;
             for (int i = 1; i < args.length; i++)
                args[i] = parameters[i-1];
 
-            return con.newInstance(args);
+            return (DBusSignal) con.newInstance(args);
          }
       } catch (Exception e) { 
          e.printStackTrace();

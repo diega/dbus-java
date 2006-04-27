@@ -62,11 +62,12 @@ class ArrayFrob
    {
       if (o instanceof Object[]) return listify((Object[]) o);
       if (!o.getClass().isArray()) throw new IllegalArgumentException("Not an array");
-      List l = new ArrayList(Array.getLength(o));
+      List<Object> l = new ArrayList<Object>(Array.getLength(o));
       for (int i = 0; i < Array.getLength(o); i++)
          l.add(Array.get(o, i));
       return l;
    }
+   @SuppressWarnings("unchecked")
    public static <T> T[] delist(List l, Class<T> c) throws IllegalArgumentException
    {
       return (T[]) l.toArray((T[]) Array.newInstance(c, 0));
@@ -78,7 +79,7 @@ class ArrayFrob
          Array.set(o, i, l.get(i));
       return o;
    }
-   public static Object convert(Object o, Class c) throws IllegalArgumentException
+   public static Object convert(Object o, Class<? extends Object> c) throws IllegalArgumentException
    {
       /* Possible Conversions:
        *

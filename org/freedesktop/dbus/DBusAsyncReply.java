@@ -17,7 +17,7 @@ public class DBusAsyncReply<ReturnType>
     */
    public static Collection<DBusAsyncReply> hasReply(Collection<DBusAsyncReply> replies)
    {
-      Collection<DBusAsyncReply> c = new ArrayList(replies);
+      Collection<DBusAsyncReply> c = new ArrayList<DBusAsyncReply>(replies);
       Iterator<DBusAsyncReply> i = c.iterator();
       while (i.hasNext())
          if (!i.next().hasReply()) i.remove();
@@ -33,6 +33,7 @@ public class DBusAsyncReply<ReturnType>
       this.mc = mc;
       this.me = me;
    }
+   @SuppressWarnings("unchecked")
    private synchronized void checkReply()
    {
       if (mc.hasReply()) {

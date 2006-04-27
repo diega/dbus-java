@@ -68,14 +68,14 @@ class DBusErrorMessage extends DBusMessage
     * Returns the destination of the error, if any.
     */
    public String getDestination() { return destination; }
-   private static native Class createExceptionClass(String name);
+   private static native Class<? extends DBusExecutionException> createExceptionClass(String name);
    /**
     * Turns this into an exception of the correct type
     */
    public DBusExecutionException getException()
    {
       try {
-         Class<? extends DBusExecutionException> c = (Class<? extends DBusExecutionException>) createExceptionClass(type);
+         Class<? extends DBusExecutionException> c = createExceptionClass(type);
          if (null == c) c = DBusExecutionException.class;
          Constructor<? extends DBusExecutionException> con = c.getConstructor(String.class);
          DBusExecutionException ex;

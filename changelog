@@ -1,3 +1,8 @@
+Version 1.7:
+	
+	* compiles with -Xlint:all
+	* fixed struct/nested struct creation
+
 Version 1.6:
 
 	* Custom serializable objects

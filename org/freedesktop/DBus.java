@@ -216,6 +216,7 @@ public interface DBus extends DBusInterface
       /**
        * Thrown if the method called was unknown on the remote object
        */
+      @SuppressWarnings("serial")
       public class UnknownMethod extends DBusExecutionException
       {
          public UnknownMethod(String message)
@@ -226,6 +227,7 @@ public interface DBus extends DBusInterface
       /**
        * Thrown if the object was unknown on a remote connection
        */
+      @SuppressWarnings("serial")
       public class UnknownObject extends DBusExecutionException
       {
          public UnknownObject(String message)
@@ -236,6 +238,7 @@ public interface DBus extends DBusInterface
       /**
        * Thrown if the requested service was not available
        */
+      @SuppressWarnings("serial")
       public class ServiceUnknown extends DBusExecutionException
       {
          public ServiceUnknown(String message)

@@ -650,6 +650,7 @@ public class DBusConnection
     * @return The converted parameters.
     * @throws DBusException Thrown if there is an error in converting the objects.
     */
+   @SuppressWarnings("unchecked")
    public static Object[] convertParameters(Object[] parameters, Type[] types) throws DBusException
    {
       if (null == parameters) return null;
@@ -671,7 +672,7 @@ public class DBusConnection
          // its an unwrapped variant, wrap it
          if (types[i] instanceof TypeVariable &&
                !(parameters[i] instanceof Variant)) {
-            parameters[i] = new Variant(parameters[i]);
+            parameters[i] = new Variant<Object>(parameters[i]);
          }
          
          // its something parameterised
@@ -681,11 +682,11 @@ public class DBusConnection
 
             // its a list, wrap it in our typed container class
             if (List.class.isAssignableFrom(r)) {
-               parameters[i] = new ListContainer((List) parameters[i], p);
+               parameters[i] = new ListContainer((List<Object>) parameters[i], p);
             }
             // its a map, wrap it in our typed container class
             else if (Map.class.isAssignableFrom(r)) {
-               parameters[i] = new MapContainer((Map) parameters[i], p);
+               parameters[i] = new MapContainer((Map<Object,Object>) parameters[i], p);
             }
             // its a struct, recurse over it
             else if (Struct.class.isAssignableFrom(r)) {
@@ -794,7 +795,7 @@ public class DBusConnection
                   parameters[i] instanceof List)) {
             if (types[i] instanceof ParameterizedType)
                parameters[i] = ArrayFrob.convert(parameters[i],
-                     (Class) ((ParameterizedType) types[i]).getRawType());
+                     (Class<? extends Object>) ((ParameterizedType) types[i]).getRawType());
             else if (types[i] instanceof GenericArrayType) {
                Type ct = ((GenericArrayType) types[i]).getGenericComponentType();
                Class cc = null;
@@ -841,6 +842,7 @@ public class DBusConnection
          _refcount = 1; 
       }
    }
+   @SuppressWarnings("unchecked")
    private DBusConnection(String address) throws DBusException
    {
       this();
@@ -864,6 +866,7 @@ public class DBusConnection
    }
 
 
+   @SuppressWarnings("unchecked")
    private DBusConnection(int bustype) throws DBusException
    {
       this();
@@ -1237,7 +1240,7 @@ public class DBusConnection
          }
       });
    }
-
+   @SuppressWarnings("unchecked")
    private void handleMessage(final DBusSignal s)
    {
       Vector<DBusSigHandler> v;

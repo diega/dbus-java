@@ -8,7 +8,7 @@ CC?=gcc
 LD?=ld
 DBUSLIB?=/usr/lib/libdbus-1.a
 CPFLAG?=-classpath
-JCFLAGS?=-cp classes:$(CLASSPATH)
+JCFLAGS?=-cp classes:$(CLASSPATH) -Xlint:all
 JFLAGS?=-Djava.library.path=.:/usr/lib
 SRCDIR=org/freedesktop
 CLASSDIR=classes/org/freedesktop/dbus
@@ -20,7 +20,7 @@ BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
 
-VERSION = 1.6
+VERSION = 1.7
 RELEASEVERSION = 1.6
  
 all: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar

@@ -4,8 +4,8 @@ class RemoteObject
 {
    String service;
    String objectpath;
-   Class iface;
-   public RemoteObject(String service, String objectpath, Class iface)
+   Class<? extends DBusInterface> iface;
+   public RemoteObject(String service, String objectpath, Class<? extends DBusInterface> iface)
    {
       this.service = service;
       this.objectpath = objectpath;

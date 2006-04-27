@@ -17,7 +17,7 @@ class MapContainer
    private Object[] keys;
    private Object[] values;
    private String sig;
-   private Map map;
+   private Map<Object,Object> map;
    public MapContainer(Object[][] content, String sig) throws DBusException
    {
       Class[] cs = new Class[2];
@@ -48,11 +48,11 @@ class MapContainer
       this.keys = keys;
       this.values = values;
       this.sig = sig;
-      this.map = new HashMap();
+      this.map = new HashMap<Object,Object>();
       for (int i = 0; i < keys.length; i++)
          this.map.put(keys[i], values[i]);
    }
-   public MapContainer(Map m, ParameterizedType t) throws DBusException
+   public MapContainer(Map<Object,Object> m, ParameterizedType t) throws DBusException
    {
       Type[] ts = t.getActualTypeArguments();
       Class c;
@@ -100,7 +100,7 @@ class MapContainer
       if (null != map) return map;
       Type[] ts = ((ParameterizedType) t).getActualTypeArguments();
 
-      this.map = new HashMap();
+      this.map = new HashMap<Object,Object>();
       for (int i = 0; i < keys.length; i++) {
          this.map.put(
                DBusConnection.deSerializeParameters(new Object[] { this.keys[i] }, new Type[] { ts[0] })[0],
