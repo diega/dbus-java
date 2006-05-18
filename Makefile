@@ -2,13 +2,14 @@ JAVAC?=javac
 JAVA?=java
 JAVAH?=javah
 JAR?=jar
-CFLAGS?=`pkg-config --cflags dbus-1`
+CFLAGS?=`pkg-config --cflags dbus-1` -Os -Wall -Werror
 LDFLAGS?=`pkg-config --libs dbus-1`
 CC?=gcc
 LD?=ld
+STRIP?=strip
 DBUSLIB?=/usr/lib/libdbus-1.a
 CPFLAG?=-classpath
-JCFLAGS?=-cp classes:$(CLASSPATH) -Xlint:all
+JCFLAGS?=-cp classes:$(CLASSPATH) -Xlint:all -O -g:none
 JFLAGS?=-Djava.library.path=.:/usr/lib
 SRCDIR=org/freedesktop
 CLASSDIR=classes/org/freedesktop/dbus
@@ -66,6 +67,7 @@ dbus-java.o: dbus-java.c org_freedesktop_dbus_DBusConnection.h org_freedesktop_d
 
 libdbus-java.so: dbus-java.o
 	$(LD) $(LDFLAGS) -fpic -shared -o $@ $^
+	$(STRIP) $@
 libdbus-java-$(VERSION).jar: .classes
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/Hal/*.class)
 dbus-java-test-$(VERSION).jar: .testclasses

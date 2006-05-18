@@ -224,7 +224,7 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
    jobject vval, jval = NULL;
    jobjectArray members;
    jmethodID mid;
-   jstring sig, cname;
+   jstring sig;
 
    char cbyteval;
    dbus_bool_t cboolval;
@@ -236,8 +236,7 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
    int16_t cshortval;
    int64_t clongval;
    const char* cstringval;
-   char* cclassname;
-   jsize i, j, clen;
+   jsize i, j;
 
    jclass fooclass;
    
@@ -315,10 +314,10 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
             (*env)->DeleteLocalRef(env, fooclass);
             break;
          case DBUS_TYPE_UINT64:
-            dbus_message_iter_get_basic(args, &clongval);
+            dbus_message_iter_get_basic(args, &culongval);
             fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/UInt64");
             mid = (*env)->GetMethodID(env, fooclass, "<init>", "(J)V");
-            jval = (*env)->NewObject(env, fooclass, mid, clongval);
+            jval = (*env)->NewObject(env, fooclass, mid, culongval);
             (*env)->SetObjectArrayElement(env, params, i, jval);
             (*env)->DeleteLocalRef(env, jval);
             (*env)->DeleteLocalRef(env, fooclass);
@@ -572,7 +571,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
 
    switch (dbus_message_get_type(msg)) {
       case DBUS_MESSAGE_TYPE_METHOD_CALL:
-         if (debug) fprintf(stderr, "=> CALL: (%s) %s%s[%s.%s]() {%d}\n",csource, cservice,cobjectpath,ctype,cname,serial);
+         if (debug) fprintf(stderr, "=> CALL: (%s) %s%s[%s.%s]() {%ld}\n",csource, cservice,cobjectpath,ctype,cname,(long int) serial);
          mid = (*env)->GetMethodID(env, callclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;J)V");
          jmsg = (*env)->NewObject(env, callclass, mid, source, service, objectpath, type, name, params, serial);
          if (NULL != params)
@@ -584,7 +583,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
          }
          break;
       case DBUS_MESSAGE_TYPE_METHOD_RETURN:
-         if (debug) fprintf(stderr, "=> REPLY: (%s)%s[%s.%s]() {%d,%d}\n",csource,cobjectpath,ctype,cname,serial,replyserial);
+         if (debug) fprintf(stderr, "=> REPLY: (%s)%s[%s.%s]() {%ld,%ld}\n",csource,cobjectpath,ctype,cname,(long int) serial,(long int) replyserial);
          mid = (*env)->GetMethodID(env, replyclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;JJ)V");
          jmsg = (*env)->NewObject(env, replyclass, mid, source, objectpath, type, name, params, serial, replyserial);
          if (NULL != params)
@@ -592,7 +591,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
          break;
       case DBUS_MESSAGE_TYPE_ERROR:
          cname = dbus_message_get_error_name(msg);
-         if (debug) fprintf(stderr, "=> ERROR: (%s => %s) %s {%d,%d}\n",csource, cdestination, cname, serial,replyserial);
+         if (debug) fprintf(stderr, "=> ERROR: (%s => %s) %s {%ld,%ld}\n",csource, cdestination, cname, (long int) serial,(long int) replyserial);
          if (NULL == cname) name = NULL;
          else name = (*env)->NewStringUTF(env, cname);
          mid = (*env)->GetMethodID(env, errclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;JJ)V");
@@ -602,7 +601,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
          break;
       case DBUS_MESSAGE_TYPE_SIGNAL:
 
-         if (debug) fprintf(stderr, "=> SIG: %s%s[%s.%s]() {%d}\n",csource, cobjectpath,ctype,cname,serial);
+         if (debug) fprintf(stderr, "=> SIG: %s%s[%s.%s]() {%ld}\n",csource, cobjectpath,ctype,cname,(long int) serial);
          if (NULL != ctype) {
             // create a new type string with /, not .
             typelen = strlen(ctype);
@@ -1062,7 +1061,7 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1erro
       dbus_message_unref(msg);
       return -1;
    }
-   if (debug) fprintf(stderr, "<= ERROR: (=> %s) %s {%d,%d}\n", cdestination, cname, serial,replyserial);
+   if (debug) fprintf(stderr, "<= ERROR: (=> %s) %s {%ld,%ld}\n", cdestination, cname, (long int) serial,(long int) replyserial);
          
    dbus_connection_flush(conn);
 
@@ -1201,7 +1200,7 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1reply_1to_
       dbus_message_unref(msg);
       return -1;
    }
-   if (debug) fprintf(stderr, "<= REPLY: %s%s[%s.%s]() {%d,%d}\n", cdestination, cobjectpath,ctype,cname,serial,replyserial);
+   if (debug) fprintf(stderr, "<= REPLY: %s%s[%s.%s]() {%ld,%ld}\n", cdestination, cobjectpath,ctype,cname,(long int) serial,(long int) replyserial);
 
    if (NULL != cname) (*env)->ReleaseStringUTFChars(env, name, cname);
    if (NULL != ctype) (*env)->ReleaseStringUTFChars(env, type, ctype);
