@@ -24,4 +24,6 @@ public interface TestRemoteInterface extends DBusInterface
    @Description("Waits then doesn't return")
    @Method.NoReply()
    public void waitawhile();
+   @Description("Interface-overloaded method")
+   public int overload();
 }

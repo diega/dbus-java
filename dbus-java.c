@@ -478,6 +478,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    const char* cobjectpath;
    const char* ctype;
    const char* cname;
+   const char* csig;
    char* cclassname;
    jstring source;
    jstring destination;
@@ -485,6 +486,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    jstring objectpath;
    jstring type;
    jstring name;
+   jstring sig;
    jobjectArray params = NULL;
    jlong serial;
    jlong replyserial;
@@ -539,7 +541,10 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    if (NULL == cservice) service = NULL;
    else service = (*env)->NewStringUTF(env, cservice);
 
-
+   csig = dbus_message_get_signature(msg);
+   if (NULL == csig) sig = (*env)->NewStringUTF(env, "");
+   else sig = (*env)->NewStringUTF(env, csig);
+   
    if (dbus_message_iter_init(msg, &args)) {
       for (len = 1; dbus_message_iter_has_next(&args); len++) 
          dbus_message_iter_next(&args);
@@ -559,7 +564,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
       jobjectArray args = (*env)->NewObjectArray(env, 1, fooclass, NULL);
       char* cerror = "An exception occurred during message reciept.";
       jstring error = (*env)->NewStringUTF(env, cerror);
-      (*env)->SetObjectArrayElement(env, args, 1, error);
+      (*env)->SetObjectArrayElement(env, args, 0, error);
       (*env)->DeleteLocalRef(env, fooclass);
       (*env)->DeleteLocalRef(env, error);
       Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1error_1message
@@ -572,8 +577,8 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    switch (dbus_message_get_type(msg)) {
       case DBUS_MESSAGE_TYPE_METHOD_CALL:
          if (debug) fprintf(stderr, "=> CALL: (%s) %s%s[%s.%s]() {%ld}\n",csource, cservice,cobjectpath,ctype,cname,(long int) serial);
-         mid = (*env)->GetMethodID(env, callclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;J)V");
-         jmsg = (*env)->NewObject(env, callclass, mid, source, service, objectpath, type, name, params, serial);
+         mid = (*env)->GetMethodID(env, callclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;J)V");
+         jmsg = (*env)->NewObject(env, callclass, mid, source, service, objectpath, type, name, sig, params, serial);
          if (NULL != params)
             (*env)->DeleteLocalRef(env, params);
          if (dbus_message_get_no_reply(msg)) {
@@ -584,8 +589,8 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
          break;
       case DBUS_MESSAGE_TYPE_METHOD_RETURN:
          if (debug) fprintf(stderr, "=> REPLY: (%s)%s[%s.%s]() {%ld,%ld}\n",csource,cobjectpath,ctype,cname,(long int) serial,(long int) replyserial);
-         mid = (*env)->GetMethodID(env, replyclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;JJ)V");
-         jmsg = (*env)->NewObject(env, replyclass, mid, source, objectpath, type, name, params, serial, replyserial);
+         mid = (*env)->GetMethodID(env, replyclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;JJ)V");
+         jmsg = (*env)->NewObject(env, replyclass, mid, source, objectpath, type, name, sig, params, serial, replyserial);
          if (NULL != params)
             (*env)->DeleteLocalRef(env, params);
          break;
@@ -594,8 +599,8 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
          if (debug) fprintf(stderr, "=> ERROR: (%s => %s) %s {%ld,%ld}\n",csource, cdestination, cname, (long int) serial,(long int) replyserial);
          if (NULL == cname) name = NULL;
          else name = (*env)->NewStringUTF(env, cname);
-         mid = (*env)->GetMethodID(env, errclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;JJ)V");
-         jmsg = (*env)->NewObject(env, errclass, mid, source, destination, name, params, serial, replyserial);
+         mid = (*env)->GetMethodID(env, errclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;JJ)V");
+         jmsg = (*env)->NewObject(env, errclass, mid, source, destination, name, sig, params, serial, replyserial);
          if (NULL != params)
             (*env)->DeleteLocalRef(env, params);
          break;
@@ -639,11 +644,11 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
          
          if (NULL == sigclass) {
             sigclass = (*env)->FindClass(env, "org/freedesktop/dbus/InternalSignal");
-            mid = (*env)->GetMethodID(env, sigclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;J[Ljava/lang/Object;)V");
-            jmsg = (*env)->NewObject(env, sigclass, mid, source, objectpath, name, type, serial, params);
+            mid = (*env)->GetMethodID(env, sigclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;J[Ljava/lang/Object;)V");
+            jmsg = (*env)->NewObject(env, sigclass, mid, source, objectpath, name, type, sig, params, serial);
          } else {
-            mid = (*env)->GetStaticMethodID(env, dsigclass, "createSignal", "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;J[Ljava/lang/Object;)Lorg/freedesktop/dbus/DBusSignal;");
-            jmsg = (*env)->CallStaticObjectMethod(env, dsigclass, mid, sigclass, source, objectpath, serial, params);
+            mid = (*env)->GetStaticMethodID(env, dsigclass, "createSignal", "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;J[Ljava/lang/Object;)Lorg/freedesktop/dbus/DBusSignal;");
+            jmsg = (*env)->CallStaticObjectMethod(env, dsigclass, mid, sigclass, source, objectpath, sig, serial, params);
          }
          
          if (NULL != params)
@@ -655,8 +660,28 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
          jmsg = NULL;
    }
 
+
+   if ((*env)->ExceptionOccurred(env)) {
+      (*env)->ExceptionClear(env);
+      char* cname = "org.freedesktop.dbus.DBusExecutionException";
+      jstring name = (*env)->NewStringUTF(env, cname);
+      jclass fooclass = (*env)->FindClass(env, "java/lang/String");
+      jobjectArray args = (*env)->NewObjectArray(env, 1, fooclass, NULL);
+      char* cerror = "An exception occurred during message reciept.";
+      jstring error = (*env)->NewStringUTF(env, cerror);
+      (*env)->SetObjectArrayElement(env, args, 0, error);
+      (*env)->DeleteLocalRef(env, fooclass);
+      Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1error_1message
+      (env, connobj, cidx, source, name, serial, args);
+      (*env)->DeleteLocalRef(env, error);
+      (*env)->DeleteLocalRef(env, name);
+      (*env)->DeleteLocalRef(env, args);
+      return NULL;
+   }
+
    // free the message
    dbus_message_unref(msg);
+
    return jmsg;
 }
 
@@ -699,6 +724,7 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
    for (i = 0; i < len; i++) { 
       item = (*env)->GetObjectArrayElement(env, params, i);
       if (NULL == item) {
+         (*env)->ExceptionClear(env);
          jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusExecutionException");
          (*env)->ThrowNew(env, dbeclass, "Cannot send NULL pointers over DBus");
          (*env)->DeleteLocalRef(env, dbeclass);

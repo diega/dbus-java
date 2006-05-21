@@ -2,6 +2,8 @@ Version 1.7:
 	
 	* compiles with -Xlint:all
 	* fixed struct/nested struct creation
+	* compile with -Os -O -Wall -Werror -g:none and strip
+	* allow overloading methods by argument type
 
 Version 1.6:
 

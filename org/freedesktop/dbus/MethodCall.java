@@ -11,13 +11,13 @@ class MethodCall extends DBusMessage
    int flags = 0;
    public MethodCall(String service, String objectpath, String iface, String name, Object[] args)
    {
-      super(null, iface, name, args, 0);
+      super(null, iface, name, "", args, 0);
       this.service = service;
       this.objectpath = objectpath;
    }
-   protected MethodCall(String source, String service, String objectpath, String iface, String name, Object[] args, long serial)
+   protected MethodCall(String source, String service, String objectpath, String iface, String name, String sig, Object[] args, long serial)
    {
-      super(source, iface, name, args, serial);
+      super(source, iface, name, sig, args, serial);
       this.service = service;
       this.objectpath = objectpath;
    }

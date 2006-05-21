@@ -24,4 +24,10 @@ public interface TestRemoteInterface2 extends DBusInterface
    public void testSerializable(byte b, TestSerializable s, int i);
    @Description("Call another method on itself from within a call")
    public String recursionTest();
+   @Description("Parameter-overloaded method (string)")
+   public int overload(String s);
+   @Description("Parameter-overloaded method (byte)")
+   public int overload(byte b);
+   @Description("Parameter-overloaded method (void)")
+   public int overload();
 }

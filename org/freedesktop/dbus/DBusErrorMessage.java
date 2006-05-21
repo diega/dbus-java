@@ -21,9 +21,9 @@ class DBusErrorMessage extends DBusMessage
     * @param serial The serial of the message.
     * @param replyserial The serial of the message this is a reply to.
     */
-   DBusErrorMessage(String source, String destination, String name, Object[] parameters, long serial, long replyserial)
+   DBusErrorMessage(String source, String destination, String name, String sig, Object[] parameters, long serial, long replyserial)
    {
-      super(source, name, name, parameters, serial, replyserial);
+      super(source, name, name, sig, parameters, serial, replyserial);
       this.destination = destination;
    }
    /**
@@ -33,7 +33,7 @@ class DBusErrorMessage extends DBusMessage
     */
    protected DBusErrorMessage(DBusMessage m, DBusExecutionException ex)
    {
-      super(null, null, null, new Object[] { ex.getMessage() }, 0, m.getSerial());
+      super(null, null, null, "s", new Object[] { ex.getMessage() }, 0, m.getSerial());
       this.type = ex.getClass().getName().replaceAll("[$]", ".");
       this.name = ex.getClass().getName().replaceAll("[$]", ".");
       this.destination = m.getSource();
@@ -46,7 +46,7 @@ class DBusErrorMessage extends DBusMessage
     */
    protected DBusErrorMessage(DBusMessage m, DBusException ex, Object... parameters)
    {
-      super(null, null, null, parameters, 0, m.getSerial());
+      super(null, null, null, "", parameters, 0, m.getSerial());
       this.type = ex.getClass().getName().replaceAll("[$]", ".");
       this.name = ex.getClass().getName().replaceAll("[$]", ".");
       this.destination = m.getSource();
@@ -59,7 +59,7 @@ class DBusErrorMessage extends DBusMessage
     */
   protected DBusErrorMessage(String destination, DBusException ex, Object... parameters)
    {
-      super(null, null, null, parameters, 0);
+      super(null, null, null, "", parameters, 0);
       this.type = ex.getClass().getName().replaceAll("[$]", ".");
       this.name = ex.getClass().getName().replaceAll("[$]", ".");
       this.destination = destination;

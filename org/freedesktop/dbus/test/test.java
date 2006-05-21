@@ -178,6 +178,24 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
          return "";
       }
    }
+   public int overload(String s)
+   {
+      return 1;
+   }
+   public int overload(byte b)
+   {
+      return 2;
+   }
+   public int overload()
+   {
+      DBusCallInfo info = DBusConnection.getCallInfo();
+      if ("org.freedesktop.dbus.test.TestRemoteInterface2".equals(info.getInterface()))
+         return 3;
+      else if ("org.freedesktop.dbus.test.TestRemoteInterface".equals(info.getInterface()))
+         return 4;
+      else
+         return -1;
+   }
 }
 
 /**
@@ -406,8 +424,20 @@ public class test
       
       System.out.println("done");
 
+      System.out.print("testing method overloading...");
+      tri = (TestRemoteInterface) conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface.class);
+      if (1 != tri2.overload("foo")) test.fail("wrong overloaded method called");
+      if (2 != tri2.overload((byte) 0)) test.fail("wrong overloaded method called");
+      if (3 != tri2.overload()) test.fail("wrong overloaded method called");
+      if (4 != tri.overload()) test.fail("wrong overloaded method called");
+      System.out.println("done");
+
       /** Pause while we wait for the DBus messages to go back and forth. */
       Thread.sleep(1000);
+
+      System.out.println("Checking for outstanding errors");
+      DBusExecutionException DBEe = conn.getError();
+      if (null != DBEe) throw DBEe;
     
       System.out.println("Disconnecting");
       /** Disconnect from the bus. */

@@ -50,20 +50,23 @@ class MethodTuple
 {
    String type;
    String name;
-   public MethodTuple(String type, String name)
+   String sig;
+   public MethodTuple(String type, String name, String sig)
    {
       this.type = type;
       this.name = name;
+      this.sig = sig;
    }
    public boolean equals(Object o)
    {
       return o.getClass().equals(MethodTuple.class)
             && ((MethodTuple) o).type.equals(this.type)
-            && ((MethodTuple) o).name.equals(this.name);
+            && ((MethodTuple) o).name.equals(this.name)
+            && ((MethodTuple) o).sig.equals(this.sig);
    }
    public int hashCode()
    {
-      return type.hashCode()+name.hashCode();
+      return type.hashCode()+name.hashCode()+sig.hashCode();
    }
 }
 class ExportedObject
@@ -96,7 +99,7 @@ class ExportedObject
             introspectiondata += getAnnotations(c);
             for (Method meth: c.getDeclaredMethods()) 
                if (Modifier.isPublic(meth.getModifiers())) {
-                  m.put(new MethodTuple(c.getName().replaceAll("[$]","."), meth.getName()), meth);
+                  String ms = "";
                   introspectiondata += "  <method name=\""+meth.getName()+"\" >\n";
                   introspectiondata += getAnnotations(meth);
                   for (Class ex: meth.getExceptionTypes())
@@ -104,8 +107,10 @@ class ExportedObject
                         introspectiondata +=
                            "   <annotation name=\"org.freedesktop.DBus.Method.Error\" value=\""+ex.getName().replaceAll("[$]",".")+"\" />\n";
                   for (Type pt: meth.getGenericParameterTypes())
-                     for (String s: DBusConnection.getDBusType(pt))
+                     for (String s: DBusConnection.getDBusType(pt)) {
                         introspectiondata += "   <arg type=\""+s+"\" direction=\"in\"/>\n";
+                        ms += s;
+                     }
                   if (!Void.TYPE.equals(meth.getGenericReturnType())) {
                      if (Tuple.class.isAssignableFrom((Class) meth.getReturnType())) {
                         for (Type t: ((ParameterizedType) meth.getGenericReturnType()).getActualTypeArguments())
@@ -118,6 +123,7 @@ class ExportedObject
                         introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
                   }
                   introspectiondata += "  </method>\n";
+                  m.put(new MethodTuple(c.getName().replaceAll("[$]","."), meth.getName(), ms), meth);
                }
             for (Class sig: c.getDeclaredClasses()) 
                if (DBusSignal.class.isAssignableFrom(sig)) {
@@ -175,7 +181,7 @@ public class DBusConnection
          if (s instanceof org.freedesktop.DBus.Local.Disconnected) {
             DBusErrorMessage err = new DBusErrorMessage(
                   servicenames.get(0), servicenames.get(0), 
-                  "org.freedesktop.DBus.Local.Disconnected",
+                  "org.freedesktop.DBus.Local.Disconnected", "s",
                   new Object[] { "Disconnected" }, 0, 0);
             synchronized (pendingCalls) {
                Long[] set = (Long[]) pendingCalls.keySet().toArray(new Long[]{});
@@ -1159,7 +1165,7 @@ public class DBusConnection
          eo = exportedObjects.get(null);
       }
       if (null != eo) {
-         meth = eo.methods.get(new MethodTuple(m.getType(), m.getName()));
+         meth = eo.methods.get(new MethodTuple(m.getType(), m.getName(), m.getSig()));
       }
       if (null != meth)
          o = new _globalhandler(m.getObjectPath());
@@ -1176,7 +1182,7 @@ public class DBusConnection
                outgoing.addLast(new DBusErrorMessage(m, new DBus.Error.UnknownObject(m.getObjectPath()+" is not an object provided by this service."))); }
             return;
          }
-         meth = eo.methods.get(new MethodTuple(m.getType(), m.getName()));
+         meth = eo.methods.get(new MethodTuple(m.getType(), m.getName(), m.getSig()));
          if (null == meth) {
             synchronized (outgoing) {
                outgoing.addLast(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("The method `"+m.getType()+"."+m.getName()+"' does not exist on this object."))); }

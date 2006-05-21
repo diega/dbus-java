@@ -17,12 +17,12 @@ public abstract class DBusSignal extends DBusMessage
 {
    /** The path to the object this is emitted from */
    protected String objectpath;
-   DBusSignal(String source, String objectpath, String type, String name, Object[] parameters, long serial)
+   DBusSignal(String source, String objectpath, String type, String name, String sig, Object[] parameters, long serial)
    {
-      super(source, type, name, parameters, serial);
+      super(source, type, name, sig, parameters, serial);
       this.objectpath = objectpath;
    }
-   static DBusSignal createSignal(Class<? extends DBusSignal> c, String source, String objectpath, long serial, Object... parameters) throws DBusException
+   static DBusSignal createSignal(Class<? extends DBusSignal> c, String source, String objectpath, String sig, long serial, Object... parameters) throws DBusException
    {
       Constructor con = c.getDeclaredConstructors()[0];
       Type[] ts = con.getGenericParameterTypes();
@@ -46,7 +46,6 @@ public abstract class DBusSignal extends DBusMessage
             return (DBusSignal) con.newInstance(args);
          }
       } catch (Exception e) { 
-         e.printStackTrace();
          throw new DBusException(e.getMessage());
       }
    }
@@ -59,7 +58,7 @@ public abstract class DBusSignal extends DBusMessage
     */
    protected DBusSignal(String objectpath, Object... parameters) throws DBusException
    {
-      super(null, "", null, parameters, 0);
+      super(null, "", null, "", parameters, 0);
       try {
          name = getClass().getSimpleName();
          if (null != getClass().getEnclosingClass())

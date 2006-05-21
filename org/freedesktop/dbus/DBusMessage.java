@@ -9,11 +9,12 @@ public abstract class DBusMessage
    String source;
    String type;
    String name;
+   String sig;
    protected Object[] parameters;
    long serial;
    long replyserial;
    DBusMessage() {}
-   protected DBusMessage(String source, String type, String name, Object[] parameters, long serial, long replyserial)
+   protected DBusMessage(String source, String type, String name, String sig, Object[] parameters, long serial, long replyserial)
    {
       this.source = source;
       this.type = type;
@@ -21,10 +22,11 @@ public abstract class DBusMessage
       this.parameters = parameters;
       this.serial = serial;
       this.replyserial = replyserial;
+      this.sig = sig;
    }
-   protected DBusMessage(String source, String type, String name, Object[] parameters, long serial)
+   protected DBusMessage(String source, String type, String name, String sig, Object[] parameters, long serial)
    {
-      this(source, type, name, parameters, serial, 0);
+      this(source, type, name, sig, parameters, serial, 0);
    }
    /**
     * Returns the Bus ID that sent the message
@@ -38,6 +40,10 @@ public abstract class DBusMessage
     * Returns the member name or error name this message represents.
     */
    public String getName() { return name; }
+   /**
+    * Returns the dbus signature of the parameters.
+    */
+   public String getSig() { return sig; }
    /**
     * Returns the message serial ID (unique for this connection)
     * @return the message serial or 0 if it has not been sent over the Bus.
