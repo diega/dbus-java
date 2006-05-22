@@ -1,3 +1,12 @@
+#
+# For profiling/debug builds use:
+#
+# make CFLAGS="-I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include" STRIP=touch
+# JCFLAGS="-cp classes:$(CLASSPATH) -Xlint:all"
+# JFLAGS="-Djava.library.path=.:/usr/lib
+# -Xrunhprof:heap=sites,cpu=samples,monitor=y,thread=y,doe=y -classic" check
+#
+
 JAVAC?=javac
 JAVA?=java
 JAVAH?=javah
