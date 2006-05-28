@@ -580,12 +580,12 @@ public class DBusConnection
                else return name;
             case 'a':
                if ('{' == dbus.charAt(1)) {
-                  if (null != imports) imports.add("java.utils.Map");
+                  if (null != imports) imports.add("java.util.Map");
                   if (fullnames) return "java.util.Map";
                   else return "Map<"+getJavaType(dbus.substring(2,3), imports, structs, true, false)+", "+
                      getJavaType(dbus.substring(3,dbus.length()-1), imports, structs, true, false)+">";
                }
-               if (null != imports) imports.add("java.utils.List");
+               if (null != imports) imports.add("java.util.List");
                if (fullnames) return "java.util.List";
                else return "List<"+getJavaType(dbus.substring(1), imports, structs, true, false) + ">";
             case 'v':
