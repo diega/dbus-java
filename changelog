@@ -4,6 +4,7 @@ Version 1.7:
 	* fixed struct/nested struct creation
 	* compile with -Os -O -Wall -Werror -g:none and strip
 	* allow overloading methods by argument type
+	* getJavaType bugfix from Antoine Perdaens
 
 Version 1.6:
 
