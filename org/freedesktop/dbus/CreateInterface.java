@@ -132,6 +132,7 @@ public class CreateInterface
    String parseSignal(Element signal, Set<String> imports, Map<StructStruct, String> structs, Set<String> anns) throws DBusException
    {
       Map<String, String> params = new HashMap<String, String>();
+      Vector<String> porder = new Vector<String>();
       char defaultname = 'a';
       imports.add("org.freedesktop.dbus.DBusSignal");
       imports.add("org.freedesktop.dbus.DBusException");
@@ -150,6 +151,7 @@ public class CreateInterface
             String name = arg.getAttribute("name");
             if (null == name || "".equals(name)) name = ""+(defaultname++);
             params.put(name, type);
+            porder.add(name);
          }
       }
 
@@ -157,16 +159,16 @@ public class CreateInterface
       out += annotations;
       out += "   public static class "+signal.getAttribute("name");
       out += " extends DBusSignal\n   {\n";
-      for (String name: params.keySet())
+      for (String name: porder)
          out += "      public final "+params.get(name)+" "+name+";\n";
       out += "      public "+signal.getAttribute("name")+"(String path";
-      for (String name: params.keySet())
+      for (String name: porder)
          out += ", "+params.get(name)+" "+name;
       out += ") throws DBusException\n      {\n         super(path";
-      for (String name: params.keySet())
+      for (String name: porder)
          out += ", "+name;
       out += ");\n";
-      for (String name: params.keySet())
+      for (String name: porder)
          out += "         this."+name+" = "+name+";\n";
       out += "      }\n";
 

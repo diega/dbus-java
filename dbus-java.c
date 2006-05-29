@@ -916,6 +916,7 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          mid = (*env)->GetMethodID(env, clazz, "getValue", "()Ljava/lang/Object;");
          members = (*env)->NewObjectArray(env, 1, objectclass, NULL);
          vitem = (*env)->CallObjectMethod(env, item, mid);
+         if (NULL == vitem) return -1;
          (*env)->SetObjectArrayElement(env, members, 0, vitem);
 
          // get its type

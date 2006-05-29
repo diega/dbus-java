@@ -16,7 +16,6 @@ LDFLAGS?=`pkg-config --libs dbus-1`
 CC?=gcc
 LD?=ld
 STRIP?=strip
-DBUSLIB?=/usr/lib/libdbus-1.a
 CPFLAG?=-classpath
 JCFLAGS?=-cp classes:$(CLASSPATH) -Xlint:all -O -g:none
 JFLAGS?=-Djava.library.path=.:/usr/lib
