@@ -95,7 +95,7 @@ doc/dbus-java.dvi: dbus-java.tex .doc
 	(cd doc; latex ../dbus-java.tex)
 	(cd doc; latex ../dbus-java.tex)
 doc/dbus-java.ps: doc/dbus-java.dvi .doc
-	(cd doc; dvips dbus-java.dvi)
+	(cd doc; dvips -o dbus-java.ps dbus-java.dvi)
 doc/dbus-java.pdf: doc/dbus-java.dvi .doc
 	(cd doc; pdflatex ../dbus-java.tex)
 doc/dbus-java/index.html: dbus-java.tex .doc
