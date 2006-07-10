@@ -1,6 +1,7 @@
 Version 1.8:
 
 	* stop dvips printing on wierd systems
+	* Doc patches from Dick Hollenbeck <dick@softplc.com>
 
 Version 1.7:
 	
