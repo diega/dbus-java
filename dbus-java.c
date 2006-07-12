@@ -466,9 +466,9 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
  * Signature: (I)Lorg/freedesktop/dbus/DBusMessage;
  */
 JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1write_1pop
-  (JNIEnv * env, jobject connobj, jint cidx, jint timeout)
+  (JNIEnv * env, jobject connobj, jint cidx, jint timeout, jobject outgoing)
 {
-   DBusMessage* msg;
+   DBusMessage* msg = NULL;
    DBusMessageIter args;
    jobject jmsg = NULL;
    jmethodID mid;
@@ -494,13 +494,8 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    int i; 
    DBusConnection* conn;
    jint flags;
-   
-   jclass sigclass; 
-   jclass callclass = (*env)->FindClass(env, "org/freedesktop/dbus/MethodCall");
-   jclass errclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusErrorMessage");
-   jclass replyclass = (*env)->FindClass(env, "org/freedesktop/dbus/MethodReply");
-   jclass dsigclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusSignal");
-   
+   jfieldID fid;
+
    conn = getconn(env, cidx);
    if (NULL == conn || !dbus_connection_get_is_connected(conn)) {
       jclass dbeclass = (*env)->FindClass(env, "org/freedesktop/dbus/NotConnected");
@@ -508,13 +503,34 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
       (*env)->DeleteLocalRef(env, dbeclass);
       return NULL;
    }
-   // blocking for timeout ms read of the next available message
-   dbus_connection_read_write(conn, timeout);
-   msg = dbus_connection_pop_message(conn);
 
-   // just return
+   jclass clazz = (*env)->FindClass(env, "java/util/LinkedList");
+   mid = (*env)->GetMethodID(env, clazz, "size", "()I");
+   clazz = (*env)->FindClass(env, "org/freedesktop/dbus/DBusConnection");
+   fid = (*env)->GetFieldID(env, clazz, "_run", "Z");
+   
+   // loop here checking for outgoing messages frequently
+   while (NULL == msg) {
+      /* sychronized (outgoing) */ { 
+         (*env)->MonitorEnter(env,outgoing);
+         i = (*env)->CallIntMethod(env, outgoing, mid);
+         (*env)->MonitorExit(env,outgoing);
+      }
+      if (0 != i) return NULL;
+      if (false == (*env)->GetBooleanField(env, connobj, fid)) return NULL;
+         
+      // blocking for timeout ms read of the next available message
+      dbus_connection_read_write(conn, timeout);
+      msg = dbus_connection_pop_message(conn);
+   }
    if (NULL == msg) return NULL;
-
+   
+   jclass sigclass; 
+   jclass callclass = (*env)->FindClass(env, "org/freedesktop/dbus/MethodCall");
+   jclass errclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusErrorMessage");
+   jclass replyclass = (*env)->FindClass(env, "org/freedesktop/dbus/MethodReply");
+   jclass dsigclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusSignal");
+ 
    serial = dbus_message_get_serial(msg);
    replyserial = dbus_message_get_reply_serial(msg);
    cobjectpath = dbus_message_get_path(msg);

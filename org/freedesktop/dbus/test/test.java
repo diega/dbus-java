@@ -293,7 +293,12 @@ public class test
       /** This gets a remote object matching our service name and exported object path. */
       Peer peer = (Peer) conn.getRemoteObject("foo.bar.Test", "/Test", Peer.class);
       /** Call ping. */
-      peer.Ping();
+      for (int i = 0; i < 100; i++) {
+         long then = System.currentTimeMillis();
+         peer.Ping();
+         long now = System.currentTimeMillis();
+         System.out.println("Ping returned in "+(now-then)+"ms.");
+      }
       
       System.out.println("Calling Method0/1");
       /** This gets a remote object matching our service name and exported object path. */

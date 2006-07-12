@@ -212,7 +212,8 @@ public class DBusConnection
 
                // read from the wire
                try {
-                  m = readIncoming(TIMEOUT);
+                  // this blocks on outgoing being non-empty or a message being available.
+                  m = readIncoming(TIMEOUT, outgoing);
                   if (m != null) {
                      synchronized (this) { notifyAll(); }
 
@@ -327,7 +328,7 @@ public class DBusConnection
    /**
     * Timeout in ms on checking the BUS for incoming messages and sending outgoing messages
     */
-   private static final int TIMEOUT = 100;
+   private static final int TIMEOUT = 1;
 
    static final String SERVICE_REGEX = "^[-_a-zA-Z][-_a-zA-Z0-9]*(\\.[-_a-zA-Z][-_a-zA-Z0-9]*)*$";
    static final String CONNID_REGEX = "^:[0-9]*\\.[0-9]*$";
@@ -350,7 +351,7 @@ public class DBusConnection
    private native int dbus_connect(String address) throws DBusException;
    private native void dbus_disconnect(int connid);
    private native void dbus_listen_signal(int connid, String type, String name) throws DBusException;
-   private native DBusMessage dbus_read_write_pop(int connid, int timeoutms);
+   private native DBusMessage dbus_read_write_pop(int connid, int timeoutms, LinkedList<DBusMessage> outgoing);
    private native int dbus_send_signal(int connid, String objectpath, String type, String name, Object... parameters);
    private native int dbus_send_error_message(int connid, String destination, String name, long replyserial, Object... params);
    private native int dbus_call_method(int connid, String service, String objectpath, String type, String name, boolean noreply, Object... params);
@@ -1327,9 +1328,9 @@ public class DBusConnection
          }
       }
    }
-   private DBusMessage readIncoming(int timeoutms)
+   private DBusMessage readIncoming(int timeoutms, LinkedList<DBusMessage> outgoing)
    {
-      DBusMessage m = dbus_read_write_pop(connid, timeoutms);
+      DBusMessage m = dbus_read_write_pop(connid, timeoutms, outgoing);
       return m;
    }
 }

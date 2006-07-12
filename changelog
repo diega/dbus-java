@@ -2,6 +2,8 @@ Version 1.8:
 
 	* stop dvips printing on wierd systems
 	* Doc patches from Dick Hollenbeck <dick@softplc.com>
+	* reduce TIMEOUT to 1ms and check for outbound messages in the JNI; reduces
+	  RTT from 100ms to ~1ms
 
 Version 1.7:
 	
