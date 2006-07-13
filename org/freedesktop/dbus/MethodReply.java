@@ -19,7 +19,11 @@ class MethodReply extends DBusMessage
       this.call = m;
       this.objectpath = m.getObjectPath();
       this.destination = m.getSource();
+      this.replyserial = m.getSerial();
    }
    public MethodCall getCall() { return call; }
    protected void setCall(MethodCall call) { this.call = call; this.replyserial = call.getSerial(); this.destination = call.getSource();}
+   public String getDestination() { return destination; }
+   public String getObjectPath() { return objectpath; }
+
 }

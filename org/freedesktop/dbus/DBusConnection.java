@@ -1052,6 +1052,37 @@ public class DBusConnection
          outgoing.add(signal); }
    }
    /** 
+    * Remove a Signal Handler.
+    * Stops listening for this signal.
+    * @param type The signal to watch for. 
+    * @throws DBusException If listening for the signal on the bus failed.
+    * @throws ClassCastException If type is not a sub-type of DBusSignal.
+    */
+   public <T extends DBusSignal> void removeSigHandler(Class<T> type, DBusSigHandler<T> handler) throws DBusException
+   {
+      if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
+      removeSigHandler(new DBusMatchRule(type), handler);
+   }
+   private <T extends DBusSignal> void removeSigHandler(DBusMatchRule rule, DBusSigHandler<T> handler) throws DBusException
+   {
+      
+      SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember());
+      synchronized (handledSignals) {
+         Vector<DBusSigHandler> v = handledSignals.get(key);
+         if (null != v) {
+            v.remove(handler);
+            if (0 == v.size()) {
+               handledSignals.remove(key);
+               try {
+                  _dbus.RemoveMatch(rule.toString());
+               } catch (DBusExecutionException DBEe) {
+                  throw new DBusException(DBEe.getMessage());
+               }
+            }
+         } 
+      }
+   }
+   /** 
     * Add a Signal Handler.
     * Adds a signal handler to call when a signal is received which matches the specified type and name.
     * @param type The signal to watch for. 
@@ -1066,12 +1097,12 @@ public class DBusConnection
    }
    private <T extends DBusSignal> void addSigHandler(DBusMatchRule rule, DBusSigHandler<T> handler) throws DBusException
    {
-         try {
-            _dbus.AddMatch(rule.toString());
-         } catch (DBusExecutionException DBEe) {
-            throw new DBusException(DBEe.getMessage());
-         }
-         SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember());
+      try {
+         _dbus.AddMatch(rule.toString());
+      } catch (DBusExecutionException DBEe) {
+         throw new DBusException(DBEe.getMessage());
+      }
+      SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember());
       synchronized (handledSignals) {
          Vector<DBusSigHandler> v = handledSignals.get(key);
          if (null == v) {
@@ -1283,9 +1314,10 @@ public class DBusConnection
          if (pendingCalls.contains(mr.getReplySerial()))
             m = pendingCalls.remove(mr.getReplySerial());
       }
-      if (null != m)
+      if (null != m) {
          m.setReply(mr);
-      else
+         mr.setCall(m);
+      } else
          synchronized (outgoing) {
             outgoing.add(new DBusErrorMessage(mr, new DBusExecutionException("Spurious reply. No message with the given serial id was awaiting a reply."))); 
          }
@@ -1320,11 +1352,10 @@ public class DBusConnection
          }
       }
       else if (m instanceof MethodReply) {
-         MethodCall call = ((MethodReply) m).getCall();
          try {
-            m.setSerial(dbus_reply_to_call(connid, call.getSource(), call.getType(), call.getObjectPath(), call.getName(), call.getSerial(), m.getParameters()));
+            m.setSerial(dbus_reply_to_call(connid, ((MethodReply) m).getDestination(), m.getType(), ((MethodReply) m).getObjectPath(), m.getName(), m.getReplySerial(), m.getParameters()));
          } catch (Exception e) {
-            dbus_send_error_message(connid, call.getSource(), DBusExecutionException.class.getName(), call.getSerial(), new Object[] { "Error sending reply: "+e.getMessage() });
+            dbus_send_error_message(connid, ((MethodReply) m).getDestination(), DBusExecutionException.class.getName(), m.getReplySerial(), new Object[] { "Error sending reply: "+e.getMessage() });
          }
       }
    }

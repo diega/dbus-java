@@ -241,6 +241,18 @@ class arraysignalhandler implements DBusSigHandler
 }
 
 /**
+ * handler which should never be called
+ */
+class badarraysignalhandler implements DBusSigHandler
+{
+   /** Handling a signal */
+   public void handle(DBusSignal s)
+   {
+      test.fail("This signal handler shouldn't be called");
+   }
+}
+
+/**
  * This is a test program which sends and recieves a signal, implements, exports and calls a remote method.
  */
 public class test
@@ -265,7 +277,11 @@ public class test
       try {
          /** This registers an instance of the test class as the signal handler for the TestSignal class. */
          conn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler());
+         conn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler());
          conn.addSigHandler(TestSignalInterface.TestArraySignal.class, new arraysignalhandler());
+         badarraysignalhandler bash = new badarraysignalhandler();
+         conn.addSigHandler(TestSignalInterface.TestSignal.class, bash);
+         conn.removeSigHandler(TestSignalInterface.TestSignal.class, bash);
          System.out.println("done");
       } catch (DBusException DBe) {
          test.fail("Failed to add handlers");

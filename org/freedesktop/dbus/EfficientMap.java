@@ -95,7 +95,7 @@ class EfficientMap
    {
       int i = start;
       while (i != end && kv[i] != l)
-         if (i == kv.length) i = 0; else i++;
+         if (i == (kv.length-1)) i = 0; else i++;
       if (i == end) return -1;
       return i;
    }
