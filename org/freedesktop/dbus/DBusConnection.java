@@ -184,10 +184,9 @@ public class DBusConnection
                   "org.freedesktop.DBus.Local.Disconnected", "s",
                   new Object[] { "Disconnected" }, 0, 0);
             synchronized (pendingCalls) {
-               Long[] set = (Long[]) pendingCalls.keySet().toArray(new Long[]{});
-               for (Long l: set) {
-                  MethodCall m = pendingCalls.get(l);
-                  pendingCalls.remove(l);
+               long[] set = pendingCalls.getKeys();
+               for (long l: set) if (-1 != l) {
+                  MethodCall m = pendingCalls.remove(l);
                   m.setReply(err);
                }
             }
@@ -232,26 +231,26 @@ public class DBusConnection
 
                // write to the wire
                synchronized (outgoing) {
-                  if (outgoing.size() > 0)
-                     m = outgoing.removeFirst(); }
+                  if (!outgoing.isEmpty())
+                     m = outgoing.remove(); }
                while (null != m) {
                   sendMessage(m);
                   m = null;
                   synchronized (outgoing) {
-                     if (outgoing.size() > 0)
-                        m = outgoing.removeFirst(); }
+                     if (!outgoing.isEmpty())
+                        m = outgoing.remove(); }
                }
             }
             synchronized (outgoing) {
-               if (outgoing.size() > 0)
-                  m = outgoing.removeFirst(); 
+               if (!outgoing.isEmpty())
+                  m = outgoing.remove(); 
             }
             while (null != m) {
                sendMessage(m);
                m = null;
                synchronized (outgoing) {
-                  if (outgoing.size() > 0)
-                     m = outgoing.removeFirst(); }
+                  if (!outgoing.isEmpty())
+                     m = outgoing.remove(); }
             }
             synchronized (this) { notifyAll(); }
          } catch (NotConnected NC) {}
@@ -329,6 +328,8 @@ public class DBusConnection
     * Timeout in ms on checking the BUS for incoming messages and sending outgoing messages
     */
    private static final int TIMEOUT = 1;
+   /** Initial size of the pending calls map */
+   private static final int PENDING_MAP_INITIAL_SIZE = 10;
 
    static final String SERVICE_REGEX = "^[-_a-zA-Z][-_a-zA-Z0-9]*(\\.[-_a-zA-Z][-_a-zA-Z0-9]*)*$";
    static final String CONNID_REGEX = "^:[0-9]*\\.[0-9]*$";
@@ -338,20 +339,20 @@ public class DBusConnection
    private Map<String,ExportedObject> exportedObjects;
    private Map<DBusInterface,RemoteObject> importedObjects;
    private Map<SignalTuple,Vector<DBusSigHandler>> handledSignals;
-   private Map<Long,MethodCall> pendingCalls;
+   private EfficientMap pendingCalls;
    private Vector<String> servicenames;
    private LinkedList<Runnable> runnables;
    private LinkedList<_workerthread> workers;
    private boolean _run;
    private int connid;
-   LinkedList<DBusMessage> outgoing;
+   EfficientQueue outgoing;
    LinkedList<DBusErrorMessage> pendingErrors;
 
    private native int dbus_connect(int bustype) throws DBusException;
    private native int dbus_connect(String address) throws DBusException;
    private native void dbus_disconnect(int connid);
    private native void dbus_listen_signal(int connid, String type, String name) throws DBusException;
-   private native DBusMessage dbus_read_write_pop(int connid, int timeoutms, LinkedList<DBusMessage> outgoing);
+   private native DBusMessage dbus_read_write_pop(int connid, int timeoutms, EfficientQueue outgoing);
    private native int dbus_send_signal(int connid, String objectpath, String type, String name, Object... parameters);
    private native int dbus_send_error_message(int connid, String destination, String name, long replyserial, Object... params);
    private native int dbus_call_method(int connid, String service, String objectpath, String type, String name, boolean noreply, Object... params);
@@ -831,9 +832,9 @@ public class DBusConnection
       importedObjects = new HashMap<DBusInterface,RemoteObject>();
       exportedObjects.put(null, new ExportedObject(new _globalhandler()));
       handledSignals = new HashMap<SignalTuple,Vector<DBusSigHandler>>();
-      pendingCalls = new HashMap<Long,MethodCall>();
+      pendingCalls = new EfficientMap(PENDING_MAP_INITIAL_SIZE);
       servicenames = new Vector<String>();
-      outgoing = new LinkedList<DBusMessage>();
+      outgoing = new EfficientQueue(PENDING_MAP_INITIAL_SIZE);
       pendingErrors = new LinkedList<DBusErrorMessage>();
       runnables = new LinkedList<Runnable>();
       workers = new LinkedList<_workerthread>();
@@ -1048,7 +1049,7 @@ public class DBusConnection
    public void sendSignal(DBusSignal signal)
    {
       synchronized (outgoing) {
-         outgoing.addLast(signal); }
+         outgoing.add(signal); }
    }
    /** 
     * Add a Signal Handler.
@@ -1180,13 +1181,13 @@ public class DBusConnection
 
          if (null == eo) {
             synchronized (outgoing) {
-               outgoing.addLast(new DBusErrorMessage(m, new DBus.Error.UnknownObject(m.getObjectPath()+" is not an object provided by this service."))); }
+               outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownObject(m.getObjectPath()+" is not an object provided by this service."))); }
             return;
          }
          meth = eo.methods.get(new MethodTuple(m.getType(), m.getName(), m.getSig()));
          if (null == meth) {
             synchronized (outgoing) {
-               outgoing.addLast(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("The method `"+m.getType()+"."+m.getName()+"' does not exist on this object."))); }
+               outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("The method `"+m.getType()+"."+m.getName()+"' does not exist on this object."))); }
             return;
          }
          o = eo.object;
@@ -1197,13 +1198,13 @@ public class DBusConnection
          m.parameters = deSerializeParameters(m.parameters, ts);
       } catch (Exception e) {
          synchronized (outgoing) {
-            outgoing.addLast(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); }
+            outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); }
       }
 
       // now execute it
       final Method me = meth;
       final Object ob = o;
-      final LinkedList<DBusMessage> outqueue = outgoing;
+      final EfficientQueue outqueue = outgoing;
       final boolean noreply = (1 == (m.getFlags() & MethodCall.NO_REPLY));
       final DBusCallInfo info = new DBusCallInfo(m);
       addRunnable(new Runnable() 
@@ -1232,16 +1233,16 @@ public class DBusConnection
                      reply = new MethodReply(m, result);
                   }
                   synchronized (outqueue) {
-                     outqueue.addLast(reply);
+                     outqueue.add(reply);
                   }
                }
             } catch (DBusExecutionException DBEe) {
                synchronized (outqueue) {
-                  outqueue.addLast(new DBusErrorMessage(m, DBEe)); 
+                  outqueue.add(new DBusErrorMessage(m, DBEe)); 
                }
             } catch (Throwable e) {
                synchronized (outqueue) {
-                  outqueue.addLast(new DBusErrorMessage(m, new DBusExecutionException("Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage()))); 
+                  outqueue.add(new DBusErrorMessage(m, new DBusExecutionException("Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage()))); 
                }
             } 
          }
@@ -1264,11 +1265,10 @@ public class DBusConnection
    }
    private void handleMessage(final DBusErrorMessage err)
    {
-      MethodCall m;
+      MethodCall m = null;
       synchronized (pendingCalls) {
-         m = pendingCalls.get(err.getReplySerial());
-         if (null != m)
-            pendingCalls.remove(err.getReplySerial());
+         if (pendingCalls.contains(err.getReplySerial()))
+            m = pendingCalls.remove(err.getReplySerial());
       }
       if (null != m)
          m.setReply(err);
@@ -1278,17 +1278,16 @@ public class DBusConnection
    }
    private void handleMessage(final MethodReply mr)
    {
-      MethodCall m;
+      MethodCall m = null;
       synchronized (pendingCalls) {
-         m = pendingCalls.get(mr.getReplySerial());
-         if (null != m)
-            pendingCalls.remove(mr.getReplySerial());
+         if (pendingCalls.contains(mr.getReplySerial()))
+            m = pendingCalls.remove(mr.getReplySerial());
       }
       if (null != m)
          m.setReply(mr);
       else
          synchronized (outgoing) {
-            outgoing.addLast(new DBusErrorMessage(mr, new DBusExecutionException("Spurious reply. No message with the given serial id was awaiting a reply."))); 
+            outgoing.add(new DBusErrorMessage(mr, new DBusExecutionException("Spurious reply. No message with the given serial id was awaiting a reply."))); 
          }
    }
    private void sendMessage(DBusMessage m)
@@ -1317,6 +1316,7 @@ public class DBusConnection
                ((MethodCall) m).setReply(new DBusErrorMessage(m, DBEe));
          } catch (Exception e) {
                ((MethodCall) m).setReply(new DBusErrorMessage(m, new DBusExecutionException("Message Failed to Send: "+e.getMessage())));
+               e.printStackTrace();
          }
       }
       else if (m instanceof MethodReply) {
@@ -1328,7 +1328,7 @@ public class DBusConnection
          }
       }
    }
-   private DBusMessage readIncoming(int timeoutms, LinkedList<DBusMessage> outgoing)
+   private DBusMessage readIncoming(int timeoutms, EfficientQueue outgoing)
    {
       DBusMessage m = dbus_read_write_pop(connid, timeoutms, outgoing);
       return m;

@@ -495,6 +495,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    DBusConnection* conn;
    jint flags;
    jfieldID fid;
+   bool b;
 
    conn = getconn(env, cidx);
    if (NULL == conn || !dbus_connection_get_is_connected(conn)) {
@@ -504,8 +505,8 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
       return NULL;
    }
 
-   jclass clazz = (*env)->FindClass(env, "java/util/LinkedList");
-   mid = (*env)->GetMethodID(env, clazz, "size", "()I");
+   jclass clazz = (*env)->FindClass(env, "org/freedesktop/dbus/EfficientQueue");
+   mid = (*env)->GetMethodID(env, clazz, "isEmpty", "()Z");
    clazz = (*env)->FindClass(env, "org/freedesktop/dbus/DBusConnection");
    fid = (*env)->GetFieldID(env, clazz, "_run", "Z");
    
@@ -513,10 +514,10 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    while (NULL == msg) {
       /* sychronized (outgoing) */ { 
          (*env)->MonitorEnter(env,outgoing);
-         i = (*env)->CallIntMethod(env, outgoing, mid);
+         b = (*env)->CallBooleanMethod(env, outgoing, mid);
          (*env)->MonitorExit(env,outgoing);
       }
-      if (0 != i) return NULL;
+      if (!b) return NULL;
       if (false == (*env)->GetBooleanField(env, connobj, fid)) return NULL;
          
       // blocking for timeout ms read of the next available message
