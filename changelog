@@ -7,6 +7,7 @@ Version 1.8:
 	* Remove two java collections which were doing a lot of allocation and
 	  deallocation and replace with data structures based on arrays.
 	* add removeSigHandler method
+	* add profiling application
 
 Version 1.7:
 	

@@ -110,6 +110,9 @@ doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java 
 testrun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
 
+profilerun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.profile $(PROFILE)
+
 viewer: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-viewer-$(VERSION).jar org.freedesktop.dbus.viewer.DBusViewer
 
@@ -118,6 +121,14 @@ check:
 	  dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
 	  if make testrun ; then export PASS=true; fi  ; \
+	  kill $$(cat pid) ; \
+	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
+
+profile:
+	( PASS=false; \
+	  dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
+	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
+	  if make profilerun ; then export PASS=true; fi  ; \
 	  kill $$(cat pid) ; \
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
 
