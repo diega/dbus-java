@@ -10,6 +10,7 @@
 JAVAC?=javac
 JAVA?=java
 JAVAH?=javah
+JAVADOC?=javadoc
 JAR?=jar
 CFLAGS?=`pkg-config --cflags dbus-1` -Os -Wall -Werror
 LDFLAGS?=`pkg-config --libs dbus-1`
@@ -101,7 +102,7 @@ doc/dbus-java.pdf: doc/dbus-java.dvi .doc
 doc/dbus-java/index.html: dbus-java.tex .doc
 	latex2html -dir doc/dbus-java dbus-java.tex
 doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java .doc
-	$(JAVA_HOME)/bin/javadoc -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java
+	$(JAVADOC) -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java
 
 %.1: %.sgml
 	docbook-to-man $< > $@
