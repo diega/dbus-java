@@ -1228,6 +1228,7 @@ public class DBusConnection
          Type[] ts = meth.getGenericParameterTypes();
          m.parameters = deSerializeParameters(m.parameters, ts);
       } catch (Exception e) {
+         e.printStackTrace();
          synchronized (outgoing) {
             outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); }
       }
@@ -1250,6 +1251,7 @@ public class DBusConnection
                try {
                   result = me.invoke(ob, m.parameters);
                } catch (InvocationTargetException ITe) {
+                  ITe.printStackTrace();
                   throw ITe.getCause();
                }
                synchronized (infomap) {
@@ -1272,6 +1274,7 @@ public class DBusConnection
                   outqueue.add(new DBusErrorMessage(m, DBEe)); 
                }
             } catch (Throwable e) {
+               e.printStackTrace();
                synchronized (outqueue) {
                   outqueue.add(new DBusErrorMessage(m, new DBusExecutionException("Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage()))); 
                }
