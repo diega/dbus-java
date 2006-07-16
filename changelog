@@ -8,6 +8,8 @@ Version 1.8:
 	  deallocation and replace with data structures based on arrays.
 	* add removeSigHandler method
 	* add profiling application
+	* handle incoming & outgoing native array types natively (biiiig savings
+			here)
 
 Version 1.7:
 	

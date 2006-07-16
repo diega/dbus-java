@@ -237,6 +237,7 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
    int64_t clongval;
    const char* cstringval;
    jsize i, j;
+   void* data;
 
    jclass fooclass;
    
@@ -246,7 +247,9 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
 
    i = 0;
    do {
-      if ((*env)->ExceptionOccurred(env)) return params;
+      if ((*env)->ExceptionOccurred(env)) {
+         return params;
+      }
       switch (dbus_message_iter_get_arg_type(args)) {
          case DBUS_TYPE_BYTE:
             dbus_message_iter_get_basic(args, &cbyteval);
@@ -372,36 +375,105 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
             (*env)->DeleteLocalRef(env, fooclass);
             break;
          case DBUS_TYPE_ARRAY:
-            // recurse over array
+
             dbus_message_iter_recurse(args, &sub);
-            for (j = 1; dbus_message_iter_has_next(&sub); j++) 
-               dbus_message_iter_next(&sub);
-            dbus_message_iter_recurse(args, &sub);
-            members = read_params(env, &sub, j, connobj);
-            
+
             // get the type signature
             cstringval = dbus_message_iter_get_signature(&sub); 
             sig = (*env)->NewStringUTF(env, cstringval);
 
-            // its a map
-            if (cstringval[0] == '{') {
-               fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/MapContainer");
-               mid = (*env)->GetMethodID(env, fooclass, "<init>", "([[Ljava/lang/Object;Ljava/lang/String;)V");
-               jval = (*env)->NewObject(env, fooclass, mid, members, sig);
-               if (NULL == jval) break;
-               (*env)->SetObjectArrayElement(env, params, i, jval);
-               (*env)->DeleteLocalRef(env, jval);
-               (*env)->DeleteLocalRef(env, fooclass);
-            } 
-            // it's an array
-            else {
-               fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/ListContainer");
-               mid = (*env)->GetMethodID(env, fooclass, "<init>", "([Ljava/lang/Object;Ljava/lang/String;)V");
-               jval = (*env)->NewObject(env, fooclass, mid, members, sig);
-               if (NULL == jval) break;
-               (*env)->SetObjectArrayElement(env, params, i, jval);
-               (*env)->DeleteLocalRef(env, jval);
-               (*env)->DeleteLocalRef(env, fooclass);
+            
+            switch (cstringval[0]) {
+
+               // it's a primative array. Special case these for performance reasons.
+               case DBUS_TYPE_BYTE:
+               case DBUS_TYPE_BOOLEAN:
+               case DBUS_TYPE_INT16:
+               case DBUS_TYPE_INT32:
+               case DBUS_TYPE_INT64:
+               case DBUS_TYPE_DOUBLE:
+
+                  j = dbus_message_iter_get_array_len(&sub); // size, not length
+
+                  switch (cstringval[0]) {
+                     case DBUS_TYPE_BYTE:
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        jval = (*env)->NewByteArray(env, j);
+                        (*env)->SetByteArrayRegion(env, (jbyteArray) jval, 0, j, (jbyte*) data);
+                        break;
+                     case DBUS_TYPE_BOOLEAN:
+                        j/=sizeof(dbus_bool_t);
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        jval = (*env)->NewBooleanArray(env, j);
+                        (*env)->SetBooleanArrayRegion(env, (jbooleanArray) jval, 0, j, (jboolean*) data);
+                        break;
+                     case DBUS_TYPE_INT16:
+                        j/=sizeof(dbus_int16_t);
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        jval = (*env)->NewShortArray(env, j);
+                        (*env)->SetShortArrayRegion(env, (jshortArray) jval, 0, j, (jshort*) data);
+                        break;
+                     case DBUS_TYPE_INT32:
+                        j/=sizeof(dbus_int32_t);
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        jval = (*env)->NewIntArray(env, j);
+                        (*env)->SetIntArrayRegion(env, (jintArray) jval, 0, j, (jint*) data);
+                        break;
+                     case DBUS_TYPE_INT64:
+                        j/=sizeof(dbus_int64_t);
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        jval = (*env)->NewLongArray(env, j);
+                        (*env)->SetLongArrayRegion(env, (jlongArray) jval, 0, j, (jlong*) data);
+                        break;
+                     case DBUS_TYPE_DOUBLE:
+                        j/=sizeof(double);
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        jval = (*env)->NewDoubleArray(env, j);
+                        (*env)->SetDoubleArrayRegion(env, (jdoubleArray) jval, 0, j, (jdouble*) data);
+                        break;
+                  }
+
+                  if (NULL == jval) break;
+                  (*env)->SetObjectArrayElement(env, params, i, jval);
+                  (*env)->DeleteLocalRef(env, jval);
+
+                  break;
+
+               // its a map
+               case '{':
+
+                  // recurse over array
+                  for (j = 1; dbus_message_iter_has_next(&sub); j++) 
+                     dbus_message_iter_next(&sub);
+                  dbus_message_iter_recurse(args, &sub);
+                  members = read_params(env, &sub, j, connobj);
+                  fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/MapContainer");
+                  mid = (*env)->GetMethodID(env, fooclass, "<init>", "([[Ljava/lang/Object;Ljava/lang/String;)V");
+                  jval = (*env)->NewObject(env, fooclass, mid, members, sig);
+                  (*env)->DeleteLocalRef(env, fooclass);
+                  (*env)->DeleteLocalRef(env, members);
+                  if (NULL == jval) break;
+                  (*env)->SetObjectArrayElement(env, params, i, jval);
+                  (*env)->DeleteLocalRef(env, jval);
+                  break;
+
+            // it's an array of non-primatives
+            default:
+
+                  // recurse over array
+                  for (j = 1; dbus_message_iter_has_next(&sub); j++) 
+                     dbus_message_iter_next(&sub);
+                  dbus_message_iter_recurse(args, &sub);
+                  members = read_params(env, &sub, j, connobj);
+
+                  fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/ListContainer");
+                  mid = (*env)->GetMethodID(env, fooclass, "<init>", "([Ljava/lang/Object;Ljava/lang/String;)V");
+                  jval = (*env)->NewObject(env, fooclass, mid, members, sig);
+                  (*env)->DeleteLocalRef(env, fooclass);
+                  (*env)->DeleteLocalRef(env, members);
+                  if (NULL == jval) break;
+                  (*env)->SetObjectArrayElement(env, params, i, jval);
+                  (*env)->DeleteLocalRef(env, jval);
             }
 /*
             // its an array
@@ -439,13 +511,13 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
                (*env)->DeleteLocalRef(env, cname);
                (*env)->DeleteLocalRef(env, fooclass);
             }*/
-            (*env)->DeleteLocalRef(env, members);
             (*env)->DeleteLocalRef(env, sig);
             break;
          case DBUS_TYPE_DICT_ENTRY:
             // recurse over array
             dbus_message_iter_recurse(args, &sub);
             jval = read_params(env, &sub, 2, connobj);
+            
             (*env)->SetObjectArrayElement(env, params, i, jval);
             (*env)->DeleteLocalRef(env, jval);
             break;
@@ -455,7 +527,8 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
             break;
       }
       i++;
-   } while (i < len && dbus_message_iter_next(args));
+      dbus_message_iter_next(args);
+   } while (i < len);
    
    return params;
 }
@@ -884,21 +957,63 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
       else if ((*env)->CallBooleanMethod(env, clazz, isarray)) {
          mid = (*env)->GetMethodID(env, clazzclass, "getComponentType", "()Ljava/lang/Class;");
          vitem = (*env)->CallObjectMethod(env, clazz, mid);
-         mid = (*env)->GetMethodID(env, clazzclass, "isPrimitive", "()Z");
-         if ((*env)->CallBooleanMethod(env, vitem, mid))
-            return -1;
          mid = (*env)->GetStaticMethodID(env, dbcclass, "getDBusType", "(Ljava/lang/reflect/Type;)[Ljava/lang/String;");
          values = (*env)->CallStaticObjectMethod(env, dbcclass, mid, vitem);
          if ((*env)->ExceptionOccurred(env)) return -1;
          if (1 != (*env)->GetArrayLength(env, values)) return -1;
          sig = (*env)->GetObjectArrayElement(env, values, 0);
-         
          cstringval = (*env)->GetStringUTFChars(env, sig, 0);
-         
          dbus_message_iter_open_container(args, DBUS_TYPE_ARRAY, cstringval, &sub);
-         if (0 > append_args(env, &sub, item, connobj)) return -1;
+
+         // special case primatives
+         mid = (*env)->GetMethodID(env, clazzclass, "isPrimitive", "()Z");
+         if ((*env)->CallBooleanMethod(env, vitem, mid)) {
+            int l = (*env)->GetArrayLength(env, (jarray) item);
+            void* buf;
+            switch (cstringval[0]) {
+               case DBUS_TYPE_BYTE:
+                  buf = malloc(l);
+                  (*env)->GetByteArrayRegion(env, (jbyteArray) item, 0, l, (jbyte*) buf);
+                  dbus_message_iter_append_fixed_array(&sub, cstringval[0], &buf, l);
+                  free(buf);
+                  break;
+               case DBUS_TYPE_BOOLEAN:
+                  buf = malloc(l*sizeof(jboolean));
+                  (*env)->GetBooleanArrayRegion(env, (jbooleanArray) item, 0, l, (jboolean*) buf);
+                  dbus_message_iter_append_fixed_array(&sub, cstringval[0], &buf, l);
+                  free(buf);
+                  break;
+               case DBUS_TYPE_INT16:
+                  buf = malloc(l*sizeof(jshort));
+                  (*env)->GetShortArrayRegion(env, (jshortArray) item, 0, l, (jshort*) buf);
+                  dbus_message_iter_append_fixed_array(&sub, cstringval[0], &buf, l);
+                  free(buf);
+                  break;
+               case DBUS_TYPE_INT32:
+                  buf = malloc(l*sizeof(jint));
+                  (*env)->GetIntArrayRegion(env, (jintArray) item, 0, l, (jint*) buf);
+                  dbus_message_iter_append_fixed_array(&sub, cstringval[0], &buf, l);
+                  free(buf);
+                  break;
+               case DBUS_TYPE_INT64:
+                  buf = malloc(l*sizeof(jlong));
+                  (*env)->GetLongArrayRegion(env, (jlongArray) item, 0, l, (jlong*) buf);
+                  dbus_message_iter_append_fixed_array(&sub, cstringval[0], &buf, l);
+                  free(buf);
+                  break;
+               case DBUS_TYPE_DOUBLE:
+                  buf = malloc(l*sizeof(jdouble));
+                  (*env)->GetDoubleArrayRegion(env, (jdoubleArray) item, 0, l, (jdouble*) buf);
+                  dbus_message_iter_append_fixed_array(&sub, cstringval[0], &buf, l);
+                  free(buf);
+                  break;
+            }
+
+         // other arrays
+         } else 
+            if (0 > append_args(env, &sub, item, connobj)) return -1;
+
          dbus_message_iter_close_container(args, &sub);
-         
          (*env)->DeleteLocalRef(env, vitem);
          (*env)->ReleaseStringUTFChars(env, sig, cstringval);
          (*env)->DeleteLocalRef(env, sig);

@@ -117,7 +117,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
       if (null == n)
          test.fail("List was null");
       if (n.size() != 3)
-         test.fail("List was wrong size");
+         test.fail("List was wrong size (expected 3, actual "+n.size()+")");
       if (n.get(0) != 2L ||
           n.get(1) != 5L ||
           n.get(2) != 71L)

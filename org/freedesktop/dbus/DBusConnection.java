@@ -715,13 +715,13 @@ public class DBusConnection
                }
             }
          }
-         else if (types[i] instanceof GenericArrayType &&
+         /*else if (types[i] instanceof GenericArrayType &&
                ! (parameters[i] instanceof Object[]))
             parameters[i] = ArrayFrob.wrap(parameters[i]);
          else if (types[i] instanceof Class &&
                ((Class) types[i]).isArray() &&
                ! (parameters[i] instanceof Object[]))
-            parameters[i] = ArrayFrob.wrap(parameters[i]);
+            parameters[i] = ArrayFrob.wrap(parameters[i]);*/
          
       }
       return parameters;
@@ -730,6 +730,7 @@ public class DBusConnection
    {
       if (null == parameters) return null;
       for (int i = 0; i < parameters.length; i++) {
+         if (null == parameters[i]) continue;
 
          if (types[i] instanceof Class &&
                DBusSerializable.class.isAssignableFrom((Class) types[i])) {
@@ -799,8 +800,9 @@ public class DBusConnection
          }
 
          // make sure arrays are in the correct format
-         if ((parameters[i] instanceof Object[] ||
-                  parameters[i] instanceof List)) {
+         if (parameters[i] instanceof Object[] ||
+                  parameters[i] instanceof List ||
+                  parameters[i].getClass().isArray()) {
             if (types[i] instanceof ParameterizedType)
                parameters[i] = ArrayFrob.convert(parameters[i],
                      (Class<? extends Object>) ((ParameterizedType) types[i]).getRawType());
@@ -1228,7 +1230,6 @@ public class DBusConnection
          Type[] ts = meth.getGenericParameterTypes();
          m.parameters = deSerializeParameters(m.parameters, ts);
       } catch (Exception e) {
-         e.printStackTrace();
          synchronized (outgoing) {
             outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); }
       }
@@ -1251,7 +1252,6 @@ public class DBusConnection
                try {
                   result = me.invoke(ob, m.parameters);
                } catch (InvocationTargetException ITe) {
-                  ITe.printStackTrace();
                   throw ITe.getCause();
                }
                synchronized (infomap) {
@@ -1274,7 +1274,6 @@ public class DBusConnection
                   outqueue.add(new DBusErrorMessage(m, DBEe)); 
                }
             } catch (Throwable e) {
-               e.printStackTrace();
                synchronized (outqueue) {
                   outqueue.add(new DBusErrorMessage(m, new DBusExecutionException("Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage()))); 
                }
@@ -1351,7 +1350,6 @@ public class DBusConnection
                ((MethodCall) m).setReply(new DBusErrorMessage(m, DBEe));
          } catch (Exception e) {
                ((MethodCall) m).setReply(new DBusErrorMessage(m, new DBusExecutionException("Message Failed to Send: "+e.getMessage())));
-               e.printStackTrace();
          }
       }
       else if (m instanceof MethodReply) {

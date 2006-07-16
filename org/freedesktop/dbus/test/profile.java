@@ -75,11 +75,11 @@ public class profile
          System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
          System.out.println("Introspect data: "+s);
       } else if ("bytes".equals(args[0])) {
-         System.out.print("Sending 500000 bytes");
+         System.out.print("Sending 5000000 bytes");
          conn.exportObject("/Profiler", new ProfilerInstance());
          Profiler p = (Profiler) conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Profiler.class);
-         byte[] bs = new byte[500000];
-         for (int i = 0; i < 500000; i++) 
+         byte[] bs = new byte[5000000];
+         for (int i = 0; i < 5000000; i++) 
             bs[i] = (byte) i;            
          long t = System.currentTimeMillis();
          p.bytes(bs);
