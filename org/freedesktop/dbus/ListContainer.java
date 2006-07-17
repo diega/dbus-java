@@ -53,9 +53,9 @@ class ListContainer
       values = (Object[]) Array.newInstance(c, l.size());
 
       try {
-         for (int i = 0; i < l.size(); i++) {
-            values[i] = DBusConnection.convertParameters( new Object[] { l.get(i) }, new Type[] { ts[0] })[0];
-         }
+         for (int i = 0; i < l.size(); i++) 
+            values[i] = DBusConnection.convertParameter(l.get(i), ts[0]);
+
       } catch (Exception e) {
          throw new DBusException(e.getMessage());
       }
@@ -84,10 +84,10 @@ class ListContainer
          return null;
       }
 
-      this.list = new Vector<Object>();
-      for (int i = 0; i < values.length; i++) {
-         this.list.add(DBusConnection.deSerializeParameters(new Object[] { this.values[i] }, new Type[] { ts[0] })[0]);
-      }
-      return list; 
+      Object[] ov = new Object[values.length];
+      for (int i = 0; i < values.length; i++) 
+         ov[i] = DBusConnection.deSerializeParameter(this.values[i], ts[0]);
+      this.list = Arrays.asList(ov); 
+      return list;
    }
 }

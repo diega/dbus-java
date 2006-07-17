@@ -34,8 +34,8 @@ class DBusErrorMessage extends DBusMessage
    protected DBusErrorMessage(DBusMessage m, DBusExecutionException ex)
    {
       super(null, null, null, "s", new Object[] { ex.getMessage() }, 0, m.getSerial());
-      this.type = ex.getClass().getName().replaceAll("[$]", ".");
-      this.name = ex.getClass().getName().replaceAll("[$]", ".");
+      this.type = DBusConnection.dollar_pattern.matcher(ex.getClass().getName()).replaceAll(".");
+      this.name = DBusConnection.dollar_pattern.matcher(ex.getClass().getName()).replaceAll(".");
       this.destination = m.getSource();
    }
    /**
@@ -47,8 +47,8 @@ class DBusErrorMessage extends DBusMessage
    protected DBusErrorMessage(DBusMessage m, DBusException ex, Object... parameters)
    {
       super(null, null, null, "", parameters, 0, m.getSerial());
-      this.type = ex.getClass().getName().replaceAll("[$]", ".");
-      this.name = ex.getClass().getName().replaceAll("[$]", ".");
+      this.type = DBusConnection.dollar_pattern.matcher(ex.getClass().getName()).replaceAll(".");
+      this.name = DBusConnection.dollar_pattern.matcher(ex.getClass().getName()).replaceAll(".");
       this.destination = m.getSource();
    }
    /**
@@ -60,8 +60,8 @@ class DBusErrorMessage extends DBusMessage
   protected DBusErrorMessage(String destination, DBusException ex, Object... parameters)
    {
       super(null, null, null, "", parameters, 0);
-      this.type = ex.getClass().getName().replaceAll("[$]", ".");
-      this.name = ex.getClass().getName().replaceAll("[$]", ".");
+      this.type = DBusConnection.dollar_pattern.matcher(ex.getClass().getName()).replaceAll(".");
+      this.name = DBusConnection.dollar_pattern.matcher(ex.getClass().getName()).replaceAll(".");
       this.destination = destination;
    }
    /**

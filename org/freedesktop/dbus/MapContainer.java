@@ -5,7 +5,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,9 +47,7 @@ class MapContainer
       this.keys = keys;
       this.values = values;
       this.sig = sig;
-      this.map = new HashMap<Object,Object>();
-      for (int i = 0; i < keys.length; i++)
-         this.map.put(keys[i], values[i]);
+      this.map = new DBusMap<Object,Object>(keys,values);
    }
    public MapContainer(Map<Object,Object> m, ParameterizedType t) throws DBusException
    {
@@ -59,7 +56,8 @@ class MapContainer
       sig = "{";
 
       c = (Class) ts[0];
-      keys = m.keySet().toArray((Object[]) Array.newInstance(c, 0));
+      //keys = m.keySet().toArray((Object[]) Array.newInstance(c, 0));
+      keys = (Object[]) Array.newInstance(c, m.size());
 
       String[] s = DBusConnection.getDBusType(ts[0]);
       if (1 != s.length) throw new DBusException("List Contents not single type");
@@ -78,8 +76,11 @@ class MapContainer
       values = (Object[]) Array.newInstance(c, m.size());
 
       try {
-         for (int i = 0; i < m.size(); i++) {
-            values[i] = DBusConnection.convertParameters( new Object[] { m.get(keys[i]) }, new Type[] { ts[1] })[0];
+         int i = 0;
+         for (Map.Entry e: m.entrySet()) {
+            values[i] = DBusConnection.convertParameter( e.getValue(), ts[1]);
+            keys[i] = e.getKey();
+            i++;
          }
       } catch (Exception e) {
          throw new DBusException(e.getMessage());
@@ -100,12 +101,13 @@ class MapContainer
       if (null != map) return map;
       Type[] ts = ((ParameterizedType) t).getActualTypeArguments();
 
-      this.map = new HashMap<Object,Object>();
+      Object[] newvalues = new Object[values.length];
       for (int i = 0; i < keys.length; i++) {
-         this.map.put(
-               DBusConnection.deSerializeParameters(new Object[] { this.keys[i] }, new Type[] { ts[0] })[0],
-               DBusConnection.deSerializeParameters(new Object[] { this.values[i] }, new Type[] { ts[1] })[0]);
+         keys[i] = DBusConnection.deSerializeParameter(this.keys[i], ts[0]);
+         newvalues[i] = DBusConnection.deSerializeParameter(this.values[i], ts[1]);
       }
-      return map; 
+      values = newvalues;
+      this.map = new DBusMap<Object,Object>(keys,values);
+      return map;
    }
 }

@@ -14,7 +14,7 @@ class DBusMatchRule
    }
    public DBusMatchRule(DBusExecutionException e)
    {
-      iface = e.getClass().getName().replaceAll("[$]", ".");
+      iface = DBusConnection.dollar_pattern.matcher(e.getClass().getName()).replaceAll(".");
       member = null;
       type = "error";
    }
@@ -35,29 +35,29 @@ class DBusMatchRule
    }
    public DBusMatchRule(Class<? extends DBusInterface> c, String method)
    {
-      iface = c.getName().replaceAll("[$]", ".");
+      iface = DBusConnection.dollar_pattern.matcher(c.getName()).replaceAll(".");
       member = method;
       type = "method_call";
    }
    public DBusMatchRule(Class c) throws DBusException
    {
       if (DBusInterface.class.isAssignableFrom(c)) {
-         iface = c.getName().replaceAll("[$]", ".");
+         iface = DBusConnection.dollar_pattern.matcher(c.getName()).replaceAll(".");
          member = null;
          type = null;
       }
       else if (DBusSignal.class.isAssignableFrom(c)) {
-         iface = c.getEnclosingClass().getName().replaceAll("[$]", ".");
+         iface = DBusConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
          member = c.getSimpleName();
          type = "signal";
       }
       else if (DBusErrorMessage.class.isAssignableFrom(c)) {
-         iface = c.getName().replaceAll("[$]", ".");
+         iface = DBusConnection.dollar_pattern.matcher(c.getName()).replaceAll(".");
          member = null;
          type = "error";
       }
       else if (DBusExecutionException.class.isAssignableFrom(c)) {
-         iface = c.getClass().getName().replaceAll("[$]", ".");
+         iface = DBusConnection.dollar_pattern.matcher(c.getClass().getName()).replaceAll(".");
          member = null;
          type = "error";
       }

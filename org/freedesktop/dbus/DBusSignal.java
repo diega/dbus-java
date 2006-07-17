@@ -62,7 +62,7 @@ public abstract class DBusSignal extends DBusMessage
       try {
          name = getClass().getSimpleName();
          if (null != getClass().getEnclosingClass())
-            type = getClass().getEnclosingClass().getName().replaceAll("[$]", ".");
+            type = DBusConnection.dollar_pattern.matcher(getClass().getEnclosingClass().getName()).replaceAll(".");
          this.objectpath = objectpath;
 
          // convert recursively everything
