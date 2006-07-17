@@ -16,6 +16,55 @@ import org.freedesktop.DBus.Introspectable;
  */
 public class profile
 {
+   public static class Log
+   {
+      private long last;
+      private int[] deltas;
+      private int current = 0;
+      public Log(int size)
+      {
+         deltas = new int[size];
+      }
+      public void start()
+      {
+         last = System.currentTimeMillis();
+      }
+      public void stop()
+      {
+         deltas[current] = (int) (System.currentTimeMillis()-last);
+         current++;
+      }
+      public double mean()
+      {
+         if (0 == current) return 0;
+         long sum = 0;
+         for (int i = 0; i < current; i++)
+            sum+=deltas[i];
+         return sum /= current;            
+      }
+      public long min()
+      {
+         int m = Integer.MAX_VALUE;
+         for (int i = 0; i < current; i++)
+            if (deltas[i] < m) m = deltas[i];
+         return m;
+      }
+      public long max()
+      {
+         int m = 0;
+         for (int i = 0; i < current; i++)
+            if (deltas[i] > m) m = deltas[i];
+         return m;
+      }
+      public double stddev()
+      {
+         double mean = mean();
+         double sum = 0;
+         for (int i=0; i < current; i++)
+            sum += (deltas[i]-mean)*(deltas[i]-mean);
+         return Math.sqrt(sum / (current-1));
+      }
+   }
    public static void main(String[] args) throws DBusException
    {
       if (0==args.length) {
@@ -28,26 +77,43 @@ public class profile
       if ("pings".equals(args[0])) {
          System.out.print("Sending 10000 pings...");
          Peer p = (Peer) conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Peer.class);
+         Log l = new Log(10000);
          long t = System.currentTimeMillis();
          for (int i = 0; i < 100; i++) {
-            for (int j = 0; j < 100; j++)
+            for (int j = 0; j < 100; j++) {
+               l.start();
                p.Ping();
+               l.stop();
+            }
             System.out.print(".");
          }
-         System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
+         t = System.currentTimeMillis()-t;
+         System.out.println(" done.");
+         System.out.println("min/max/avg (ms): "+l.min()+"/"+l.max()+"/"+l.mean());
+         System.out.println("deviation: "+l.stddev());
+         System.out.println("Total time: "+t+"ms");
       } else if ("arrays".equals(args[0])) {
-         System.out.print("Sending array of 1000 ints 100 times.");
+         System.out.print("Sending array of 1000 ints 1000 times.");
          conn.exportObject("/Profiler", new ProfilerInstance());
          Profiler p = (Profiler) conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Profiler.class);
          int[] v = new int[1000];
          Random r = new Random();
          for (int i = 0; i < 1000; i++) v[i] = r.nextInt();
+         Log l = new Log(1000);
          long t = System.currentTimeMillis();
          for (int i = 0; i < 100; i++) {
-            p.array(v);
+            for (int j = 0; j < 10; j++) {
+               l.start();
+               p.array(v);
+               l.stop();
+            }
             System.out.print(".");
          }
-         System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
+         t = System.currentTimeMillis()-t;
+         System.out.println(" done.");
+         System.out.println("min/max/avg (ms): "+l.min()+"/"+l.max()+"/"+l.mean());
+         System.out.println("deviation: "+l.stddev());
+         System.out.println("Total time: "+t+"ms");
       } else if ("maps".equals(args[0])) {
          System.out.print("Sending map of 100 string=>strings 1000 times.");
          conn.exportObject("/Profiler", new ProfilerInstance());
@@ -55,13 +121,21 @@ public class profile
          HashMap<String,String> m = new HashMap<String,String>();
          for (int i = 0; i < 100; i++) 
             m.put(""+i, "hello");
+         Log l = new Log(1000);
          long t = System.currentTimeMillis();
          for (int i = 0; i < 100; i++) {
-            for (int j=0; j < 10; j++)
+            for (int j=0; j < 10; j++) {
+               l.start();
                p.map(m);
+               l.stop();
+            }
             System.out.print(".");
          }
-         System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
+         t = System.currentTimeMillis()-t;
+         System.out.println(" done.");
+         System.out.println("min/max/avg (ms): "+l.min()+"/"+l.max()+"/"+l.mean());
+         System.out.println("deviation: "+l.stddev());
+         System.out.println("Total time: "+t+"ms");
       } else if ("lists".equals(args[0])) {
          System.out.print("Sending list of 100 strings 1000 times.");
          conn.exportObject("/Profiler", new ProfilerInstance());
@@ -69,37 +143,61 @@ public class profile
          Vector<String> v = new Vector<String>();
          for (int i = 0; i < 100; i++) 
             v.add("hello "+i);
+         Log l = new Log(1000);
          long t = System.currentTimeMillis();
          for (int i = 0; i < 100; i++) {
-            for (int j=0; j < 10; j++)
+            for (int j=0; j < 10; j++) {
+               l.start();
                p.list(v);
+               l.stop();
+            }
             System.out.print(".");
          }
-         System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
+         t = System.currentTimeMillis()-t;
+         System.out.println(" done.");
+         System.out.println("min/max/avg (ms): "+l.min()+"/"+l.max()+"/"+l.mean());
+         System.out.println("deviation: "+l.stddev());
+         System.out.println("Total time: "+t+"ms");
       } else if ("structs".equals(args[0])) {
          System.out.print("Sending a struct 1000 times.");
          conn.exportObject("/Profiler", new ProfilerInstance());
          Profiler p = (Profiler) conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Profiler.class);
          ProfileStruct ps = new ProfileStruct("hello", new UInt32(18), 500L);
+         Log l = new Log(1000);
          long t = System.currentTimeMillis();
          for (int i = 0; i < 100; i++) {
-            for (int j=0; j < 10; j++)
+            for (int j=0; j < 10; j++) {
+               l.start();
                p.struct(ps);
+               l.stop();
+            }
             System.out.print(".");
          }
-         System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
+         t = System.currentTimeMillis()-t;
+         System.out.println(" done.");
+         System.out.println("min/max/avg (ms): "+l.min()+"/"+l.max()+"/"+l.mean());
+         System.out.println("deviation: "+l.stddev());
+         System.out.println("Total time: "+t+"ms");
       } else if ("introspect".equals(args[0])) {
          System.out.print("Recieving introspection data 1000 times.");
          conn.exportObject("/Profiler", new ProfilerInstance());
          Introspectable is = (Introspectable) conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Introspectable.class);
+         Log l = new Log(1000);
          long t = System.currentTimeMillis();
          String s = null;
          for (int i = 0; i < 100; i++) {
-            for (int j = 0; j < 10; j++)
+            for (int j = 0; j < 10; j++) {
+               l.start();
                s = is.Introspect();
+               l.stop();
+            }
             System.out.print(".");
          }
-         System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
+         t = System.currentTimeMillis()-t;
+         System.out.println(" done.");
+         System.out.println("min/max/avg (ms): "+l.min()+"/"+l.max()+"/"+l.mean());
+         System.out.println("deviation: "+l.stddev());
+         System.out.println("Total time: "+t+"ms");
          System.out.println("Introspect data: "+s);
       } else if ("bytes".equals(args[0])) {
          System.out.print("Sending 5000000 bytes");
