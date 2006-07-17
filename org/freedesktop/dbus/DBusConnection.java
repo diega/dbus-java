@@ -522,12 +522,16 @@ public class DBusConnection
       } else if (c instanceof Class && 
             Struct.class.isAssignableFrom((Class) c)) {
          out[level].append('(');
-         Field[] fs = ((Class) c).getDeclaredFields();
-         Type[] ts = new Type[fs.length];
-         for (Field f : fs) {
-            Position pos = f.getAnnotation(Position.class);
-            if (null == pos) continue;
-            ts[pos.value()] = f.getGenericType();
+         Type[] ts = Struct.getStructTypeCache(c);
+         if (null == ts) {
+            Field[] fs = ((Class) c).getDeclaredFields();
+            ts = new Type[fs.length];
+            for (Field f : fs) {
+               Position p = f.getAnnotation(Position.class);
+               if (null == p) continue;
+               ts[p.value()] = f.getGenericType();
+           }
+            Struct.putStructTypeCache(c, ts);
          }
 
          for (Type t: ts)
@@ -761,12 +765,16 @@ public class DBusConnection
       if (parameter instanceof Object[] && 
             type instanceof Class &&
             Struct.class.isAssignableFrom((Class) type)) {
-         Field[] fs = ((Class) type).getDeclaredFields();
-         Type[] ts = new Type[fs.length];
-         for (Field f : fs) {
-            Position p = f.getAnnotation(Position.class);
-            if (null == p) continue;
-            ts[p.value()] = f.getGenericType();
+         Type[] ts = Struct.getStructTypeCache(type);
+         if (null == ts) {
+            Field[] fs = ((Class) type).getDeclaredFields();
+            ts = new Type[fs.length];
+            for (Field f : fs) {
+               Position p = f.getAnnotation(Position.class);
+               if (null == p) continue;
+               ts[p.value()] = f.getGenericType();
+           }
+            Struct.putStructTypeCache(type, ts);
          }
 
          // recurse over struct contents

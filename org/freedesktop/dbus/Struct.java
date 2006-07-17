@@ -1,5 +1,7 @@
 package org.freedesktop.dbus;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import org.freedesktop.dbus.Position;
@@ -13,6 +15,15 @@ import org.freedesktop.dbus.Position;
  */
 public abstract class Struct
 {
+   private static Map<Type,Type[]> typecache = new HashMap<Type,Type[]>();
+   static void putStructTypeCache(Type k, Type[] v)
+   {
+      typecache.put(k, v);
+   }
+   static Type[] getStructTypeCache(Type k)
+   {
+      return typecache.get(k);
+   }
    private String sig = null;
    private Object[] parameters = null;
    public Struct() {}

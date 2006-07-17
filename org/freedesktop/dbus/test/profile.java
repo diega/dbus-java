@@ -1,12 +1,13 @@
 package org.freedesktop.dbus.test;
 
 import java.util.Random;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Vector;
 
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.UInt32;
 import org.freedesktop.DBus.Peer;
 import org.freedesktop.DBus.Introspectable;
 
@@ -19,7 +20,7 @@ public class profile
    {
       if (0==args.length) {
          System.out.println("You must specify a profile type.");
-         System.out.println("Syntax: profile <pings|arrays|introspect|maps|bytes>");
+         System.out.println("Syntax: profile <pings|arrays|introspect|maps|bytes|lists|structs>");
          System.exit(1);
       }
       DBusConnection conn = DBusConnection.getConnection(DBusConnection.SESSION);
@@ -61,6 +62,32 @@ public class profile
             System.out.print(".");
          }
          System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
+      } else if ("lists".equals(args[0])) {
+         System.out.print("Sending list of 100 strings 1000 times.");
+         conn.exportObject("/Profiler", new ProfilerInstance());
+         Profiler p = (Profiler) conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Profiler.class);
+         Vector<String> v = new Vector<String>();
+         for (int i = 0; i < 100; i++) 
+            v.add("hello "+i);
+         long t = System.currentTimeMillis();
+         for (int i = 0; i < 100; i++) {
+            for (int j=0; j < 10; j++)
+               p.list(v);
+            System.out.print(".");
+         }
+         System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
+      } else if ("structs".equals(args[0])) {
+         System.out.print("Sending a struct 1000 times.");
+         conn.exportObject("/Profiler", new ProfilerInstance());
+         Profiler p = (Profiler) conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Profiler.class);
+         ProfileStruct ps = new ProfileStruct("hello", new UInt32(18), 500L);
+         long t = System.currentTimeMillis();
+         for (int i = 0; i < 100; i++) {
+            for (int j=0; j < 10; j++)
+               p.struct(ps);
+            System.out.print(".");
+         }
+         System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
       } else if ("introspect".equals(args[0])) {
          System.out.print("Recieving introspection data 1000 times.");
          conn.exportObject("/Profiler", new ProfilerInstance());
@@ -87,7 +114,7 @@ public class profile
       } else {
          conn.disconnect();
          System.out.println("Invalid profile ``"+args[0]+"''.");
-         System.out.println("Syntax: profile <pings|arrays|introspect|maps|bytes>");
+         System.out.println("Syntax: profile <pings|arrays|introspect|maps|bytes|lists|structs>");
          System.exit(1);
       }
       conn.disconnect();
