@@ -22,7 +22,7 @@
 \fi
 
 \author{Matthew Johnson\\matthew.johnson@cl.cam.ac.uk}
-\title{DBus programming in Java 1.5}
+\title{D-Bus programming in Java 1.5}
 
 \begin{document}
 
@@ -34,13 +34,13 @@
 
 \section{Introduction}
 
-This document describes how to use the Java bindings for DBus. DBus
+This document describes how to use the Java bindings for D-Bus. D-Bus
 is an IPC mechanism which at a low level uses message passing over
-Unix Sockets or IP. DBus models its messages as either function
+Unix Sockets or IP. D-Bus models its messages as either function
 calls on remote objects, or signals emitted from them.
 
 Java is an object-oriented language and these bindings attempt to
-match the DBus IPC model to the Java object model. The bindings also
+match the D-Bus IPC model to the Java object model. The bindings also
 make heavy use of threads and exceptions. The programmer should be
 careful to take care of synchronisation issues in their code. All
 method calls by remote programs on exported objects and all signal
@@ -49,7 +49,7 @@ throw {\tt DBusExecutionException}, which is a runtime exception and
 so the compiler will not remind you to handle it.
 
 The Java bindings API is also documented in the
-JavaDoc\footnote{http://javadoc.matthew.ath.cx/}, DBus is
+JavaDoc\footnote{http://javadoc.matthew.ath.cx/}, D-Bus is
 described in the
 specification\footnote{http://dbus.freedesktop.org/doc/dbus-specification.html}
 and the API
@@ -58,12 +58,12 @@ documentation\footnote{http://dbus.freedesktop.org/doc/api/html/}.
 \subsection{Dependencies}
 
 These bindings require Java 1.5-compatible VM and compiler (either
-Sun, or ecj+jamvm with classpath-generics newer than 0.19), and DBus
+Sun, or ecj+jamvm with classpath-generics newer than 0.19), and D-Bus
 0.60 or newer.
 
-\subsection{DBus Terminology}
+\subsection{D-Bus Terminology}
 
-DBus has several notions which are exposed to the users of the Java
+D-Bus has several notions which are exposed to the users of the Java
 bindings.
 
 \subsubsection{Service Names}
@@ -92,7 +92,7 @@ are used to distinguish objects.
 \subsubsection{Member Names}
 
 Methods and Signals have names which identify them within an
-interface. DBus does not support method overloading, only one
+interface. D-Bus does not support method overloading, only one
 method or signal should exist with each name.
 
 \subsubsection{Errors}
@@ -189,9 +189,9 @@ if (stuffreply.hasReply()) {
 
 \section{DBusInterface}
 
-To call methods or expose methods on DBus you need to define them
+To call methods or expose methods on D-Bus you need to define them
 with their exact signature in a Java interface. The full name of
-this interface must be the same as the DBus interface they
+this interface must be the same as the D-Bus interface they
 represent.
 
 For example, if I want to expose methods on the interface
@@ -201,7 +201,7 @@ in the file {\tt org/freedesktop/DBus.java} as normal. Any object
 wanting to export these methods would implement {\tt
 org.freedesktop.DBus}.
 
-Any interfaces which can be exported over DBus must extend {\tt
+Any interfaces which can be exported over D-Bus must extend {\tt
 DBusInterface\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/DBusInterface.html}}.
 A class may implement more than one exportable interface, all public
 methods declared in an interface which extend {\tt DBusInterface}
@@ -214,7 +214,7 @@ the test
 classes\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/test/TestRemoteInterface2.java
 http://javadoc.matthew.ath.cx/org/freedesktop/dbus/test/TestRemoteInterface.java}.
 
-All method calls by other programs on objects you export over DBus
+All method calls by other programs on objects you export over D-Bus
 are executed in their own thread.
 
 {\tt DBusInterface} itself specifies one method \verb&boolean isRemote()&. If this is executed on a remote object it will always
@@ -405,12 +405,12 @@ public class Handler extends DBusSigHandler
 \end{figure}
 
 
-\section{DBus Types}
+\section{D-Bus Types}
 
-DBus supports a number of types in its messages, some which Java
+D-Bus supports a number of types in its messages, some which Java
 supports natively, and some which it doesn't. These bindings provide
-a way of modelling the extra DBus Types in Java. The full list of
-types and what DBus type they map to is in table \ref{table:types}.
+a way of modelling the extra D-Bus Types in Java. The full list of
+types and what D-Bus type they map to is in table \ref{table:types}.
 
 \subsection{Basic Types}
 
@@ -418,19 +418,19 @@ All of Java's basic types are supported as parameters and return types to method
 
 \subsubsection{Unsigned Types}
 
-DBus, like C and similar languages, has a notion of unsigned numeric
+D-Bus, like C and similar languages, has a notion of unsigned numeric
 types. These bindings supply {\tt
 UInt16\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/UInt16.html}}, {\tt
 UInt32} and {\tt UInt64} classes to represent these new basic types.
 
 \subsection{Strings}
 
-DBus also supports sending Strings. When mentioned below, Strings
+D-Bus also supports sending Strings. When mentioned below, Strings
 count as a basic type.
 
 \subsection{Arrays}
 
-You can send arrays of any valid DBus Type over DBus. These can
+You can send arrays of any valid D-Bus Type over D-Bus. These can
 either be declared in Java as arrays (e.g. \verb&Integer[]& or
 \verb&int[]&) or as Lists (e.g. \verb&List<String>&). All lists {\bf
 must} be parameterised with their type in the source (reflection on
@@ -438,15 +438,15 @@ this is used by the bindings to determine their type).
 
 \subsection{Maps}
 
-DBus supports a dictionary type analogous to the Java Map type. This
+D-Bus supports a dictionary type analogous to the Java Map type. This
 has the additional restriction that only basic types can be used as
-the key (including String). Any valid DBus type can be the value. As
+the key (including String). Any valid D-Bus type can be the value. As
 with lists, maps must be fully parameterised. (e.g.
 \verb&Map<Integer, String>&).
 
 \subsection{Variants}
 
-DBus has support for a Variant type. This is similar to declaring that a method takes a parameter of type {\tt Object}, in that a Variant may contain any other type. Variants can either be declared using the {\tt Variant\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/Variant.html}} class, or as a Type Variable. In the latter case the value is automatically unwrapped and passed to the function. Variants in compound types (Arrays, Maps, etc) must be declared using the Variant class and manually unwrapped.
+D-Bus has support for a Variant type. This is similar to declaring that a method takes a parameter of type {\tt Object}, in that a Variant may contain any other type. Variants can either be declared using the {\tt Variant\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/Variant.html}} class, or as a Type Variable. In the latter case the value is automatically unwrapped and passed to the function. Variants in compound types (Arrays, Maps, etc) must be declared using the Variant class and manually unwrapped.
 
 Both these methods use variants:
 
@@ -457,7 +457,7 @@ public <T> int hash(T v);
 
 \subsection{Structs}
 
-DBus has a struct type, which is a collection of other types. Java
+D-Bus has a struct type, which is a collection of other types. Java
 does not have an analogue of this other than fields in classes, and
 due to the limitation of Java reflection this is not sufficient. The
 bindings declare a {\tt
@@ -508,7 +508,7 @@ public void do(Struct3<String, UInt32, String> data);
 
 
 Section~\ref{sec:create} describes how these can be automatically
-generated from DBus introspection data.
+generated from D-Bus introspection data.
 
 \subsection{Objects}
 
@@ -521,7 +521,7 @@ services in a similar fashion.
 
 \subsection{Multiple Return Values}
 
-DBus also allows functions to return multiple values, a concept not supported
+D-Bus also allows functions to return multiple values, a concept not supported
 by Java. This has been solved in a fashion similar to the struct, using a {\tt
 Tuple\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/Tuple.html}} class, and
 defining tuples of the appropriate length. This can be seen in
@@ -540,12 +540,12 @@ public ThreeTuple<String, Integer, Boolean> status(int item);
 
 \subsection{Full list of types}
 
-Table \ref{table:types} contains a full list of all the Java types and their corresponding DBus types.
+Table \ref{table:types} contains a full list of all the Java types and their corresponding D-Bus types.
 
 \begin{table}
 \begin{center}
 \begin{tabular}{l|l}
-\bf Java Type & \bf DBus Type \\
+\bf Java Type & \bf D-Bus Type \\
 \hline
 Byte	&	DBUS\_TYPE\_BYTE	\\
 byte	&	DBUS\_TYPE\_BYTE	\\
@@ -572,14 +572,14 @@ Variant	&	DBUS\_TYPE\_VARIANT	\\
 ? extends DBusInterface	&	DBUS\_TYPE\_OBJECT\_PATH	\\
 \end{tabular}
 \end{center}
-\caption{Mapping between Java types and DBus types}
+\caption{Mapping between Java types and D-Bus types}
 \label{table:types}
 \end{table}
 
 \section{CreateInterface}
 \label{sec:create}
 
-DBus provides a method to get introspection data on a remote object,
+D-Bus provides a method to get introspection data on a remote object,
 which describes the interfaces, methods and signals it provides.
 This introspection data is in XML
 format\footnote{http://dbus.freedesktop.org/doc/dbus-specification.html\#introspection-format}.
@@ -591,7 +591,7 @@ The {\tt
 CreateInterface\footnote{http://javadoc.matthew.ath.cx/org/freedesktop/dbus/CreateInterface.html}}
 class will automatically create Java source files from an XML file
 containing the introspection data, or by querying the remote object
-over DBus.  CreateInterface can be called from Java code, or can be run as a
+over D-Bus.  CreateInterface can be called from Java code, or can be run as a
 stand alone program.  
 
 The syntax for the CreateInterface program is
@@ -608,7 +608,7 @@ correct directory structure will be created.
 
 \section{Annotations}
 
-You can annotate your dbus methods as in figure \ref{fig:annotation} to provide hints to other users of your API. Common annotations are listed in table \ref{tab:annotations}.
+You can annotate your D-Bus methods as in figure \ref{fig:annotation} to provide hints to other users of your API. Common annotations are listed in table \ref{tab:annotations}.
 
 \begin{figure}[htb]
 \begin{center}
@@ -659,7 +659,7 @@ the {\tt DBUS\_JAVA\_DEBUG} environment variable before running your program.
 
 As an example here are a complete set of interfaces for the
 bluemon\footnote{http://www.matthew.ath.cx/projects/bluemon} daemon,
-which communicates over DBus. These interfaces were all created by
+which communicates over D-Bus. These interfaces were all created by
 querying introspection data over the bus.
 
 \newpage
