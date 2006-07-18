@@ -5,11 +5,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import java.util.Map;
+import java.util.List;
+
 import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
+import org.freedesktop.dbus.Position;
+import org.freedesktop.dbus.Struct;
+import org.freedesktop.dbus.Tuple;
+import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
+import org.freedesktop.dbus.UInt64;
+import org.freedesktop.dbus.Variant;
 
 public interface DBus extends DBusInterface
 {
@@ -294,6 +303,90 @@ public interface DBus extends DBusInterface
       public @interface CSymbol
       {
          String value();
+      }
+   }
+   /**
+    * Contains Binding-test interfaces
+    */
+   public interface Binding
+   {
+      public interface SingleTests extends DBusInterface
+      {
+         @Description("Returns the sum of the values in the input list")
+         public UInt32 Sum(List<Byte> a);
+      }
+      public interface TestCallbacks extends DBusInterface
+      {
+         @Description("when the trigger signal is received, this method should be called on the sending service/object.")
+         public void Response(UInt16 a, double b);
+      }
+      public interface Tests extends DBusInterface
+      {
+         @Description("Returns the sum of the values in the input list")
+         public long Sum(List<Integer> a);
+         @Description("Given a map of A => B, should return a map of B => a list of all the As which mapped to B")
+         public Map<String, List<String>> InvertMalling(Map<String, String> a);
+         @Description("This method returns the contents of a struct as separate values")
+         public Triplet<String, UInt32, Short> DeStruct(TestStruct a);
+         @Description("Given any compound type as a variant, return all the primitive types recursively contained within as an array of variants")
+         public List<Variant> Primitize(Variant a);
+         @Description("inverts it's input")
+         public boolean Invert(boolean a);
+         @Description("triggers sending of a signal from the supplied object with the given parameter")
+         public void Trigger(DBusInterface a, UInt64 b);
+      }
+      public interface TestSignals extends DBusInterface
+      {
+         @Description("Sent in response to a method call")
+         public static class Triggered extends DBusSignal
+         {
+            public final UInt64 a;
+            public Triggered(String path, UInt64 a) throws DBusException
+            {
+               super(path, a);
+               this.a = a;
+            }
+         }
+         @Description("Causes a callback")
+         public static class Trigger extends DBusSignal
+         {
+            public final UInt16 a;
+            public final double b;
+            public Trigger(String path, UInt16 a, double b) throws DBusException
+            {
+               super(path, a, b);
+               this.a = a;
+               this.b = b;
+            }
+         }
+      }
+      public final class TestStruct extends Struct
+      {
+         @Position(0)
+         public final String a;
+         @Position(1)
+         public final UInt32 b;
+         @Position(2)
+         public final Short c;
+         public TestStruct(String a, UInt32 b, Short c)
+         {
+            this.a = a;
+            this.b = b;
+            this.c = c;
+         }
+      }
+      public final class Triplet<A,B,C> extends Tuple
+      {
+         public final A a;
+         public final B b;
+         public final C c;
+         public Triplet(A a, B b, C c)
+         {
+            super(a, b, c);
+            this.a = a;
+            this.b = b;
+            this.c = c;
+         }
       }
    }
 }
