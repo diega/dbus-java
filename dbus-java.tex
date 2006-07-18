@@ -24,9 +24,9 @@
 \author{Matthew Johnson\\matthew.johnson@cl.cam.ac.uk}
 \title{D-Bus programming in Java 1.5}
 
-\newcommand{\javadocroot/}{http://javadoc.matthew.ath.cx/}
-
 \begin{document}
+
+\def\javadocroot/{http://javadoc.matthew.ath.cx/}
 
 \maketitle
 
@@ -701,7 +701,9 @@ public class TestSerializable implements DBusSerializable
    }
    public Object[] serialize() throws DBusException
    {
-      return DBusConnection.convertParameters(new Object[] { a, b, c }, new Type[] { TestSerializable.class });
+      return DBusConnection.convertParameters(
+            new Object[] { a, b, c }, 
+            new Type[] { TestSerializable.class });
    }
    public int getInt() { return a; }
    public String getString() { return b; }
