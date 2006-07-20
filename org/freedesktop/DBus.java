@@ -369,11 +369,11 @@ public interface DBus extends DBusInterface
          @Description("Returns the sum of the values in the input list")
          public long Sum(int[] a);
          @Description("Given a map of A => B, should return a map of B => a list of all the As which mapped to B")
-         public Map<String, List<String>> InvertMalling(Map<String, String> a);
+         public Map<String, List<String>> InvertMapping(Map<String, String> a);
          @Description("This method returns the contents of a struct as separate values")
          public Triplet<String, UInt32, Short> DeStruct(TestStruct a);
          @Description("Given any compound type as a variant, return all the primitive types recursively contained within as an array of variants")
-         public Variant[] Primitize(Variant a);
+         public List<Variant> Primitize(Variant a);
          @Description("inverts it's input")
          public boolean Invert(boolean a);
          @Description("triggers sending of a signal from the supplied object with the given parameter")

@@ -110,6 +110,12 @@ doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java 
 testrun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
 
+cross-test-server: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_server
+
+cross-test-client: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_client
+
 profilerun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.profile $(PROFILE)
 
@@ -123,6 +129,13 @@ check:
 	  if make testrun ; then export PASS=true; fi  ; \
 	  kill $$(cat pid) ; \
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
+
+internal-cross-test:
+	( dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
+	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
+	  make cross-test-server > server.log &\
+	  make cross-test-client > client.log ;\
+	  kill $$(cat pid) ; )
 
 profile:
 	( PASS=false; \

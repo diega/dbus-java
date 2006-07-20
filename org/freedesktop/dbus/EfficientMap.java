@@ -39,12 +39,13 @@ class EfficientMap
    public long[] getKeys()
    {
       int size;
-      if (start < end) size = end-start-1;
+      if (start < end) size = (end-start)+1;
       else size = kv.length-(start-end);
       long[] lv = new long[size];
       System.arraycopy(kv,start,lv,0,kv.length-start);
-      if (end != (kv.length-1)) 
-         System.arraycopy(kv,0,lv,kv.length-start,end+1);
+      if (end != (kv.length-1)) {
+         System.arraycopy(kv,0,lv,kv.length-start,end);
+      }
       return lv;
    }
    private void shrink()
