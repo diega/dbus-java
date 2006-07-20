@@ -313,7 +313,7 @@ public interface DBus extends DBusInterface
       public interface SingleTests extends DBusInterface
       {
          @Description("Returns the sum of the values in the input list")
-         public UInt32 Sum(List<Byte> a);
+         public UInt32 Sum(byte[] a);
       }
       public interface TestCallbacks extends DBusInterface
       {
@@ -322,14 +322,58 @@ public interface DBus extends DBusInterface
       }
       public interface Tests extends DBusInterface
       {
+         @Description("Returns whatever it is passed")
+         public Variant Identity(Variant input);
+         @Description("Returns whatever it is passed")
+         public byte IdentityByte(byte input);
+         @Description("Returns whatever it is passed")
+         public boolean IdentityBool(boolean input);
+         @Description("Returns whatever it is passed")
+         public short IdentityInt16(short input);
+         @Description("Returns whatever it is passed")
+         public UInt16 IdentityUInt16(UInt16 input);
+         @Description("Returns whatever it is passed")
+         public int IdentityInt32(int input);
+         @Description("Returns whatever it is passed")
+         public UInt32 IdentityUInt32(UInt32 input);
+         @Description("Returns whatever it is passed")
+         public long IdentityInt64(long input);
+         @Description("Returns whatever it is passed")
+         public UInt64 IdentityUInt64(UInt64 input);
+         @Description("Returns whatever it is passed")
+         public double IdentityDouble(double input);
+         @Description("Returns whatever it is passed")
+         public String IdentityString(String input);
+         @Description("Returns whatever it is passed")
+         public Variant[] IdentityArray(Variant[] input);
+         @Description("Returns whatever it is passed")
+         public byte[] IdentityByteArray(byte[] input);
+         @Description("Returns whatever it is passed")
+         public boolean[] IdentityBoolArray(boolean[] input);
+         @Description("Returns whatever it is passed")
+         public short[] IdentityInt16Array(short[] input);
+         @Description("Returns whatever it is passed")
+         public UInt16[] IdentityUInt16Array(UInt16[] input);
+         @Description("Returns whatever it is passed")
+         public int[] IdentityInt32Array(int[] input);
+         @Description("Returns whatever it is passed")
+         public UInt32[] IdentityUInt32Array(UInt32[] input);
+         @Description("Returns whatever it is passed")
+         public long[] IdentityInt64Array(long[] input);
+         @Description("Returns whatever it is passed")
+         public UInt64[] IdentityUInt64Array(UInt64[] input);
+         @Description("Returns whatever it is passed")
+         public double[] IdentityDoubleArray(double[] input);
+         @Description("Returns whatever it is passed")
+         public String[] IdentityStringArray(String[] input);
          @Description("Returns the sum of the values in the input list")
-         public long Sum(List<Integer> a);
+         public long Sum(int[] a);
          @Description("Given a map of A => B, should return a map of B => a list of all the As which mapped to B")
          public Map<String, List<String>> InvertMalling(Map<String, String> a);
          @Description("This method returns the contents of a struct as separate values")
          public Triplet<String, UInt32, Short> DeStruct(TestStruct a);
          @Description("Given any compound type as a variant, return all the primitive types recursively contained within as an array of variants")
-         public List<Variant> Primitize(Variant a);
+         public Variant[] Primitize(Variant a);
          @Description("inverts it's input")
          public boolean Invert(boolean a);
          @Description("triggers sending of a signal from the supplied object with the given parameter")
