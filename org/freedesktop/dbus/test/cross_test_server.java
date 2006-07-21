@@ -22,6 +22,7 @@ import org.freedesktop.dbus.Variant;
 public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.SingleTests, DBusSigHandler<DBus.Binding.TestSignals.Trigger>
 {
    private DBusConnection conn;
+   boolean run = true;
    private Set<String> done = new TreeSet<String>();
    private Set<String> notdone = new TreeSet<String>();
    {
@@ -292,12 +293,14 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
    {
       done.add("org.freedesktop.DBus.Binding.Tests.Exit");
       notdone.remove("org.freedesktop.DBus.Binding.Tests.Exit");
-      conn.disconnect();
       for (String s: done)
          System.out.println(s+" ok");
       for (String s: notdone)
          System.out.println(s+" untested");
-      System.exit(0);
+      run = false;
+      synchronized (this) {
+         notifyAll();
+      }
    }
    public void handle(DBus.Binding.TestSignals.Trigger t)
    {
@@ -319,6 +322,15 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       cross_test_server cts = new cross_test_server(conn);
       conn.addSigHandler(DBus.Binding.TestSignals.Trigger.class, cts);
       conn.exportObject("/Test", cts);
+      synchronized (cts) {
+         while (cts.run) {
+            try {
+               cts.wait();
+            } catch (InterruptedException Ie) {}
+         }
+      }
+      conn.disconnect();
+      System.exit(0);
    }
 }
 

@@ -189,7 +189,8 @@ public class DBusConnection
                long[] set = pendingCalls.getKeys();
                for (long l: set) if (-1 != l) {
                   MethodCall m = pendingCalls.remove(l);
-                  m.setReply(err);
+                  if (null != m)
+                     m.setReply(err);
                }
             }
             synchronized (pendingErrors) {

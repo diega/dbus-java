@@ -130,11 +130,11 @@ check:
 	  kill $$(cat pid) ; \
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
 
-internal-cross-test:
+internal-cross-test: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	( dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  make cross-test-server > server.log &\
-	  make cross-test-client > client.log ;\
+	  make -s cross-test-server > server.log &\
+	  make -s cross-test-client > client.log ;\
 	  kill $$(cat pid) ; )
 
 profile:

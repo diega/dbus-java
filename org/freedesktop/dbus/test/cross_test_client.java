@@ -77,9 +77,10 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       try {
          Method[] ms = iface.getMethods();
          Method m = null;
-         for (Method t: ms)
+         for (Method t: ms) {
             if (t.getName().equals(method))
                m = t;
+         }
             
          Object o = m.invoke(proxy, parameters);
          if (o == rv || (o != null && o.equals(rv)))
@@ -140,7 +141,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       test(DBus.Binding.Tests.class, tests, "IdentityString", "", ""); 
       test(DBus.Binding.Tests.class, tests, "IdentityString", "The Quick Brown Fox Jumped Over The Lazy Dog", "The Quick Brown Fox Jumped Over The Lazy Dog"); 
       test(DBus.Binding.Tests.class, tests, "IdentityString", "ひらがなゲーム - かなぶん", "ひらがなゲーム - かなぶん"); 
-      testArray(DBus.Binding.Tests.class, tests, "IdentityBoolArray", Boolean.TYPE);
+      /*testArray(DBus.Binding.Tests.class, tests, "IdentityBoolArray", Boolean.TYPE);
       testArray(DBus.Binding.Tests.class, tests, "IdentityByteArray", Byte.TYPE);
       testArray(DBus.Binding.Tests.class, tests, "IdentityInt16Array", Short.TYPE);
       testArray(DBus.Binding.Tests.class, tests, "IdentityInt32Array", Integer.TYPE);
@@ -201,7 +202,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
          ctc.conn.sendSignal(new DBus.Binding.TestSignals.Trigger("/Test", new UInt16(15), 12.5));
       } catch (DBusException DBe) {
          throw new DBusExecutionException(DBe.getMessage());
-      }
+      }*/
          
       test(DBus.Binding.Tests.class, tests, "Exit", null);
    }
