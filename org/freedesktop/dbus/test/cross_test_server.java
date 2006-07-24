@@ -315,8 +315,8 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       }
    }
 
-   public static void main(String[] args) throws DBusException
-   {
+   public static void main(String[] args)
+   { try {
       DBusConnection conn = DBusConnection.getConnection(DBusConnection.SESSION);
       conn.registerService("org.freedesktop.DBus.Binding.TestServer");
       cross_test_server cts = new cross_test_server(conn);
@@ -331,6 +331,9 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       }
       conn.disconnect();
       System.exit(0);
-   }
+   } catch (DBusException DBe) {
+      DBe.printStackTrace();
+      System.exit(1);
+   }}
 }
 

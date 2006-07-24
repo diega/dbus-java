@@ -1,0 +1,9 @@
+org.freedesktop.DBus.Binding.SingleTests.Sum
+org.freedesktop.DBus.Binding.Tests.DeStruct
+org.freedesktop.DBus.Binding.TestSignals.Trigger
+org.freedesktop.DBus.Binding.Tests.InvertMapping
+org.freedesktop.DBus.Binding.Tests.Primitize
+org.freedesktop.DBus.Binding.Tests.Sum
+org.freedesktop.DBus.Binding.Tests.Trigger
+org.freedesktop.DBus.Binding.TestSignals.Triggered
+org.freedesktop.DBus.Binding.TestCallbacks.Response

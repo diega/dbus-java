@@ -142,7 +142,6 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1connect__I
    
    if (dbus_error_is_set(&err)) {
       message = err.message;
-      dbus_error_free(&err); 
    } 
    if (NULL == conn) {
       if (NULL == message)
@@ -281,9 +280,9 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
          case DBUS_TYPE_UINT16:
             dbus_message_iter_get_basic(args, &cushortval);
             fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/UInt16");
-            cintval = cushortval;
+            jint jintval = cushortval;
             mid = (*env)->GetMethodID(env, fooclass, "<init>", "(I)V");
-            jval = (*env)->NewObject(env, fooclass, mid, cintval);
+            jval = (*env)->NewObject(env, fooclass, mid, jintval);
             (*env)->SetObjectArrayElement(env, params, i, jval);
             (*env)->DeleteLocalRef(env, jval);
             (*env)->DeleteLocalRef(env, fooclass);
@@ -300,9 +299,9 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
          case DBUS_TYPE_UINT32:
             dbus_message_iter_get_basic(args, &cuintval);
             fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/UInt32");
-            clongval = cuintval;
+            jlong jlongval = cuintval;
             mid = (*env)->GetMethodID(env, fooclass, "<init>", "(J)V");
-            jval = (*env)->NewObject(env, fooclass, mid, clongval);
+            jval = (*env)->NewObject(env, fooclass, mid, jlongval);
             (*env)->SetObjectArrayElement(env, params, i, jval);
             (*env)->DeleteLocalRef(env, jval);
             (*env)->DeleteLocalRef(env, fooclass);
@@ -318,9 +317,10 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
             break;
          case DBUS_TYPE_UINT64:
             dbus_message_iter_get_basic(args, &culongval);
+            jlongval = culongval;
             fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/UInt64");
             mid = (*env)->GetMethodID(env, fooclass, "<init>", "(J)V");
-            jval = (*env)->NewObject(env, fooclass, mid, culongval);
+            jval = (*env)->NewObject(env, fooclass, mid, jlongval);
             (*env)->SetObjectArrayElement(env, params, i, jval);
             (*env)->DeleteLocalRef(env, jval);
             (*env)->DeleteLocalRef(env, fooclass);

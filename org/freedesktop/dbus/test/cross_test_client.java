@@ -61,10 +61,11 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
    }
    public static void pass(String test)
    {
-      passed.add(test);
+      passed.add(test.replaceAll("[$]", "."));
    }
    public static void fail(String test, String reason)
    {
+      test = test.replaceAll("[$]", ".");
       List<String> reasons = failed.get(test);
       if (null == reasons) {
          reasons = new Vector<String>();
@@ -216,8 +217,8 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       test(iface, proxy, method, array, array);
    }
          
-   public static void main(String[] args) throws DBusException
-   {
+   public static void main(String[] args)
+   { try {
       /* init */
       DBusConnection conn = DBusConnection.getConnection(DBusConnection.SESSION);
       ctc = new cross_test_client(conn);
@@ -230,7 +231,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
 
       /* report results */
       for (String s: passed)
-         System.out.println(s+" ok");
+         System.out.println(s+" pass");
       int i = 1;
       for (String s: failed.keySet()) 
          for (String r: failed.get(s)) {
@@ -240,5 +241,8 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
          }
       
       conn.disconnect();
-   }
+   } catch (DBusException DBe) {
+      DBe.printStackTrace();
+      System.exit(1);
+   }}
 }
