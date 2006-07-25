@@ -39,12 +39,15 @@ class EfficientMap
    public long[] getKeys()
    {
       int size;
-      if (start < end) size = (end-start)+1;
+      if (start < end) size = end-start;
       else size = kv.length-(start-end);
       long[] lv = new long[size];
-      System.arraycopy(kv,start,lv,0,kv.length-start);
-      if (end != (kv.length-1)) {
-         System.arraycopy(kv,0,lv,kv.length-start,end);
+      int copya;
+      if (size > kv.length-start) copya = kv.length-start;
+      else copya = size;
+      System.arraycopy(kv,start,lv,0,copya);
+      if (copya < size) {
+         System.arraycopy(kv,0,lv,copya,size-copya);
       }
       return lv;
    }

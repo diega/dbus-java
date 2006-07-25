@@ -970,6 +970,9 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          if ((*env)->CallBooleanMethod(env, vitem, mid)) {
             int l = (*env)->GetArrayLength(env, (jarray) item);
             void* buf;
+            jboolean* buf1;
+            dbus_bool_t* buf2;
+            int a;
             switch (cstringval[0]) {
                case DBUS_TYPE_BYTE:
                   buf = malloc(l);
@@ -978,10 +981,14 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
                   free(buf);
                   break;
                case DBUS_TYPE_BOOLEAN:
-                  buf = malloc(l*sizeof(jboolean));
-                  (*env)->GetBooleanArrayRegion(env, (jbooleanArray) item, 0, l, (jboolean*) buf);
-                  dbus_message_iter_append_fixed_array(&sub, cstringval[0], &buf, l);
-                  free(buf);
+                  buf1 = malloc(l*sizeof(jboolean));
+                  (*env)->GetBooleanArrayRegion(env, (jbooleanArray) item, 0, l, buf1);
+                  buf2 = malloc(l*sizeof(dbus_bool_t));
+                  for (a = 0; a < l; a++)
+                     buf2[a] = buf1[a];
+                  dbus_message_iter_append_fixed_array(&sub, cstringval[0], &buf2, l);
+                  free(buf1);
+                  free(buf2);
                   break;
                case DBUS_TYPE_INT16:
                   buf = malloc(l*sizeof(jshort));

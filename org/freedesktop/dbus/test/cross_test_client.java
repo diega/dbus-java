@@ -4,6 +4,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,10 +85,14 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
          }
             
          Object o = m.invoke(proxy, parameters);
-         if (o == rv || (o != null && o.equals(rv)))
-            pass(iface.getName()+"."+method);
-         else
-            fail(iface.getName()+"."+method, "Incorrect return value; expected "+rv+" got "+o);
+         if (rv.getClass().isArray()) {
+            compareArray(iface.getName()+"."+method, rv,o); 
+         } else {
+            if (o == rv || (o != null && o.equals(rv)))
+               pass(iface.getName()+"."+method);
+            else
+               fail(iface.getName()+"."+method, "Incorrect return value; expected "+rv+" got "+o);
+         }
       } catch (DBusExecutionException DBEe) {
          fail(iface.getName()+"."+method, "Error occurred during execution: "+DBEe.getClass().getName()+" "+DBEe.getMessage());
       } catch (InvocationTargetException ITe) {
@@ -96,63 +101,105 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
          fail(iface.getName()+"."+method, "Error occurred during execution: "+e.getClass().getName()+" "+e.getMessage());
       }
    }
+   public static String collapseArray(Object array)
+   {
+      if (array.getClass().isArray()) {
+         String s = "{ ";
+         for (int i = 0; i < Array.getLength(array); i++)
+            s += collapseArray(Array.get(array, i))+",";
+         s = s.replaceAll(".$"," }");
+         return s;
+      } else return array.toString();
+   }
    public static void doTests(DBus.Binding.Tests tests, DBus.Binding.SingleTests singletests)
    {
+      Random r = new Random();
+      int i;
       test(DBus.Binding.Tests.class, tests, "IdentityBool", false, false); 
       test(DBus.Binding.Tests.class, tests, "IdentityBool", true, true); 
+      
       test(DBus.Binding.Tests.class, tests, "Invert", false, true); 
       test(DBus.Binding.Tests.class, tests, "Invert", true, false); 
+      
       test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) 0, (byte) 0); 
       test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) 1, (byte) 1); 
       test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) -1, (byte) -1); 
       test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) Byte.MAX_VALUE, (byte) Byte.MAX_VALUE); 
       test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) Byte.MIN_VALUE, (byte) Byte.MIN_VALUE); 
+      i = r.nextInt();
+      test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) i, (byte) i); 
+      
       test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) 0, (short) 0); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) 1, (short) 1); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) -1, (short) -1); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) Short.MAX_VALUE, (short) Short.MAX_VALUE); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) Short.MIN_VALUE, (short) Short.MIN_VALUE); 
+      i = r.nextInt();
+      test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) i, (short) i); 
+      
       test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) 0, (int) 0); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) 1, (int) 1); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) -1, (int) -1); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) Integer.MAX_VALUE, (int) Integer.MAX_VALUE); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) Integer.MIN_VALUE, (int) Integer.MIN_VALUE); 
+      i = r.nextInt();
+      test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) i, (int) i); 
+
+      
       test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) 0, (long) 0); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) 1, (long) 1); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) -1, (long) -1); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) Long.MAX_VALUE, (long) Long.MAX_VALUE); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) Long.MIN_VALUE, (long) Long.MIN_VALUE); 
+      i = r.nextInt();
+      test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) i, (long) i); 
+
       test(DBus.Binding.Tests.class, tests, "IdentityUInt16", new UInt16(0), new UInt16(0)); 
       test(DBus.Binding.Tests.class, tests, "IdentityUInt16", new UInt16(1), new UInt16(1)); 
       test(DBus.Binding.Tests.class, tests, "IdentityUInt16", new UInt16(UInt16.MAX_VALUE), new UInt16(UInt16.MAX_VALUE)); 
       test(DBus.Binding.Tests.class, tests, "IdentityUInt16", new UInt16(UInt16.MIN_VALUE), new UInt16(UInt16.MIN_VALUE)); 
+      i = r.nextInt();
+      i = i > 0 ? i : -i;
+      test(DBus.Binding.Tests.class, tests, "IdentityUInt16", new UInt16(i%UInt16.MAX_VALUE), new UInt16(i%UInt16.MAX_VALUE)); 
+      
       test(DBus.Binding.Tests.class, tests, "IdentityUInt32", new UInt32(0), new UInt32(0)); 
       test(DBus.Binding.Tests.class, tests, "IdentityUInt32", new UInt32(1), new UInt32(1)); 
       test(DBus.Binding.Tests.class, tests, "IdentityUInt32", new UInt32(UInt32.MAX_VALUE), new UInt32(UInt32.MAX_VALUE)); 
       test(DBus.Binding.Tests.class, tests, "IdentityUInt32", new UInt32(UInt32.MIN_VALUE), new UInt32(UInt32.MIN_VALUE)); 
+      i = r.nextInt();
+      i = i > 0 ? i : -i;
+      test(DBus.Binding.Tests.class, tests, "IdentityUInt32", new UInt32(i%UInt32.MAX_VALUE), new UInt32(i%UInt32.MAX_VALUE)); 
+      
       test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(0), new UInt64(0)); 
       test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(1), new UInt64(1)); 
       test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(UInt64.MAX_VALUE), new UInt64(UInt64.MAX_VALUE)); 
       test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(UInt64.MIN_VALUE), new UInt64(UInt64.MIN_VALUE)); 
-      test(DBus.Binding.Tests.class, tests, "IdentityDouble", new Double(0), new Double(0)); 
-      test(DBus.Binding.Tests.class, tests, "IdentityDouble", new Double(1), new Double(1)); 
-      test(DBus.Binding.Tests.class, tests, "IdentityDouble", new Double(-1), new Double(-1)); 
-      test(DBus.Binding.Tests.class, tests, "IdentityDouble", new Double(Double.MAX_VALUE), new Double(Double.MAX_VALUE)); 
-      test(DBus.Binding.Tests.class, tests, "IdentityDouble", new Double(Double.MIN_VALUE), new Double(Double.MIN_VALUE)); 
+      i = r.nextInt();
+      i = i > 0 ? i : -i;
+      test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(i%UInt64.MAX_VALUE), new UInt64(i%UInt64.MAX_VALUE)); 
+      
+      test(DBus.Binding.Tests.class, tests, "IdentityDouble", 0.0, 0.0); 
+      test(DBus.Binding.Tests.class, tests, "IdentityDouble", 1.0, 1.0); 
+      test(DBus.Binding.Tests.class, tests, "IdentityDouble", -1.0, -1.0); 
+      test(DBus.Binding.Tests.class, tests, "IdentityDouble", Double.MAX_VALUE, Double.MAX_VALUE); 
+      test(DBus.Binding.Tests.class, tests, "IdentityDouble", Double.MIN_VALUE, Double.MIN_VALUE); 
+      i = r.nextInt();
+      test(DBus.Binding.Tests.class, tests, "IdentityDouble", (double) i, (double) i); 
+      
       test(DBus.Binding.Tests.class, tests, "IdentityString", "", ""); 
       test(DBus.Binding.Tests.class, tests, "IdentityString", "The Quick Brown Fox Jumped Over The Lazy Dog", "The Quick Brown Fox Jumped Over The Lazy Dog"); 
       test(DBus.Binding.Tests.class, tests, "IdentityString", "ひらがなゲーム - かなぶん", "ひらがなゲーム - かなぶん"); 
-      /*testArray(DBus.Binding.Tests.class, tests, "IdentityBoolArray", Boolean.TYPE);
+      testArray(DBus.Binding.Tests.class, tests, "IdentityBoolArray", Boolean.TYPE);
       testArray(DBus.Binding.Tests.class, tests, "IdentityByteArray", Byte.TYPE);
       testArray(DBus.Binding.Tests.class, tests, "IdentityInt16Array", Short.TYPE);
       testArray(DBus.Binding.Tests.class, tests, "IdentityInt32Array", Integer.TYPE);
       testArray(DBus.Binding.Tests.class, tests, "IdentityInt64Array", Long.TYPE);
+      testArray(DBus.Binding.Tests.class, tests, "IdentityDoubleArray", Double.class);
+      /*
       testArray(DBus.Binding.Tests.class, tests, "IdentityUInt16Array", UInt16.class);
       testArray(DBus.Binding.Tests.class, tests, "IdentityUInt32Array", UInt32.class);
       testArray(DBus.Binding.Tests.class, tests, "IdentityUInt64Array", UInt64.class);
-      testArray(DBus.Binding.Tests.class, tests, "IdentityDoubleArray", Double.class);
       testArray(DBus.Binding.Tests.class, tests, "IdentityStringArray", String.class);
-      
       int[] is = new int[0];
       test(DBus.Binding.Tests.class, tests, "Sum", 0L, is); 
       Random r = new Random();
@@ -215,6 +262,39 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       int l = (r.nextInt() % 100);
       array = Array.newInstance(arrayType, (l < 0 ? -l : l) + 15);
       test(iface, proxy, method, array, array);
+   }
+   public static void compareArray(String test, Object a, Object b) 
+   {
+      if (!a.getClass().equals(b.getClass())) {
+         fail(test, "Incorrect return type; expected "+a.getClass()+" got "+b.getClass()); 
+         return;
+      }
+      boolean pass = false;
+      
+      if (a instanceof Object[])
+         pass = Arrays.equals((Object[]) a, (Object[]) b);
+      else if (a instanceof byte[])
+         pass = Arrays.equals((byte[]) a, (byte[]) b);
+      else if (a instanceof boolean[])
+         pass = Arrays.equals((boolean[]) a, (boolean[]) b);
+      else if (a instanceof int[])
+         pass = Arrays.equals((int[]) a, (int[]) b);
+      else if (a instanceof short[])
+         pass = Arrays.equals((short[]) a, (short[]) b);
+      else if (a instanceof long[])
+         pass = Arrays.equals((long[]) a, (long[]) b);
+      else if (a instanceof double[])
+         pass = Arrays.equals((double[]) a, (double[]) b);
+         
+      if (pass)
+         pass(test);
+      else {
+         String s = "Incorrect return value; expected ";
+         s += collapseArray(a);
+         s += " got ";
+         s += collapseArray(b);
+         fail(test, s);
+      }
    }
          
    public static void main(String[] args)
