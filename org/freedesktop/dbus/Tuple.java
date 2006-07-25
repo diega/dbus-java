@@ -1,5 +1,7 @@
 package org.freedesktop.dbus;
 
+import java.util.Arrays;
+
 /**
  * Tuples allow multiple values to be returned from a method.
  * You should create a sub class of this tuple with the correct
@@ -33,5 +35,12 @@ public abstract class Tuple
       for (Object o: os)
          s += o+", ";
       return s.replaceAll(", $", ">");
+   }
+   /** Compare the contents of this tuple with another */
+   public boolean equals(Object other)
+   {
+      if (null == other) return false;
+      if (!(other instanceof Tuple)) return false;
+      return Arrays.equals(this.parameters, ((Tuple) other).parameters);
    }
 }

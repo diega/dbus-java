@@ -942,7 +942,6 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          // get members
          mid = (*env)->GetMethodID(env, listclass, "getValues", "()[Ljava/lang/Object;");
          values = (*env)->CallObjectMethod(env, item, mid);
-         slen = (*env)->GetArrayLength(env, values);
          
          dbus_message_iter_open_container(args, DBUS_TYPE_ARRAY, cstringval, &sub);
 
@@ -1017,8 +1016,9 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
             }
 
          // other arrays
-         } else 
+         } else  {
             if (0 > append_args(env, &sub, item, connobj)) return -1;
+         }
 
          dbus_message_iter_close_container(args, &sub);
          (*env)->DeleteLocalRef(env, vitem);

@@ -7,7 +7,7 @@ package org.freedesktop.dbus;
 public class UInt16 extends Number implements Comparable<UInt16>
 {
    /** Maximum possible value. */
-   public static final int MAX_VALUE = 65536;
+   public static final int MAX_VALUE = 65535;
    /** Minimum possible value. */
    public static final int MIN_VALUE = 0;
    private int value;

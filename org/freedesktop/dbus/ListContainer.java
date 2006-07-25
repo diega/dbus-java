@@ -34,6 +34,35 @@ class ListContainer
          this.values[i] = content[i];
       }
    }
+   public ListContainer(Object[] content, Type t) throws DBusException
+   {
+      list = null;
+      Class c;
+
+      if (t instanceof Class)
+         c = (Class) t;
+      else if (t instanceof ParameterizedType)
+         c = (Class) ((ParameterizedType) t).getRawType();
+      else c = null;
+
+      if (Map.class.isAssignableFrom(c))
+         c = MapContainer.class;
+      if (List.class.isAssignableFrom(c)) 
+         c = ListContainer.class;
+
+      values = (Object[]) Array.newInstance(c, content.length);
+      try {
+         for (int i = 0; i < content.length; i++) 
+            values[i] = DBusConnection.convertParameter(content[i], t);
+
+      } catch (Exception e) {
+         throw new DBusException(e.getMessage());
+      }
+
+      String[] s = DBusConnection.getDBusType(t);
+      if (1 != s.length) throw new DBusException("List Contents not single type");
+      sig = s[0];
+   }
    public ListContainer(List<Object> l, ParameterizedType t) throws DBusException
    {
       Type[] ts = t.getActualTypeArguments();

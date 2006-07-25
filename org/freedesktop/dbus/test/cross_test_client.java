@@ -83,9 +83,9 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
             if (t.getName().equals(method))
                m = t;
          }
-            
+         System.err.println(method+"("+collapseArray(parameters)+")");   
          Object o = m.invoke(proxy, parameters);
-         if (rv.getClass().isArray()) {
+         if (null != rv && rv.getClass().isArray()) {
             compareArray(iface.getName()+"."+method, rv,o); 
          } else {
             if (o == rv || (o != null && o.equals(rv)))
@@ -115,6 +115,9 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
    {
       Random r = new Random();
       int i;
+      test(DBus.Binding.Tests.class, tests, "Identity", new Variant<Integer>(new Integer(1)), new Variant<Integer>(new Integer(1))); 
+      test(DBus.Binding.Tests.class, tests, "Identity", new Variant<String>("Hello"), new Variant<String>("Hello")); 
+
       test(DBus.Binding.Tests.class, tests, "IdentityBool", false, false); 
       test(DBus.Binding.Tests.class, tests, "IdentityBool", true, true); 
       
@@ -189,42 +192,43 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       test(DBus.Binding.Tests.class, tests, "IdentityString", "", ""); 
       test(DBus.Binding.Tests.class, tests, "IdentityString", "The Quick Brown Fox Jumped Over The Lazy Dog", "The Quick Brown Fox Jumped Over The Lazy Dog"); 
       test(DBus.Binding.Tests.class, tests, "IdentityString", "ひらがなゲーム - かなぶん", "ひらがなゲーム - かなぶん"); 
-      testArray(DBus.Binding.Tests.class, tests, "IdentityBoolArray", Boolean.TYPE);
-      testArray(DBus.Binding.Tests.class, tests, "IdentityByteArray", Byte.TYPE);
-      testArray(DBus.Binding.Tests.class, tests, "IdentityInt16Array", Short.TYPE);
-      testArray(DBus.Binding.Tests.class, tests, "IdentityInt32Array", Integer.TYPE);
-      testArray(DBus.Binding.Tests.class, tests, "IdentityInt64Array", Long.TYPE);
-      testArray(DBus.Binding.Tests.class, tests, "IdentityDoubleArray", Double.class);
-      /*
-      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt16Array", UInt16.class);
-      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt32Array", UInt32.class);
-      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt64Array", UInt64.class);
-      testArray(DBus.Binding.Tests.class, tests, "IdentityStringArray", String.class);
+      testArray(DBus.Binding.Tests.class, tests, "IdentityBoolArray", Boolean.TYPE, null);
+      testArray(DBus.Binding.Tests.class, tests, "IdentityByteArray", Byte.TYPE, null);
+      testArray(DBus.Binding.Tests.class, tests, "IdentityInt16Array", Short.TYPE, null);
+      testArray(DBus.Binding.Tests.class, tests, "IdentityInt32Array", Integer.TYPE, null);
+      testArray(DBus.Binding.Tests.class, tests, "IdentityInt64Array", Long.TYPE, null);
+      testArray(DBus.Binding.Tests.class, tests, "IdentityDoubleArray", Double.TYPE, null);
+      
+      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt16Array", UInt16.class, new UInt16(0));
+      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt32Array", UInt32.class, new UInt32(0));
+      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt64Array", UInt64.class, new UInt64(0));
+      testArray(DBus.Binding.Tests.class, tests, "IdentityStringArray", String.class, "");
+      
       int[] is = new int[0];
       test(DBus.Binding.Tests.class, tests, "Sum", 0L, is); 
-      Random r = new Random();
+      r = new Random();
       int len = (r.nextInt() % 100) + 15;
       is = new int[(len<0 ? -len: len)+15];
       long result = 0;
-      for (int i = 0; i < len; i++) {
+      for (i = 0; i < len; i++) {
          is[i] = r.nextInt();
          result += is[i];
       }
       test(DBus.Binding.Tests.class, tests, "Sum", result, is); 
 
       byte[] bs = new byte[0];
-      test(DBus.Binding.SingleTests.class, singletests, "Sum", (short) 0, bs); 
+      test(DBus.Binding.SingleTests.class, singletests, "Sum", new UInt32(0), bs); 
       len = (r.nextInt() % 100);
       bs = new byte[(len<0 ? -len: len)+15];
-      short res = 0;
-      for (int i = 0; i < len; i++) {
+      int res = 0;
+      for (i = 0; i < len; i++) {
          bs[i] = (byte) r.nextInt();
          res += bs[i];
       }
-      test(DBus.Binding.SingleTests.class, singletests, "Sum", res, bs); 
+      test(DBus.Binding.SingleTests.class, singletests, "Sum", new UInt32(res<0?-res:res), bs); 
 
       test(DBus.Binding.Tests.class, tests, "DeStruct", new DBus.Binding.Triplet<String,UInt32,Short>("hi", new UInt32(12), new Short((short) 99)), new DBus.Binding.TestStruct("hi", new UInt32(12), new Short((short) 99))); 
-
+/*
       Map<String, String> in = new HashMap<String, String>();
       Map<String, List<String>> out = new HashMap<String, List<String>>();
       test(DBus.Binding.Tests.class, tests, "InvertMapping", in, out);
@@ -242,25 +246,27 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       l = new Vector<String>();
       l.add("in");
       out.put("out", l);
-      test(DBus.Binding.Tests.class, tests, "InvertMapping", in, out);
+      test(DBus.Binding.Tests.class, tests, "InvertMapping", in, out);*/
 
       test(DBus.Binding.Tests.class, tests, "Trigger", null, tests, new UInt64(21389479283L));
-
+/*
       try {
          ctc.conn.sendSignal(new DBus.Binding.TestSignals.Trigger("/Test", new UInt16(15), 12.5));
       } catch (DBusException DBe) {
          throw new DBusExecutionException(DBe.getMessage());
-      }*/
-         
+      }
+  */       
       test(DBus.Binding.Tests.class, tests, "Exit", null);
    }
-   public static void testArray(Class iface, Object proxy, String method, Class arrayType)
+   public static void testArray(Class iface, Object proxy, String method, Class arrayType, Object content)
    {
       Object array = Array.newInstance(arrayType, 0);
       test(iface, proxy, method, array, array);
       Random r = new Random();
       int l = (r.nextInt() % 100);
       array = Array.newInstance(arrayType, (l < 0 ? -l : l) + 15);
+      if (null != content) 
+         Arrays.fill((Object[]) array, content);
       test(iface, proxy, method, array, array);
    }
    public static void compareArray(String test, Object a, Object b) 

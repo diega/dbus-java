@@ -7,7 +7,7 @@ package org.freedesktop.dbus;
 public class UInt32 extends Number implements Comparable<UInt32>
 {
    /** Maximum allowed value */
-   public static final long MAX_VALUE = 4294967296L;
+   public static final long MAX_VALUE = 4294967295L;
    /** Minimum allowed value */
    public static final long MIN_VALUE = 0;
    private long value;

@@ -741,8 +741,16 @@ public class DBusConnection
             }
          }
       }
-      return parameter;
 
+      else if (type instanceof GenericArrayType) {
+         Type t = ((GenericArrayType) type).getGenericComponentType();
+         if (!(t instanceof Class) || !((Class) t).isPrimitive())
+            parameter = new ListContainer((Object[]) parameter, t);
+      } else if (type instanceof Class && ((Class) type).isArray()) {
+         if (!((Class) type).getComponentType().isPrimitive())
+            parameter = new ListContainer((Object[]) parameter, ((Class) type).getComponentType());
+      }
+      return parameter;
    }
    static Object deSerializeParameter(Object parameter, Type type) throws Exception
    {

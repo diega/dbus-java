@@ -34,4 +34,11 @@ public class Variant<T>
    public Class getType() { return o.getClass(); }
    /** Format the Variant as a string. */
    public String toString() { return "["+o+"]"; }
+   /** Compare this Variant with another by comparing contents */
+   public boolean equals(Object other)
+   {
+      if (null == other) return false;
+      if (!(other instanceof Variant)) return false;
+      return this.o.equals(((Variant)other).o);
+   }
 }
