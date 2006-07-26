@@ -104,6 +104,19 @@ JNIEXPORT jclass JNICALL Java_org_freedesktop_dbus_DBusErrorMessage_createExcept
 
 /*
  * Class:     org_freedesktop_dbus_DBusConnection
+ * Method:    get_exception_debug_state
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_freedesktop_dbus_DBusConnection_get_1exception_1debug_1state
+  (JNIEnv * env, jobject o)
+{
+   // check debug status
+   return (NULL != getenv("DBUS_JAVA_EXCEPTION_DEBUG"));
+}
+
+
+/*
+ * Class:     org_freedesktop_dbus_DBusConnection
  * Method:    dbus_connect
  * Signature: (I)I
  */
@@ -447,8 +460,14 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
                   if (DBUS_TYPE_INVALID == dbus_message_iter_get_arg_type(&sub)) j = 0;
                   else for (j = 1; dbus_message_iter_has_next(&sub); j++) 
                      dbus_message_iter_next(&sub);
-                  dbus_message_iter_recurse(args, &sub);
-                  members = read_params(env, &sub, j, connobj);
+                  if (0 == j) {
+                     fooclass = (*env)->FindClass(env, "java/lang/Object");
+                     members = (*env)->NewObjectArray(env, 0, fooclass, NULL);
+                     (*env)->DeleteLocalRef(env, fooclass);
+                  } else {
+                     dbus_message_iter_recurse(args, &sub);
+                     members = read_params(env, &sub, j, connobj);
+                  }
                   fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/MapContainer");
                   mid = (*env)->GetMethodID(env, fooclass, "<init>", "([[Ljava/lang/Object;Ljava/lang/String;)V");
                   jval = (*env)->NewObject(env, fooclass, mid, members, sig);

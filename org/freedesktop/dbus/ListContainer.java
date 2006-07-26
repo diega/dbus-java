@@ -27,6 +27,7 @@ class ListContainer
             c = ListContainer.class;
          this.values = (Object[]) Array.newInstance(c, content.length);
       } catch (ClassNotFoundException CNFe) {
+         if (DBusConnection.EXCEPTION_DEBUG) CNFe.printStackTrace();
          throw new DBusException("Map contains invalid type: "+CNFe.getMessage());
       }
       this.sig = sig;
@@ -56,6 +57,7 @@ class ListContainer
             values[i] = DBusConnection.convertParameter(content[i], t);
 
       } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusException(e.getMessage());
       }
 
@@ -86,6 +88,7 @@ class ListContainer
             values[i] = DBusConnection.convertParameter(l.get(i), ts[0]);
 
       } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusException(e.getMessage());
       }
 

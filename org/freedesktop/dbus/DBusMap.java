@@ -15,7 +15,7 @@ class DBusMap<K, V> implements Map<K, V>
       this.keys=keys;
       this.values=values;
    }
-   class Entry implements Map.Entry<K,V>
+   class Entry implements Map.Entry<K,V>, Comparable<Entry>
    {
       private int entry;
       public Entry(int i)
@@ -44,6 +44,10 @@ class DBusMap<K, V> implements Map<K, V>
       {
          throw new UnsupportedOperationException();
       }
+      public int compareTo(Entry e)
+      {
+         return entry - e.entry;
+      }
    }
 
    public void clear()
@@ -67,7 +71,7 @@ class DBusMap<K, V> implements Map<K, V>
    public Set<Map.Entry<K,V>>    entrySet()
    {
       Set<Map.Entry<K,V>> s = new TreeSet<Map.Entry<K,V>>();
-      for (int i = 0; i < keys.length; i++)
+      for (int i = 0; i < keys.length; i++) 
          s.add(new Entry(i));
       return s;
    }
@@ -115,7 +119,14 @@ class DBusMap<K, V> implements Map<K, V>
    public boolean equals(Object o) 
    {
       if (null == o) return false;
-      if (!(o instanceof DBusMap)) return false;
-      return Arrays.equals(((DBusMap) o).keys, this.keys) && Arrays.equals(((DBusMap) o).values, this.values);
+      if (!(o instanceof Map)) return false;
+      return ((Map) o).entrySet().equals(entrySet());
+   }
+   public String toString()
+   {
+      String s = "{ ";
+      for (int i = 0; i < keys.length; i++) 
+         s += keys[i] + " => " + values[i] + ",";
+      return s.replaceAll(".$", " }");
    }
 }

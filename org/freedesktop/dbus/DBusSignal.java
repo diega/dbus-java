@@ -50,6 +50,7 @@ public abstract class DBusSignal extends DBusMessage
          s.setSource(source);
          return s;
       } catch (Exception e) { 
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusException(e.getMessage());
       }
    }
@@ -81,6 +82,7 @@ public abstract class DBusSignal extends DBusMessage
             parameters = DBusConnection.convertParameters(parameters, types);
 
       } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusException("Failed to correctly determine DBusSignal type: "+e);
       }
    }

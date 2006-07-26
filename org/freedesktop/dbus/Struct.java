@@ -45,6 +45,7 @@ public abstract class Struct
                   new Object[] { f.get(this) },
                   new Type[] { ts[p.value()] })[0];
          } catch (Exception e) {
+            if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
             throw new DBusException(e.getMessage());
          }
       }

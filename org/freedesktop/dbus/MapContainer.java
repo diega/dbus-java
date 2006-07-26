@@ -34,6 +34,7 @@ class MapContainer
             cs[1] = ListContainer.class;
          this.values = (Object[]) Array.newInstance(cs[1], content.length);
       } catch (ClassNotFoundException CNFe) {
+         if (DBusConnection.EXCEPTION_DEBUG) CNFe.printStackTrace();
          throw new DBusException("Map contains invalid type: "+CNFe.getMessage());
       }
       this.sig = sig;
@@ -83,6 +84,7 @@ class MapContainer
             i++;
          }
       } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusException(e.getMessage());
       }
 

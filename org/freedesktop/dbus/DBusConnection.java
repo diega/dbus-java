@@ -352,6 +352,7 @@ public class DBusConnection
    LinkedList<DBusErrorMessage> pendingErrors;
 
    private native int dbus_connect(int bustype) throws DBusException;
+   private static native boolean get_exception_debug_state();
    private native int dbus_connect(String address) throws DBusException;
    private native void dbus_disconnect(int connid);
    private native void dbus_listen_signal(int connid, String type, String name) throws DBusException;
@@ -372,6 +373,10 @@ public class DBusConnection
    private DBus _dbus;
    private _thread thread;
    static final Pattern dollar_pattern = Pattern.compile("[$]");
+   public static final boolean EXCEPTION_DEBUG;
+   static {
+      EXCEPTION_DEBUG = get_exception_debug_state();
+   }
 
    /**
     * Connect to the BUS. If a connection already exists to the specified Bus, a reference to it is returned.
@@ -474,6 +479,7 @@ public class DBusConnection
                if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
                out[level].append(s[0]);
             } catch (ArrayIndexOutOfBoundsException AIOOBe) {
+               if (DBusConnection.EXCEPTION_DEBUG) AIOOBe.printStackTrace();
                throw new DBusException("Map must have 2 parameters");
             }
             out[level].append('}');
@@ -666,6 +672,7 @@ public class DBusConnection
                throw new DBusException("Failed to parse DBus type signature: "+dbus);
          }
       } catch (IndexOutOfBoundsException IOOBe) {
+         if (DBusConnection.EXCEPTION_DEBUG) IOOBe.printStackTrace();
          throw new DBusException("Failed to parse DBus type signature: "+dbus);
       }
    }
@@ -737,6 +744,7 @@ public class DBusConnection
             try {
                parameter = con.newInstance(newparams);
             } catch (Exception e) {
+               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                throw new DBusException("Failure in serializing parameters: "+e.getMessage());
             }
          }
@@ -856,6 +864,7 @@ public class DBusConnection
                   System.arraycopy(parameters, i + newtypes.length, compress, i+1, parameters.length - i - newtypes.length);
                   parameters = compress;
                } catch (ArrayIndexOutOfBoundsException AIOOBe) {
+                  if (DBusConnection.EXCEPTION_DEBUG) AIOOBe.printStackTrace();
                   throw new DBusException("Not enough elements to create custom object from serialized data ("+(parameters.length-i)+" < "+(newtypes.length)+")");
                }
             }
@@ -906,6 +915,7 @@ public class DBusConnection
       try {
          servicenames.add(_dbus.Hello());
       } catch (DBusExecutionException DBEe) {
+         if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
          throw new DBusException(DBEe.getMessage());
       }
       // register disconnect handlers
@@ -930,6 +940,7 @@ public class DBusConnection
       try {
          servicenames.add(_dbus.Hello());
       } catch (DBusExecutionException DBEe) {
+         if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
          throw new DBusException(DBEe.getMessage());
       }
       // register disconnect handlers
@@ -1017,6 +1028,7 @@ public class DBusConnection
                   new UInt32(DBus.DBUS_NAME_FLAG_REPLACE_EXISTING |
                      DBus.DBUS_NAME_FLAG_DO_NOT_QUEUE));
          } catch (DBusExecutionException DBEe) {
+            if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
             throw new DBusException(DBEe.getMessage());
          }
          switch (rv.intValue()) {
@@ -1118,6 +1130,7 @@ public class DBusConnection
                try {
                   _dbus.RemoveMatch(rule.toString());
                } catch (DBusExecutionException DBEe) {
+                  if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
                   throw new DBusException(DBEe.getMessage());
                }
             }
@@ -1142,6 +1155,7 @@ public class DBusConnection
       try {
          _dbus.AddMatch(rule.toString());
       } catch (DBusExecutionException DBEe) {
+         if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
          throw new DBusException(DBEe.getMessage());
       }
       SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember());
@@ -1221,8 +1235,10 @@ public class DBusConnection
          Method me = ro.iface.getMethod(m, types);
          return (DBusAsyncReply) RemoteInvocationHandler.executeRemoteMethod(ro, me, this, ro.iface, true, parameters);
       } catch (DBusExecutionException DBEe) {
+         if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
          throw DBEe;
       } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusExecutionException(e.getMessage());
       }
    }
@@ -1270,6 +1286,7 @@ public class DBusConnection
          Type[] ts = meth.getGenericParameterTypes();
          m.parameters = deSerializeParameters(m.parameters, ts);
       } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          synchronized (outgoing) {
             outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); }
       }
@@ -1290,8 +1307,9 @@ public class DBusConnection
                }
                Object result;
                try {
-                  result = me.invoke(ob, m.parameters);
+               result = me.invoke(ob, m.parameters);
                } catch (InvocationTargetException ITe) {
+                  if (DBusConnection.EXCEPTION_DEBUG) ITe.getCause().printStackTrace();
                   throw ITe.getCause();
                }
                synchronized (infomap) {
@@ -1310,10 +1328,12 @@ public class DBusConnection
                   }
                }
             } catch (DBusExecutionException DBEe) {
+               if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
                synchronized (outqueue) {
                   outqueue.add(new DBusErrorMessage(m, DBEe)); 
                }
             } catch (Throwable e) {
+               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                synchronized (outqueue) {
                   outqueue.add(new DBusErrorMessage(m, new DBusExecutionException("Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage()))); 
                }
@@ -1387,15 +1407,18 @@ public class DBusConnection
                   ((MethodCall) m).setReply(new DBusErrorMessage(m, new InternalMessageException("Message Failed to Send")));
             }
          } catch (DBusExecutionException DBEe) {
-               ((MethodCall) m).setReply(new DBusErrorMessage(m, DBEe));
+            if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
+            ((MethodCall) m).setReply(new DBusErrorMessage(m, DBEe));
          } catch (Exception e) {
-               ((MethodCall) m).setReply(new DBusErrorMessage(m, new DBusExecutionException("Message Failed to Send: "+e.getMessage())));
+            if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+            ((MethodCall) m).setReply(new DBusErrorMessage(m, new DBusExecutionException("Message Failed to Send: "+e.getMessage())));
          }
       }
       else if (m instanceof MethodReply) {
          try {
             m.setSerial(dbus_reply_to_call(connid, ((MethodReply) m).getDestination(), m.getType(), ((MethodReply) m).getObjectPath(), m.getName(), m.getReplySerial(), m.getParameters()));
          } catch (Exception e) {
+            if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
             dbus_send_error_message(connid, ((MethodReply) m).getDestination(), DBusExecutionException.class.getName(), m.getReplySerial(), new Object[] { "Error sending reply: "+e.getMessage() });
          }
       }

@@ -14,6 +14,7 @@ import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSigHandler;
+import org.freedesktop.dbus.Struct;
 import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
@@ -263,12 +264,38 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       return new DBus.Binding.Triplet<String, UInt32, Short>(a.a, a.b, a.c);
    }
    @DBus.Description("Given any compound type as a variant, return all the primitive types recursively contained within as an array of variants")
+   @SuppressWarnings("unchecked")
    public List<Variant> Primitize(Variant a)
    {
       done.add("org.freedesktop.DBus.Binding.Tests.Primitize");
       notdone.remove("org.freedesktop.DBus.Binding.Tests.Primitize");
       List<Variant> vs = new Vector<Variant>();
-      // TODO: do stuff
+      
+      // it's a list
+      if (List.class.isAssignableFrom(a.getType())) {
+         for (Object o: (List) a.getValue())
+            vs.addAll(Primitize(new Variant(o)));
+      
+      // it's a map
+      } else if (Map.class.isAssignableFrom(a.getType())) {
+         for (Object o: ((Map) a.getValue()).keySet()) {
+            vs.addAll(Primitize(new Variant(o)));
+            vs.addAll(Primitize(new Variant(((Map)a.getValue()).get(o))));
+         }
+      
+      // it's a struct
+      } else if (Struct.class.isAssignableFrom(a.getType())) {
+         try {
+            for (Object o: ((Struct) a.getValue()).getParameters())
+               vs.addAll(Primitize(new Variant(o)));
+         } catch (DBusException DBe) {
+            throw new DBusExecutionException(DBe.getMessage());
+         }
+      
+      // it's already a primative in an variant, add it to the list
+      } else { 
+         vs.add(a); 
+      }
       return vs;
    }
    @DBus.Description("inverts it's input")

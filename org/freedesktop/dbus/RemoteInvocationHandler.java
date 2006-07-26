@@ -35,6 +35,7 @@ class RemoteInvocationHandler implements InvocationHandler
                      new Type[] { m.getGenericReturnType() });
             }
             catch (Exception e) { 
+               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                throw new DBusExecutionException("Wrong return type (failed to de-serialize correct types: "+e.getMessage()+")");
             }
 
@@ -60,12 +61,14 @@ class RemoteInvocationHandler implements InvocationHandler
                con = ((Class) p.getRawType()).getDeclaredConstructors()[0]; 
             }
             catch (Exception e) { 
+               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                throw new DBusExecutionException("Wrong return type (Tuple type invalid: "+e.getMessage()+")");
             }
 
             // create tuple and return stuff
             try { return con.newInstance(rp); }
             catch (Exception e) {
+               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                throw new DBusExecutionException("Wrong return type (failed to create Tuple, contents probably invalid)");
             }
       }
@@ -76,6 +79,7 @@ class RemoteInvocationHandler implements InvocationHandler
       try {
          args = DBusConnection.convertParameters(args, ts);
       } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusExecutionException(e.getMessage());
       }
       MethodCall call = new MethodCall(ro.service, ro.objectpath, DBusConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), m.getName(), args);

@@ -9,7 +9,7 @@ import java.util.Map;
  * This will wrap another value whose type is determined at runtime.
  * The Variant may be parameterized to restrict the types it may accept.
  */
-public class Variant<T>
+public class Variant<T> implements Comparable<Variant<T>>
 {
    private final T o;
    /** 
@@ -22,8 +22,10 @@ public class Variant<T>
       try {
          DBusConnection.getDBusType(o.getClass());
       } catch (DBusException DBe) {
-         if (!(o instanceof List || o instanceof Map))
+         if (!(o instanceof List || o instanceof Map)) {
+            if (DBusConnection.EXCEPTION_DEBUG) DBe.printStackTrace();
             throw new IllegalArgumentException("Can't wrap "+o.getClass()+" in a Variant ("+DBe.getMessage()+")");
+         }
       }
       this.o = o;
    }
@@ -40,5 +42,10 @@ public class Variant<T>
       if (null == other) return false;
       if (!(other instanceof Variant)) return false;
       return this.o.equals(((Variant)other).o);
+   }
+   @SuppressWarnings("unchecked")
+   public int compareTo(Variant<T> other)
+   {
+      return ((Comparable<T>) o).compareTo(other.getValue());
    }
 }

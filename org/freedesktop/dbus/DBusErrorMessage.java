@@ -90,6 +90,7 @@ class DBusErrorMessage extends DBusMessage
          ex.setType(type);
          return ex;
       } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          DBusExecutionException ex;
          if (null == parameters || 0 == parameters.length)
             ex = new DBusExecutionException("");

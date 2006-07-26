@@ -20,6 +20,7 @@ import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSigHandler;
+import org.freedesktop.dbus.Struct;
 import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
@@ -110,12 +111,86 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
             s += collapseArray(Array.get(array, i))+",";
          s = s.replaceAll(".$"," }");
          return s;
+      } else if (array instanceof List) {
+         String s = "{ ";
+         for (Object o: (List) array)
+            s += collapseArray(o)+",";
+         s = s.replaceAll(".$"," }");
+         return s;
+      } else if (array instanceof Map) {
+         String s = "{ ";
+         for (Object o: ((Map) array).keySet())
+            s += collapseArray(o)+" => "+collapseArray(((Map) array).get(o))+",";
+         s = s.replaceAll(".$"," }");
+         return s;
       } else return array.toString();
    }
-   public static void doTests(DBus.Binding.Tests tests, DBus.Binding.SingleTests singletests)
+   public static boolean setCompareLists(List<Variant> a, List<Variant> b)
+   {
+      Set<Variant> as = new TreeSet<Variant>();
+      as.addAll(a);
+      Set<Variant> bs = new TreeSet<Variant>();
+      bs.addAll(b);
+      return as.equals(bs);
+   }
+   @SuppressWarnings("unchecked")
+   private static List<Variant> Primitize(Variant a)
+   {
+      List<Variant> vs = new Vector<Variant>();
+
+      // it's a list
+      if (List.class.isAssignableFrom(a.getType())) {
+         for (Object o: (List) a.getValue())
+            vs.addAll(Primitize(new Variant(o)));
+
+         // it's a map
+      } else if (Map.class.isAssignableFrom(a.getType())) {
+         for (Object o: ((Map) a.getValue()).keySet()) {
+            vs.addAll(Primitize(new Variant(o)));
+            vs.addAll(Primitize(new Variant(((Map)a.getValue()).get(o))));
+         }
+
+         // it's a struct
+      } else if (Struct.class.isAssignableFrom(a.getType())) {
+         try {
+            for (Object o: ((Struct) a.getValue()).getParameters())
+               vs.addAll(Primitize(new Variant(o)));
+         } catch (DBusException DBe) {
+            throw new DBusExecutionException(DBe.getMessage());
+         }
+
+         // it's already a primative in an variant, add it to the list
+      } else {
+         vs.add(a);
+      }
+      return vs;
+   }
+
+   @SuppressWarnings("unchecked")
+   public static void primitizeTest(DBus.Binding.Tests tests, Object input)
+   {
+      Variant in = new Variant(input);      
+      List<Variant> vs = Primitize(in);
+      List<Variant> res;
+
+      try {
+      
+         res = tests.Primitize(in);
+         if (setCompareLists(res, vs))
+            pass("org.freedesktop.DBus.Binding.Tests.Primitize");
+         else
+            fail("org.freedesktop.DBus.Binding.Tests.Primitize", "Wrong Return Value; expected "+collapseArray(vs)+" got "+collapseArray(res));
+
+      } catch (Exception e) {
+         fail("org.freedesktop.DBus.Binding.Tests.Primitize", "Exception occurred during test: ("+e.getClass().getName()+") "+e.getMessage());
+      }
+   }
+   public static void doTests(DBus.Peer peer, DBus.Introspectable intro, DBus.Binding.Tests tests, DBus.Binding.SingleTests singletests)
    {
       Random r = new Random();
       int i;
+      test(DBus.Peer.class, peer, "Ping", null); 
+
       test(DBus.Binding.Tests.class, tests, "Identity", new Variant<Integer>(new Integer(1)), new Variant<Integer>(new Integer(1))); 
       test(DBus.Binding.Tests.class, tests, "Identity", new Variant<String>("Hello"), new Variant<String>("Hello")); 
 
@@ -231,10 +306,11 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       test(DBus.Binding.SingleTests.class, singletests, "Sum", new UInt32(res<0?-res:res), bs); 
 
       test(DBus.Binding.Tests.class, tests, "DeStruct", new DBus.Binding.Triplet<String,UInt32,Short>("hi", new UInt32(12), new Short((short) 99)), new DBus.Binding.TestStruct("hi", new UInt32(12), new Short((short) 99))); 
-/*
+
       Map<String, String> in = new HashMap<String, String>();
       Map<String, List<String>> out = new HashMap<String, List<String>>();
-      test(DBus.Binding.Tests.class, tests, "InvertMapping", in, out);
+      test(DBus.Binding.Tests.class, tests, "InvertMapping", out, in);
+      
       in.put("hi", "there");
       in.put("to", "there");
       in.put("from", "here");
@@ -249,7 +325,9 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       l = new Vector<String>();
       l.add("in");
       out.put("out", l);
-      test(DBus.Binding.Tests.class, tests, "InvertMapping", in, out);*/
+      test(DBus.Binding.Tests.class, tests, "InvertMapping", out, in);
+      
+      primitizeTest(tests, new Integer(1));
 
       test(DBus.Binding.Tests.class, tests, "Trigger", null, "/Test", new UInt64(21389479283L));
 
@@ -317,8 +395,10 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       conn.addSigHandler(DBus.Binding.TestSignals.Triggered.class, ctc);
       DBus.Binding.Tests tests = (DBus.Binding.Tests) conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Binding.Tests.class);
       DBus.Binding.SingleTests singletests = (DBus.Binding.SingleTests) conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Binding.SingleTests.class);
+      DBus.Peer peer = (DBus.Peer) conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Peer.class);
+      DBus.Introspectable intro = (DBus.Introspectable) conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Introspectable.class);
 
-      doTests(tests, singletests);
+      doTests(peer, intro, tests, singletests);
 
       /* report results */
       for (String s: passed)

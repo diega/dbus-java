@@ -140,6 +140,7 @@ class ArrayFrob
             return type((Object[]) o, c.getComponentType());
       
       } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new IllegalArgumentException(e);
       }
 
