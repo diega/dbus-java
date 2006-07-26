@@ -191,6 +191,11 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       int i;
       test(DBus.Peer.class, peer, "Ping", null); 
 
+      try { if (intro.Introspect().startsWith("<!DOCTYPE")) pass("org.freedesktop.DBus.Introspectable.Introspect");
+            else fail("org.freedesktop.DBus.Introspectable.Introspect", "Didn't get valid xml data back");
+      } catch (DBusExecutionException DBEe) { fail("org.freedesktop.DBus.Introspectable.Introspect", "Got exception during execution ("+DBEe.getClass().getName()+"): "+DBEe.getMessage());
+      }
+
       test(DBus.Binding.Tests.class, tests, "Identity", new Variant<Integer>(new Integer(1)), new Variant<Integer>(new Integer(1))); 
       test(DBus.Binding.Tests.class, tests, "Identity", new Variant<String>("Hello"), new Variant<String>("Hello")); 
 
