@@ -377,7 +377,7 @@ public interface DBus extends DBusInterface
          @Description("inverts it's input")
          public boolean Invert(boolean a);
          @Description("triggers sending of a signal from the supplied object with the given parameter")
-         public void Trigger(DBusInterface a, UInt64 b);
+         public void Trigger(String a, UInt64 b);
          @Description("Causes the server to exit")
          public void Exit();
       }

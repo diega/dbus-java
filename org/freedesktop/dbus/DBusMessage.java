@@ -55,6 +55,7 @@ public abstract class DBusMessage
     */
    public long getReplySerial() { return replyserial; }
    protected void setSerial(long serial) { this.serial = serial; }
+   protected void setSource(String source) { this.source = source; }
    protected void setReplySerial(long serial) { this.replyserial = serial; }
    /**
     * Returns the parameters to this message as an Object array.

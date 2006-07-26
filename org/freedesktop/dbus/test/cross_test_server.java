@@ -235,6 +235,7 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       notdone.remove("org.freedesktop.DBus.Binding.SingleTests.Sum");
       int sum = 0;
       for (byte b: a) sum += b;
+      sum = sum < 0 ? -sum : sum;
       return new UInt32(sum % (UInt32.MAX_VALUE+1));
    }
    @DBus.Description("Given a map of A => B, should return a map of B => a list of all the As which mapped to B")
@@ -278,13 +279,12 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       return !a;
    }
    @DBus.Description("triggers sending of a signal from the supplied object with the given parameter")
-   public void Trigger(DBusInterface a, UInt64 b)
+   public void Trigger(String a, UInt64 b)
    {
       done.add("org.freedesktop.DBus.Binding.Tests.Trigger");
       notdone.remove("org.freedesktop.DBus.Binding.Tests.Trigger");
       try {
-         // TODO: needs to be from the passed in object
-         conn.sendSignal(new DBus.Binding.TestSignals.Triggered("", b));
+         conn.sendSignal(new DBus.Binding.TestSignals.Triggered(a, b));
       } catch (DBusException DBe) {
          throw new DBusExecutionException(DBe.getMessage());
       }
@@ -306,9 +306,8 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
    {
       done.add("org.freedesktop.DBus.Binding.TestSignals.Trigger");
       notdone.remove("org.freedesktop.DBus.Binding.TestSignals.Trigger");
-      DBusCallInfo info = DBusConnection.getCallInfo();
       try {
-         DBus.Binding.TestCallbacks cb = (DBus.Binding.TestCallbacks) conn.getRemoteObject(info.getSource(), "/Test", DBus.Binding.TestCallbacks.class);
+         DBus.Binding.TestCallbacks cb = (DBus.Binding.TestCallbacks) conn.getRemoteObject(t.getSource(), "/Test", DBus.Binding.TestCallbacks.class);
          cb.Response(t.a, t.b);
       } catch (DBusException DBe) {
          throw new DBusExecutionException(DBe.getMessage());

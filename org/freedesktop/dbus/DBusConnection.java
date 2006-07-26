@@ -754,6 +754,8 @@ public class DBusConnection
    }
    static Object deSerializeParameter(Object parameter, Type type) throws Exception
    {
+      if (null == parameter) 
+         return null;
 
       // its a wrapped variant, unwrap it
       if (type instanceof TypeVariable 
@@ -1070,8 +1072,11 @@ public class DBusConnection
     */
    public DBusInterface getRemoteObject(String service, String objectpath, Class<? extends DBusInterface> type) throws DBusException
    {
-      if (!service.matches(SERVICE_REGEX) && !service.matches(CONNID_REGEX)) throw new DBusException("Invalid service name");
-      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path");
+      if (null == service) throw new DBusException("Invalid service name ("+service+")");
+      if (null == objectpath) throw new DBusException("Invalid object path");
+      if (null == type) throw new ClassCastException("Not A DBus Interface");
+      if (!service.matches(SERVICE_REGEX) && !service.matches(CONNID_REGEX)) throw new DBusException("Invalid service name ("+service+")");
+      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
       if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Interface");
       RemoteObject ro = new RemoteObject(service, objectpath, type);
       DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
@@ -1265,7 +1270,6 @@ public class DBusConnection
          Type[] ts = meth.getGenericParameterTypes();
          m.parameters = deSerializeParameters(m.parameters, ts);
       } catch (Exception e) {
-         e.printStackTrace();
          synchronized (outgoing) {
             outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); }
       }

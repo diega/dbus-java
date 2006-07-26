@@ -354,7 +354,8 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
             break;
          case DBUS_TYPE_STRUCT:
             dbus_message_iter_recurse(args, &sub);
-            for (j = 1; dbus_message_iter_has_next(&sub); j++) 
+            if (DBUS_TYPE_INVALID == dbus_message_iter_get_arg_type(&sub)) j = 0;
+            else for (j = 1; dbus_message_iter_has_next(&sub); j++) 
                dbus_message_iter_next(&sub);
             dbus_message_iter_recurse(args, &sub);
             jval = read_params(env, &sub, j, connobj);
@@ -397,39 +398,39 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
 
                   switch (cstringval[0]) {
                      case DBUS_TYPE_BYTE:
-                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
                         jval = (*env)->NewByteArray(env, j);
-                        (*env)->SetByteArrayRegion(env, (jbyteArray) jval, 0, j, (jbyte*) data);
+                        if (0 != j) (*env)->SetByteArrayRegion(env, (jbyteArray) jval, 0, j, (jbyte*) data);
                         break;
                      case DBUS_TYPE_BOOLEAN:
                         j/=sizeof(dbus_bool_t);
-                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
                         jval = (*env)->NewBooleanArray(env, j);
-                        (*env)->SetBooleanArrayRegion(env, (jbooleanArray) jval, 0, j, (jboolean*) data);
+                        if (0 != j) (*env)->SetBooleanArrayRegion(env, (jbooleanArray) jval, 0, j, (jboolean*) data);
                         break;
                      case DBUS_TYPE_INT16:
                         j/=sizeof(dbus_int16_t);
-                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
                         jval = (*env)->NewShortArray(env, j);
-                        (*env)->SetShortArrayRegion(env, (jshortArray) jval, 0, j, (jshort*) data);
+                        if (0 != j) (*env)->SetShortArrayRegion(env, (jshortArray) jval, 0, j, (jshort*) data);
                         break;
                      case DBUS_TYPE_INT32:
                         j/=sizeof(dbus_int32_t);
-                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
                         jval = (*env)->NewIntArray(env, j);
-                        (*env)->SetIntArrayRegion(env, (jintArray) jval, 0, j, (jint*) data);
+                        if (0 != j) (*env)->SetIntArrayRegion(env, (jintArray) jval, 0, j, (jint*) data);
                         break;
                      case DBUS_TYPE_INT64:
                         j/=sizeof(dbus_int64_t);
-                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
                         jval = (*env)->NewLongArray(env, j);
-                        (*env)->SetLongArrayRegion(env, (jlongArray) jval, 0, j, (jlong*) data);
+                        if (0 != j) (*env)->SetLongArrayRegion(env, (jlongArray) jval, 0, j, (jlong*) data);
                         break;
                      case DBUS_TYPE_DOUBLE:
                         j/=sizeof(double);
-                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
                         jval = (*env)->NewDoubleArray(env, j);
-                        (*env)->SetDoubleArrayRegion(env, (jdoubleArray) jval, 0, j, (jdouble*) data);
+                        if (0 != j) (*env)->SetDoubleArrayRegion(env, (jdoubleArray) jval, 0, j, (jdouble*) data);
                         break;
                   }
 
@@ -443,7 +444,8 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
                case '{':
 
                   // recurse over array
-                  for (j = 1; dbus_message_iter_has_next(&sub); j++) 
+                  if (DBUS_TYPE_INVALID == dbus_message_iter_get_arg_type(&sub)) j = 0;
+                  else for (j = 1; dbus_message_iter_has_next(&sub); j++) 
                      dbus_message_iter_next(&sub);
                   dbus_message_iter_recurse(args, &sub);
                   members = read_params(env, &sub, j, connobj);
@@ -461,10 +463,18 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
             default:
 
                   // recurse over array
-                  for (j = 1; dbus_message_iter_has_next(&sub); j++) 
+                  if (DBUS_TYPE_INVALID == dbus_message_iter_get_arg_type(&sub)) j = 0;
+                  else for (j = 1; dbus_message_iter_has_next(&sub); j++) 
                      dbus_message_iter_next(&sub);
-                  dbus_message_iter_recurse(args, &sub);
-                  members = read_params(env, &sub, j, connobj);
+
+                  if (0 == j) {
+                     fooclass = (*env)->FindClass(env, "java/lang/Object");
+                     members = (*env)->NewObjectArray(env, 0, fooclass, NULL);
+                     (*env)->DeleteLocalRef(env, fooclass);
+                  } else {
+                     dbus_message_iter_recurse(args, &sub);
+                     members = read_params(env, &sub, j, connobj);
+                  }
 
                   fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/ListContainer");
                   mid = (*env)->GetMethodID(env, fooclass, "<init>", "([Ljava/lang/Object;Ljava/lang/String;)V");
@@ -636,7 +646,8 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    else sig = (*env)->NewStringUTF(env, csig);
    
    if (dbus_message_iter_init(msg, &args)) {
-      for (len = 1; dbus_message_iter_has_next(&args); len++) 
+      if (DBUS_TYPE_INVALID == dbus_message_iter_get_arg_type(&args)) len = 0;
+      else for (len = 1; dbus_message_iter_has_next(&args); len++) 
          dbus_message_iter_next(&args);
       if (!dbus_message_iter_init(msg, &args)) {
          fprintf(stderr, "Reinitialising arguments failed\n");

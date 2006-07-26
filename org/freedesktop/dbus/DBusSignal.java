@@ -36,15 +36,19 @@ public abstract class DBusSignal extends DBusMessage
 
       try {
          parameters = DBusConnection.deSerializeParameters(parameters, types);
-         if (null == parameters) return (DBusSignal) con.newInstance(objectpath);
+         DBusSignal s;
+         if (null == parameters) s = (DBusSignal) con.newInstance(objectpath);
          else {
             Object[] args = new Object[parameters.length + 1];
-            args[1] = objectpath;
+            args[0] = objectpath;
             for (int i = 1; i < args.length; i++)
                args[i] = parameters[i-1];
 
-            return (DBusSignal) con.newInstance(args);
+            s = (DBusSignal) con.newInstance(args);
          }
+         s.setSerial(serial);
+         s.setSource(source);
+         return s;
       } catch (Exception e) { 
          throw new DBusException(e.getMessage());
       }

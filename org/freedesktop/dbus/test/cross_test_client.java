@@ -47,18 +47,21 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
    public void handle(DBus.Binding.TestSignals.Triggered t)
    {
       failed.remove("org.freedesktop.DBus.Binding.TestSignals.Triggered");
-      if (t.a.equals(new UInt64(21389479283L)))
+      if (new UInt64(21389479283L).equals(t.a) && "/Test".equals(t.getObjectPath()))
          pass("org.freedesktop.DBus.Binding.TestSignals.Triggered");
-      else
+      else if (!new UInt64(21389479283L).equals(t.a))
          fail("org.freedesktop.DBus.Binding.TestSignals.Triggered", "Incorrect signal content; expected 21389479283 got "+t.a);
+      else if (!"/Test".equals(t.getObjectPath()))
+         fail("org.freedesktop.DBus.Binding.TestSignals.Triggered", "Incorrect signal source object; expected /Test got "+t.getObjectPath());
    }
    public void Response(UInt16 a, double b)
    {
-      failed.remove("org.freedesktop.DBus.Binding.TestSignals.Triggered");
+      System.err.println("Response!");
+      failed.remove("org.freedesktop.DBus.Binding.TestCallbacks.Response");
       if (a.equals(new UInt16(15)) && (b == 12.5))
-         pass("org.freedesktop.DBus.Binding.TestSignals.Triggered");
+         pass("org.freedesktop.DBus.Binding.TestCallbacks.Response");
       else
-         fail("org.freedesktop.DBus.Binding.TestSignals.Triggered", "Incorrect signal content; expected 15, 12.5 got "+a+", "+b);
+         fail("org.freedesktop.DBus.Binding.TestCallbacks.Response", "Incorrect parameters; expected 15, 12.5 got "+a+", "+b);
    }
    public static void pass(String test)
    {
@@ -83,7 +86,6 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
             if (t.getName().equals(method))
                m = t;
          }
-         System.err.println(method+"("+collapseArray(parameters)+")");   
          Object o = m.invoke(proxy, parameters);
          if (null != rv && rv.getClass().isArray()) {
             compareArray(iface.getName()+"."+method, rv,o); 
@@ -192,6 +194,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       test(DBus.Binding.Tests.class, tests, "IdentityString", "", ""); 
       test(DBus.Binding.Tests.class, tests, "IdentityString", "The Quick Brown Fox Jumped Over The Lazy Dog", "The Quick Brown Fox Jumped Over The Lazy Dog"); 
       test(DBus.Binding.Tests.class, tests, "IdentityString", "ひらがなゲーム - かなぶん", "ひらがなゲーム - かなぶん"); 
+      
       testArray(DBus.Binding.Tests.class, tests, "IdentityBoolArray", Boolean.TYPE, null);
       testArray(DBus.Binding.Tests.class, tests, "IdentityByteArray", Byte.TYPE, null);
       testArray(DBus.Binding.Tests.class, tests, "IdentityInt16Array", Short.TYPE, null);
@@ -199,10 +202,11 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       testArray(DBus.Binding.Tests.class, tests, "IdentityInt64Array", Long.TYPE, null);
       testArray(DBus.Binding.Tests.class, tests, "IdentityDoubleArray", Double.TYPE, null);
       
-      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt16Array", UInt16.class, new UInt16(0));
-      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt32Array", UInt32.class, new UInt32(0));
-      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt64Array", UInt64.class, new UInt64(0));
-      testArray(DBus.Binding.Tests.class, tests, "IdentityStringArray", String.class, "");
+      testArray(DBus.Binding.Tests.class, tests, "IdentityArray", Variant.class, new Variant<String>("aoeu"));
+      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt16Array", UInt16.class, new UInt16(12));
+      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt32Array", UInt32.class, new UInt32(190));
+      testArray(DBus.Binding.Tests.class, tests, "IdentityUInt64Array", UInt64.class, new UInt64(103948));
+      testArray(DBus.Binding.Tests.class, tests, "IdentityStringArray", String.class, "asdf");
       
       int[] is = new int[0];
       test(DBus.Binding.Tests.class, tests, "Sum", 0L, is); 
@@ -248,14 +252,16 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       out.put("out", l);
       test(DBus.Binding.Tests.class, tests, "InvertMapping", in, out);*/
 
-      test(DBus.Binding.Tests.class, tests, "Trigger", null, tests, new UInt64(21389479283L));
-/*
+      test(DBus.Binding.Tests.class, tests, "Trigger", null, "/Test", new UInt64(21389479283L));
+
       try {
          ctc.conn.sendSignal(new DBus.Binding.TestSignals.Trigger("/Test", new UInt16(15), 12.5));
       } catch (DBusException DBe) {
          throw new DBusExecutionException(DBe.getMessage());
       }
-  */       
+         
+      try { Thread.sleep(1000); } catch (InterruptedException Ie) {}
+
       test(DBus.Binding.Tests.class, tests, "Exit", null);
    }
    public static void testArray(Class iface, Object proxy, String method, Class arrayType, Object content)
