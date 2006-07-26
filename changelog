@@ -4,6 +4,7 @@ Version 1.9:
 	* Struct optimisations
 	* Canonicalise D-Bus spelling in documentation
 	* Update documentation
+   * Implement cross-bindings test suite
 
 Version 1.8:
 
