@@ -56,7 +56,6 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
    }
    public void Response(UInt16 a, double b)
    {
-      System.err.println("Response!");
       failed.remove("org.freedesktop.DBus.Binding.TestCallbacks.Response");
       if (a.equals(new UInt16(15)) && (b == 12.5))
          pass("org.freedesktop.DBus.Binding.TestCallbacks.Response");
