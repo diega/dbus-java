@@ -1072,7 +1072,39 @@ public class DBusConnection
       }
    }
    /** 
-    * Return a reference to a remote object 
+    * Return a reference to a remote object. 
+    * This method will resolve the well known name (if given) to a unique bus name when you call it.
+    * This means that if a well known name is released by one process and acquired by another calls to
+    * objects gained from this method will continue to operate on the original process.
+    * @param service The service to connect to. Usually a well known service name in dot-notation (such as "org.freedesktop.local")
+    * or may be a DBus address such as ":1-16".
+    * @param objectpath The path on which the service is exporting the object.$
+    * @param type The interface they are exporting it on. This type must have the same full class name and exposed method signatures
+    * as the interface the remote object is exporting.
+    * @return A reference to a remote object.
+    * @throws ClassCastException If type is not a sub-type of DBusInterface
+    * @throws DBusException If service or objectpath are incorrectly formatted.
+    */
+   public DBusInterface getPeerRemoteObject(String service, String objectpath, Class<? extends DBusInterface> type) throws DBusException
+   {
+      if (null == service) throw new DBusException("Invalid service name ("+service+")");
+      if (null == objectpath) throw new DBusException("Invalid object path");
+      if (null == type) throw new ClassCastException("Not A DBus Interface");
+      if (!service.matches(SERVICE_REGEX) && !service.matches(CONNID_REGEX)) throw new DBusException("Invalid service name ("+service+")");
+      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Interface");
+      String unique = _dbus.GetNameOwner(service);
+      RemoteObject ro = new RemoteObject(unique, objectpath, type);
+      DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
+            new Class[] { type }, new RemoteInvocationHandler(this, ro, type));
+      importedObjects.put(i, ro);
+      return i;
+   }
+   /** 
+    * Return a reference to a remote object. 
+    * This method will always refer to the well known name (if given) rather than resolving it to a unique bus name.
+    * In particular this means that if a service providing the well known name disappears and is taken over by another process
+    * proxy objects gained by this method will make calls on the new service.
     * @param service The service to connect to. Usually a well known service name in dot-notation (such as "org.freedesktop.local")
     * or may be a DBus address such as ":1-16".
     * @param objectpath The path on which the service is exporting the object.

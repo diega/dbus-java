@@ -5,6 +5,7 @@ Version 1.9:
 	* Canonicalise D-Bus spelling in documentation
 	* Update documentation
    * Implement cross-bindings test suite
+   * add getPeerRemoteObject method
 
 Version 1.8:
 
