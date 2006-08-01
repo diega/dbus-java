@@ -6,6 +6,8 @@ class DBusMatchRule
    private String type;
    private String iface;
    private String member;
+   private String object;
+   private String source;
    public DBusMatchRule(String type, String iface, String member)
    {
       this.type = type;
@@ -39,6 +41,12 @@ class DBusMatchRule
       member = method;
       type = "method_call";
    }
+   public DBusMatchRule(Class c, String source, String object) throws DBusException
+   {
+      this(c);
+      this.source = source;
+      this.object = object;
+   }
    public DBusMatchRule(Class c) throws DBusException
    {
       if (DBusInterface.class.isAssignableFrom(c)) {
@@ -70,10 +78,14 @@ class DBusMatchRule
       if (null != type) s = null == s ? "type='"+type+"'" : s + ",type='"+type+"'";
       if (null != member) s = null == s ? "member='"+member+"'" : s + ",member='"+member+"'";
       if (null != iface) s = null == s ? "interface='"+iface+"'" : s + ",interface='"+iface+"'";
+      if (null != source) s = null == s ? "sender='"+source+"'" : s + ",sender='"+source+"'";
+      if (null != object) s = null == s ? "path='"+object+"'" : s + ",path='"+object+"'";
       return s;
    }
    public String getType() { return type; }
    public String getInterface() { return iface; }
    public String getMember() { return member; }
+   public String getSource() { return source; }
+   public String getObject() { return object; }
    
 }

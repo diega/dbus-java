@@ -31,20 +31,35 @@ class SignalTuple
 {
    String type;
    String name;
-   public SignalTuple(String type, String name)
+   String object;
+   String source;
+   public SignalTuple(String type, String name, String object, String source)
    {
       this.type = type;
       this.name = name;
+      this.object = object;
+      this.source = source;
    }
    public boolean equals(Object o)
    {
-       return o.getClass().equals(SignalTuple.class)
-            && ((SignalTuple) o).type.equals(this.type)
-            && ((SignalTuple) o).name.equals(this.name);
+      if (!(o instanceof SignalTuple)) return false;
+      SignalTuple other = (SignalTuple) o;
+      if (null == this.type && null != other.type) return false;
+      if (null != this.type && !this.type.equals(other.type)) return false;
+      if (null == this.name && null != other.name) return false;
+      if (null != this.name && !this.name.equals(other.name)) return false;
+      if (null == this.object && null != other.object) return false;
+      if (null != this.object && !this.object.equals(other.object)) return false;
+      if (null == this.source && null != other.source) return false;
+      if (null != this.source && !this.source.equals(other.source)) return false;
+      return true;
    }
    public int hashCode()
    {
-      return type.hashCode()+name.hashCode();
+      return (null == type ? 0 : type.hashCode())
+         +   (null == name ? 0 : name.hashCode())
+         +   (null == source ? 0 : source.hashCode())
+         +   (null == object ? 0 : object.hashCode());
    }
 }
 
@@ -1149,10 +1164,58 @@ public class DBusConnection
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       removeSigHandler(new DBusMatchRule(type), handler);
    }
+   /** 
+    * Remove a Signal Handler.
+    * Stops listening for this signal.
+    * @param type The signal to watch for. 
+    * @param object The object emitting the signal.
+    * @throws DBusException If listening for the signal on the bus failed.
+    * @throws ClassCastException If type is not a sub-type of DBusSignal.
+    */
+   public <T extends DBusSignal> void removeSigHandler(Class<T> type, DBusInterface object,  DBusSigHandler<T> handler) throws DBusException
+   {
+      if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
+      String objectpath = importedObjects.get(object).objectpath;
+      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      removeSigHandler(new DBusMatchRule(type, null, objectpath), handler);
+   }
+   /** 
+    * Remove a Signal Handler.
+    * Stops listening for this signal.
+    * @param type The signal to watch for. 
+    * @param source The source of the signal.
+    * @throws DBusException If listening for the signal on the bus failed.
+    * @throws ClassCastException If type is not a sub-type of DBusSignal.
+    */
+   public <T extends DBusSignal> void removeSigHandler(Class<T> type, String source, DBusSigHandler<T> handler) throws DBusException
+   {
+      if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
+      if (source.matches(SERVICE_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
+      if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
+      removeSigHandler(new DBusMatchRule(type, source, null), handler);
+   }
+   /** 
+    * Remove a Signal Handler.
+    * Stops listening for this signal.
+    * @param type The signal to watch for. 
+    * @param source The source of the signal.
+    * @param object The object emitting the signal.
+    * @throws DBusException If listening for the signal on the bus failed.
+    * @throws ClassCastException If type is not a sub-type of DBusSignal.
+    */
+   public <T extends DBusSignal> void removeSigHandler(Class<T> type, String source, DBusInterface object,  DBusSigHandler<T> handler) throws DBusException
+   {
+      if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
+      if (source.matches(SERVICE_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
+      if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
+      String objectpath = importedObjects.get(object).objectpath;
+      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      removeSigHandler(new DBusMatchRule(type, source, objectpath), handler);
+   }
    private <T extends DBusSignal> void removeSigHandler(DBusMatchRule rule, DBusSigHandler<T> handler) throws DBusException
    {
       
-      SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember());
+      SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember(), rule.getObject(), rule.getSource());
       synchronized (handledSignals) {
          Vector<DBusSigHandler> v = handledSignals.get(key);
          if (null != v) {
@@ -1182,15 +1245,67 @@ public class DBusConnection
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       addSigHandler(new DBusMatchRule(type), handler);
    }
+   /** 
+    * Add a Signal Handler.
+    * Adds a signal handler to call when a signal is received which matches the specified type, name and object.
+    * @param type The signal to watch for. 
+    * @param object The object from which the signal will be emitted
+    * @param handler The handler to call when a signal is received.
+    * @throws DBusException If listening for the signal on the bus failed.
+    * @throws ClassCastException If type is not a sub-type of DBusSignal.
+    */
+   public <T extends DBusSignal> void addSigHandler(Class<T> type, DBusInterface object, DBusSigHandler<T> handler) throws DBusException
+   {
+      if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
+      String objectpath = importedObjects.get(object).objectpath;
+      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      addSigHandler(new DBusMatchRule(type, null, objectpath), handler);
+   }
+   /** 
+    * Add a Signal Handler.
+    * Adds a signal handler to call when a signal is received which matches the specified type, name and source.
+    * @param type The signal to watch for. 
+    * @param source The process which will send the signal. This <b>MUST</b> be a unique bus name and not a well known name.
+    * @param handler The handler to call when a signal is received.
+    * @throws DBusException If listening for the signal on the bus failed.
+    * @throws ClassCastException If type is not a sub-type of DBusSignal.
+    */
+   public <T extends DBusSignal> void addSigHandler(Class<T> type, String source, DBusSigHandler<T> handler) throws DBusException
+   {
+      if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
+      if (source.matches(SERVICE_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
+      if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
+      addSigHandler(new DBusMatchRule(type, source, null), handler);
+   }
+   /** 
+    * Add a Signal Handler.
+    * Adds a signal handler to call when a signal is received which matches the specified type, name, source and object.
+    * @param type The signal to watch for. 
+    * @param source The process which will send the signal. This <b>MUST</b> be a unique bus name and not a well known name.
+    * @param object The object from which the signal will be emitted
+    * @param handler The handler to call when a signal is received.
+    * @throws DBusException If listening for the signal on the bus failed.
+    * @throws ClassCastException If type is not a sub-type of DBusSignal.
+    */
+   public <T extends DBusSignal> void addSigHandler(Class<T> type, String source, DBusInterface object,  DBusSigHandler<T> handler) throws DBusException
+   {
+      if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
+      if (source.matches(SERVICE_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
+      if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
+      String objectpath = importedObjects.get(object).objectpath;
+      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      addSigHandler(new DBusMatchRule(type, source, objectpath), handler);
+   }
    private <T extends DBusSignal> void addSigHandler(DBusMatchRule rule, DBusSigHandler<T> handler) throws DBusException
    {
       try {
+         System.err.println(rule.toString());
          _dbus.AddMatch(rule.toString());
       } catch (DBusExecutionException DBEe) {
          if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
          throw new DBusException(DBEe.getMessage());
       }
-      SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember());
+      SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember(), rule.getObject(), rule.getSource());
       synchronized (handledSignals) {
          Vector<DBusSigHandler> v = handledSignals.get(key);
          if (null == v) {
@@ -1376,11 +1491,19 @@ public class DBusConnection
    @SuppressWarnings("unchecked")
    private void handleMessage(final DBusSignal s)
    {
-      Vector<DBusSigHandler> v;
+      Vector<DBusSigHandler> v = new Vector<DBusSigHandler>();
       synchronized(handledSignals) {
-         v = handledSignals.get(new SignalTuple(s.getType(), s.getName()));
+         Vector<DBusSigHandler> t;
+         t = handledSignals.get(new SignalTuple(s.getType(), s.getName(), null, null));
+         if (null != t) v.addAll(t);
+         t = handledSignals.get(new SignalTuple(s.getType(), s.getName(), s.getObjectPath(), null));
+         if (null != t) v.addAll(t);
+         t = handledSignals.get(new SignalTuple(s.getType(), s.getName(), null, s.getSource()));
+         if (null != t) v.addAll(t);
+         t = handledSignals.get(new SignalTuple(s.getType(), s.getName(), s.getObjectPath(), s.getSource()));
+         if (null != t) v.addAll(t);
       }
-      if (null == v) return;
+      if (0 == v.size()) return;
       for (final DBusSigHandler h: v)
          addRunnable(new Runnable() { public void run() {
             {

@@ -18,8 +18,10 @@ import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
 import org.freedesktop.dbus.Variant;
 
-import org.freedesktop.DBus.Error.UnknownObject;
+import org.freedesktop.DBus;
+import org.freedesktop.DBus.Error.MatchRuleInvalid;
 import org.freedesktop.DBus.Error.ServiceUnknown;
+import org.freedesktop.DBus.Error.UnknownObject;
 import org.freedesktop.DBus.Peer;
 import org.freedesktop.DBus.Introspectable;
 
@@ -206,6 +208,11 @@ class signalhandler implements DBusSigHandler<TestSignalInterface.TestSignal>
    /** Handling a signal */
    public void handle(TestSignalInterface.TestSignal t)
    {
+      if (false == test.done1) {
+         test.done1 = true;
+      } else {
+         test.fail("SignalHandler 1 has been run too many times");
+      }
       System.out.println("SignalHandler 1 Running");
       System.out.println("string("+t.value+") int("+t.number+")");
       if (!"Bar".equals(t.value) || !(new UInt32(42)).equals(t.number))
@@ -221,6 +228,11 @@ class arraysignalhandler implements DBusSigHandler
    /** Handling a signal */
    public void handle(DBusSignal s)
    {
+      if (false == test.done2) {
+         test.done2 = true;
+      } else {
+         test.fail("SignalHandler 2 has been run too many times");
+      }
       TestSignalInterface.TestArraySignal t = (TestSignalInterface.TestArraySignal) s;
       System.out.println("SignalHandler 2 Running");
       System.out.println("Got a test array signal with Parameters: ");
@@ -257,6 +269,8 @@ class badarraysignalhandler implements DBusSigHandler
  */
 public class test
 {
+   public static boolean done1 = false;
+   public static boolean done2 = false;
    public static void fail(String message)
    {
       System.err.println("Test Failed: "+message);
@@ -273,18 +287,24 @@ public class test
       System.out.println("Registering Name");
       conn.registerService("foo.bar.Test");
       
+      /** This gets a remote object matching our service name and exported object path. */
+      Peer peer = (Peer) conn.getRemoteObject("foo.bar.Test", "/Test", Peer.class);
+      DBus dbus = (DBus) conn.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
+
       System.out.print("Listening for signals...");
       try {
          /** This registers an instance of the test class as the signal handler for the TestSignal class. */
          conn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler());
-         conn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler());
-         conn.addSigHandler(TestSignalInterface.TestArraySignal.class, new arraysignalhandler());
+         String source = dbus.GetNameOwner("foo.bar.Test");
+         conn.addSigHandler(TestSignalInterface.TestArraySignal.class, source, peer, new arraysignalhandler());
          badarraysignalhandler bash = new badarraysignalhandler();
          conn.addSigHandler(TestSignalInterface.TestSignal.class, bash);
          conn.removeSigHandler(TestSignalInterface.TestSignal.class, bash);
          System.out.println("done");
+      } catch (MatchRuleInvalid MRI) {
+         test.fail("Failed to add handlers: "+MRI.getMessage());
       } catch (DBusException DBe) {
-         test.fail("Failed to add handlers");
+         test.fail("Failed to add handlers: "+DBe.getMessage());
       }
       
       System.out.println("Listening for Method Calls");
@@ -294,7 +314,7 @@ public class test
       
       System.out.println("Sending Signal");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
-      conn.sendSignal(new TestSignalInterface.TestSignal("/foo/bar/com/Wibble", "Bar", new UInt32(42)));
+      conn.sendSignal(new TestSignalInterface.TestSignal("/foo/bar/Wibble", "Bar", new UInt32(42)));
       
       System.out.println("Getting our introspection data");
       /** This gets a remote object matching our service name and exported object path. */
@@ -306,8 +326,6 @@ public class test
       System.out.println("Got Introspection Data: \n"+data);
       
       System.out.println("Pinging ourselves");
-      /** This gets a remote object matching our service name and exported object path. */
-      Peer peer = (Peer) conn.getRemoteObject("foo.bar.Test", "/Test", Peer.class);
       /** Call ping. */
       for (int i = 0; i < 10; i++) {
          long then = System.currentTimeMillis();
@@ -425,7 +443,7 @@ public class test
       
       System.out.print("Sending Array Signal...");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
-      conn.sendSignal(new TestSignalInterface.TestArraySignal("/foo/bar/com/Wibble", new TestStruct2(l, new Variant<UInt64>(new UInt64(567)))));
+      conn.sendSignal(new TestSignalInterface.TestArraySignal("/Test", new TestStruct2(l, new Variant<UInt64>(new UInt64(567)))));
       
       System.out.println("done");
 
@@ -464,6 +482,10 @@ public class test
       /** Disconnect from the bus. */
       conn.disconnect();
       conn = null;
+
+      if (!done1) fail("Signal handler 1 failed to be run");
+      if (!done2) fail("Signal handler 2 failed to be run");
+      
    } catch (Exception e) {
       e.printStackTrace();
       fail("Unexpected Exception Occurred");

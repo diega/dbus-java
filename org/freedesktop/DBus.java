@@ -143,7 +143,7 @@ public interface DBus extends DBusInterface
     * match this rule.
     * @param matchrule The Match rule as a string. Format Undocumented.
     */
-   public void AddMatch(String matchrule);
+   public void AddMatch(String matchrule) throws Error.MatchRuleInvalid;
 
    /**
     * Remove a match rule.
@@ -151,7 +151,7 @@ public interface DBus extends DBusInterface
     * match this rule.
     * @param matchrule The Match rule as a string. Format Undocumented.
     */
-   public void RemoveMatch(String matchrule);
+   public void RemoveMatch(String matchrule) throws Error.MatchRuleInvalid;
 
    /**
     * List the connections currently queued for a name.
@@ -251,6 +251,17 @@ public interface DBus extends DBusInterface
       public class ServiceUnknown extends DBusExecutionException
       {
          public ServiceUnknown(String message)
+         {
+            super(message);
+         }
+      }
+      /**
+       * Thrown if the match rule is invalid
+       */
+      @SuppressWarnings("serial")
+      public class MatchRuleInvalid extends DBusExecutionException
+      {
+         public MatchRuleInvalid(String message)
          {
             super(message);
          }
