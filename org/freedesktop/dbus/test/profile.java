@@ -7,9 +7,17 @@ import java.util.Vector;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.DBus.Peer;
 import org.freedesktop.DBus.Introspectable;
+
+class ProfileHandler implements DBusSigHandler<Profiler.ProfileSignal>
+{
+   public void handle(Profiler.ProfileSignal s)
+   {
+   }
+}
 
 /**
  * Profiling tests.
@@ -69,7 +77,7 @@ public class profile
    {
       if (0==args.length) {
          System.out.println("You must specify a profile type.");
-         System.out.println("Syntax: profile <pings|arrays|introspect|maps|bytes|lists|structs>");
+         System.out.println("Syntax: profile <pings|arrays|introspect|maps|bytes|lists|structs|signals>");
          System.exit(1);
       }
       DBusConnection conn = DBusConnection.getConnection(DBusConnection.SESSION);
@@ -209,10 +217,29 @@ public class profile
          long t = System.currentTimeMillis();
          p.bytes(bs);
          System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
+      } else if ("signals".equals(args[0])) {
+         System.out.print("Sending 100000 signals");
+         conn.addSigHandler(Profiler.ProfileSignal.class, new ProfileHandler());
+         Log l = new Log(100000);
+         Profiler.ProfileSignal p = new Profiler.ProfileSignal("/");
+         long t = System.currentTimeMillis();
+         for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < 1000; j++) {
+               l.start();
+               conn.sendSignal(p);
+               l.stop();
+            }
+            System.out.print(".");
+         }
+         t = System.currentTimeMillis()-t;
+         System.out.println(" done.");
+         System.out.println("min/max/avg (ms): "+l.min()+"/"+l.max()+"/"+l.mean());
+         System.out.println("deviation: "+l.stddev());
+         System.out.println("Total time: "+t+"ms");
       } else {
          conn.disconnect();
          System.out.println("Invalid profile ``"+args[0]+"''.");
-         System.out.println("Syntax: profile <pings|arrays|introspect|maps|bytes|lists|structs>");
+         System.out.println("Syntax: profile <pings|arrays|introspect|maps|bytes|lists|structs|signals>");
          System.exit(1);
       }
       conn.disconnect();
