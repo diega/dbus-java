@@ -7,6 +7,7 @@ Version 1.9:
    * Implement cross-bindings test suite
    * add getPeerRemoteObject method
    * add addSigHandler methods which filter on sender and path
+	* Signal handling optimisations
 
 Version 1.8:
 
