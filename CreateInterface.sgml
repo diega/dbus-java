@@ -64,7 +64,7 @@ manpage.1: manpage.sgml
     <cmdsynopsis>
       <command>&dhpackage;</command>
          <arg><option><replaceable>introspection.xml</replaceable></option></arg>
-         <arg><option><replaceable>servicename</replaceable> <replaceable>objectname</replaceable></option></arg>
+         <arg><option><replaceable>busname</replaceable> <replaceable>objectname</replaceable></option></arg>
          <arg><option>-y </option></arg>
          <arg><option>--system </option></arg>
          <arg><option>-s </option></arg>

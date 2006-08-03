@@ -328,7 +328,7 @@ public interface DBus extends DBusInterface
       }
       public interface TestCallbacks extends DBusInterface
       {
-         @Description("when the trigger signal is received, this method should be called on the sending service/object.")
+         @Description("when the trigger signal is received, this method should be called on the sending process/object.")
          public void Response(UInt16 a, double b);
       }
       public interface Tests extends DBusInterface

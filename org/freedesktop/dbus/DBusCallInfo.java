@@ -19,7 +19,7 @@ public class DBusCallInfo
    DBusCallInfo(MethodCall m)
    {
       this.source = m.getSource();
-      this.destination = m.getService();
+      this.destination = m.getDestination();
       this.objectpath = m.getObjectPath();
       this.iface = m.getType();
       this.method = m.getName();

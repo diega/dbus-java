@@ -197,7 +197,7 @@ public class DBusConnection
       {
          if (s instanceof org.freedesktop.DBus.Local.Disconnected) {
             DBusErrorMessage err = new DBusErrorMessage(
-                  servicenames.get(0), servicenames.get(0), 
+                  busnames.get(0), busnames.get(0), 
                   "org.freedesktop.DBus.Local.Disconnected", "s",
                   new Object[] { "Disconnected" }, 0, 0);
             synchronized (pendingCalls) {
@@ -349,7 +349,7 @@ public class DBusConnection
    /** Initial size of the pending calls map */
    private static final int PENDING_MAP_INITIAL_SIZE = 10;
 
-   static final String SERVICE_REGEX = "^[-_a-zA-Z][-_a-zA-Z0-9]*(\\.[-_a-zA-Z][-_a-zA-Z0-9]*)*$";
+   static final String BUSNAME_REGEX = "^[-_a-zA-Z][-_a-zA-Z0-9]*(\\.[-_a-zA-Z][-_a-zA-Z0-9]*)*$";
    static final String CONNID_REGEX = "^:[0-9]*\\.[0-9]*$";
    static final String OBJECT_REGEX = "^/([-_a-zA-Z0-9]+(/[-_a-zA-Z0-9]+)*)?$";
    static final byte THREADCOUNT = 4;
@@ -358,7 +358,7 @@ public class DBusConnection
    private Map<DBusInterface,RemoteObject> importedObjects;
    private Map<SignalTuple,Vector<DBusSigHandler>> handledSignals;
    private EfficientMap pendingCalls;
-   private Vector<String> servicenames;
+   private Vector<String> busnames;
    private LinkedList<Runnable> runnables;
    private LinkedList<_workerthread> workers;
    private boolean _run;
@@ -374,7 +374,7 @@ public class DBusConnection
    private native DBusMessage dbus_read_write_pop(int connid, int timeoutms, EfficientQueue outgoing);
    private native int dbus_send_signal(int connid, String objectpath, String type, String name, Object... parameters);
    private native int dbus_send_error_message(int connid, String destination, String name, long replyserial, Object... params);
-   private native int dbus_call_method(int connid, String service, String objectpath, String type, String name, boolean noreply, Object... params);
+   private native int dbus_call_method(int connid, String busname, String objectpath, String type, String name, boolean noreply, Object... params);
    private native int dbus_reply_to_call(int connid, String destination, String type, String objectpath, String name, long replyserial, Object... params);
    static {
       System.loadLibrary("dbus-1");
@@ -896,7 +896,7 @@ public class DBusConnection
       exportedObjects.put(null, new ExportedObject(new _globalhandler()));
       handledSignals = new HashMap<SignalTuple,Vector<DBusSigHandler>>();
       pendingCalls = new EfficientMap(PENDING_MAP_INITIAL_SIZE);
-      servicenames = new Vector<String>();
+      busnames = new Vector<String>();
       outgoing = new EfficientQueue(PENDING_MAP_INITIAL_SIZE);
       pendingErrors = new LinkedList<DBusErrorMessage>();
       runnables = new LinkedList<Runnable>();
@@ -928,7 +928,7 @@ public class DBusConnection
       // register ourselves
       _dbus = (DBus) getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
       try {
-         servicenames.add(_dbus.Hello());
+         busnames.add(_dbus.Hello());
       } catch (DBusExecutionException DBEe) {
          if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
          throw new DBusException(DBEe.getMessage());
@@ -953,7 +953,7 @@ public class DBusConnection
       // register ourselves
       _dbus = (DBus) getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
       try {
-         servicenames.add(_dbus.Hello());
+         busnames.add(_dbus.Hello());
       } catch (DBusExecutionException DBEe) {
          if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
          throw new DBusException(DBEe.getMessage());
@@ -1027,19 +1027,34 @@ public class DBusConnection
    }
 
    /** 
-    * Register a service.
+    * Register a bus name.
     * Register the well known name that this should respond to on the Bus.
-    * @param servicename The name to respond to. MUST be in dot-notation like "org.freedesktop.local"
+    * This function is deprecated in favour of requestBusName.
+    * @param busname The name to respond to. MUST be in dot-notation like "org.freedesktop.local"
     * @throws DBusException If the register name failed, or our name already exists on the bus.
-    *  or if servicename is incorrectly formatted.
+    *  or if busname is incorrectly formatted.
+    * @see #requestBusName
+    * @deprecated
     */
-   public void registerService(String servicename) throws DBusException
+   @Deprecated()
+   public void registerService(String busname) throws DBusException
    {
-      if (!servicename.matches(SERVICE_REGEX)) throw new DBusException("Invalid service name");
-      synchronized (this.servicenames) {
+      requestBusName(busname);
+   }
+   /** 
+    * Request a bus name.
+    * Request the well known name that this should respond to on the Bus.
+    * @param busname The name to respond to. MUST be in dot-notation like "org.freedesktop.local"
+    * @throws DBusException If the register name failed, or our name already exists on the bus.
+    *  or if busname is incorrectly formatted.
+    */
+   public void requestBusName(String busname) throws DBusException
+   {
+      if (!busname.matches(BUSNAME_REGEX)) throw new DBusException("Invalid bus name");
+      synchronized (this.busnames) {
          UInt32 rv;
          try { 
-            rv = _dbus.RequestName(servicename, 
+            rv = _dbus.RequestName(busname, 
                   new UInt32(DBus.DBUS_NAME_FLAG_REPLACE_EXISTING |
                      DBus.DBUS_NAME_FLAG_DO_NOT_QUEUE));
          } catch (DBusExecutionException DBEe) {
@@ -1048,12 +1063,12 @@ public class DBusConnection
          }
          switch (rv.intValue()) {
             case DBus.DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER: break;
-            case DBus.DBUS_REQUEST_NAME_REPLY_IN_QUEUE: throw new DBusException("Failed to register service name");
-            case DBus.DBUS_REQUEST_NAME_REPLY_EXISTS: throw new DBusException("Failed to register service name");
+            case DBus.DBUS_REQUEST_NAME_REPLY_IN_QUEUE: throw new DBusException("Failed to register bus name");
+            case DBus.DBUS_REQUEST_NAME_REPLY_EXISTS: throw new DBusException("Failed to register bus name");
             case DBus.DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER: break;
             default: break;
          }
-         this.servicenames.add(servicename);
+         this.busnames.add(busname);
       }
    }
    /** 
@@ -1091,24 +1106,24 @@ public class DBusConnection
     * This method will resolve the well known name (if given) to a unique bus name when you call it.
     * This means that if a well known name is released by one process and acquired by another calls to
     * objects gained from this method will continue to operate on the original process.
-    * @param service The service to connect to. Usually a well known service name in dot-notation (such as "org.freedesktop.local")
+    * @param busname The bus name to connect to. Usually a well known bus name in dot-notation (such as "org.freedesktop.local")
     * or may be a DBus address such as ":1-16".
-    * @param objectpath The path on which the service is exporting the object.$
+    * @param objectpath The path on which the process is exporting the object.$
     * @param type The interface they are exporting it on. This type must have the same full class name and exposed method signatures
     * as the interface the remote object is exporting.
     * @return A reference to a remote object.
     * @throws ClassCastException If type is not a sub-type of DBusInterface
-    * @throws DBusException If service or objectpath are incorrectly formatted.
+    * @throws DBusException If busname or objectpath are incorrectly formatted.
     */
-   public DBusInterface getPeerRemoteObject(String service, String objectpath, Class<? extends DBusInterface> type) throws DBusException
+   public DBusInterface getPeerRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type) throws DBusException
    {
-      if (null == service) throw new DBusException("Invalid service name ("+service+")");
+      if (null == busname) throw new DBusException("Invalid busname name ("+busname+")");
       if (null == objectpath) throw new DBusException("Invalid object path");
       if (null == type) throw new ClassCastException("Not A DBus Interface");
-      if (!service.matches(SERVICE_REGEX) && !service.matches(CONNID_REGEX)) throw new DBusException("Invalid service name ("+service+")");
+      if (!busname.matches(BUSNAME_REGEX) && !busname.matches(CONNID_REGEX)) throw new DBusException("Invalid busname name ("+busname+")");
       if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
       if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Interface");
-      String unique = _dbus.GetNameOwner(service);
+      String unique = _dbus.GetNameOwner(busname);
       RemoteObject ro = new RemoteObject(unique, objectpath, type);
       DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
             new Class[] { type }, new RemoteInvocationHandler(this, ro, type));
@@ -1118,26 +1133,26 @@ public class DBusConnection
    /** 
     * Return a reference to a remote object. 
     * This method will always refer to the well known name (if given) rather than resolving it to a unique bus name.
-    * In particular this means that if a service providing the well known name disappears and is taken over by another process
-    * proxy objects gained by this method will make calls on the new service.
-    * @param service The service to connect to. Usually a well known service name in dot-notation (such as "org.freedesktop.local")
+    * In particular this means that if a process providing the well known name disappears and is taken over by another process
+    * proxy objects gained by this method will make calls on the new proccess.
+    * @param busname The bus name to connect to. Usually a well known bus name name in dot-notation (such as "org.freedesktop.local")
     * or may be a DBus address such as ":1-16".
-    * @param objectpath The path on which the service is exporting the object.
+    * @param objectpath The path on which the process is exporting the object.
     * @param type The interface they are exporting it on. This type must have the same full class name and exposed method signatures
     * as the interface the remote object is exporting.
     * @return A reference to a remote object.
     * @throws ClassCastException If type is not a sub-type of DBusInterface
-    * @throws DBusException If service or objectpath are incorrectly formatted.
+    * @throws DBusException If busname or objectpath are incorrectly formatted.
     */
-   public DBusInterface getRemoteObject(String service, String objectpath, Class<? extends DBusInterface> type) throws DBusException
+   public DBusInterface getRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type) throws DBusException
    {
-      if (null == service) throw new DBusException("Invalid service name ("+service+")");
+      if (null == busname) throw new DBusException("Invalid busname name ("+busname+")");
       if (null == objectpath) throw new DBusException("Invalid object path");
       if (null == type) throw new ClassCastException("Not A DBus Interface");
-      if (!service.matches(SERVICE_REGEX) && !service.matches(CONNID_REGEX)) throw new DBusException("Invalid service name ("+service+")");
+      if (!busname.matches(BUSNAME_REGEX) && !busname.matches(CONNID_REGEX)) throw new DBusException("Invalid busname name ("+busname+")");
       if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
       if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Interface");
-      RemoteObject ro = new RemoteObject(service, objectpath, type);
+      RemoteObject ro = new RemoteObject(busname, objectpath, type);
       DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
             new Class[] { type }, new RemoteInvocationHandler(this, ro, type));
       importedObjects.put(i, ro);
@@ -1190,7 +1205,7 @@ public class DBusConnection
    public <T extends DBusSignal> void removeSigHandler(Class<T> type, String source, DBusSigHandler<T> handler) throws DBusException
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
-      if (source.matches(SERVICE_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
+      if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
       if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
       removeSigHandler(new DBusMatchRule(type, source, null), handler);
    }
@@ -1206,7 +1221,7 @@ public class DBusConnection
    public <T extends DBusSignal> void removeSigHandler(Class<T> type, String source, DBusInterface object,  DBusSigHandler<T> handler) throws DBusException
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
-      if (source.matches(SERVICE_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
+      if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
       if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
       String objectpath = importedObjects.get(object).objectpath;
       if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
@@ -1273,7 +1288,7 @@ public class DBusConnection
    public <T extends DBusSignal> void addSigHandler(Class<T> type, String source, DBusSigHandler<T> handler) throws DBusException
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
-      if (source.matches(SERVICE_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
+      if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
       if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
       addSigHandler(new DBusMatchRule(type, source, null), handler);
    }
@@ -1290,7 +1305,7 @@ public class DBusConnection
    public <T extends DBusSignal> void addSigHandler(Class<T> type, String source, DBusInterface object,  DBusSigHandler<T> handler) throws DBusException
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
-      if (source.matches(SERVICE_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
+      if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
       if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
       String objectpath = importedObjects.get(object).objectpath;
       if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
@@ -1417,7 +1432,7 @@ public class DBusConnection
 
          if (null == eo) {
             synchronized (outgoing) {
-               outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownObject(m.getObjectPath()+" is not an object provided by this service."))); }
+               outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownObject(m.getObjectPath()+" is not an object provided by this process."))); }
             return;
          }
          meth = eo.methods.get(new MethodTuple(m.getType(), m.getName(), m.getSig()));
@@ -1553,7 +1568,7 @@ public class DBusConnection
          try {
             synchronized (pendingCalls) {
                int flags = ((MethodCall) m).getFlags();
-               m.setSerial(dbus_call_method(connid, ((MethodCall) m).getService(), ((MethodCall) m).getObjectPath(), m.getType(), m.getName(), 1 == (flags & MethodCall.NO_REPLY), m.getParameters()));
+               m.setSerial(dbus_call_method(connid, ((MethodCall) m).getDestination(), ((MethodCall) m).getObjectPath(), m.getType(), m.getName(), 1 == (flags & MethodCall.NO_REPLY), m.getParameters()));
                if (0 < m.getSerial()) {
                   if (0 == (flags & MethodCall.NO_REPLY))
                      pendingCalls.put(m.getSerial(),(MethodCall) m);

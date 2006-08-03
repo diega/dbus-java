@@ -82,7 +82,7 @@ class RemoteInvocationHandler implements InvocationHandler
          if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusExecutionException(e.getMessage());
       }
-      MethodCall call = new MethodCall(ro.service, ro.objectpath, DBusConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), m.getName(), args);
+      MethodCall call = new MethodCall(ro.busname, ro.objectpath, DBusConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), m.getName(), args);
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) call.setFlags(MethodCall.NO_REPLY);
       synchronized (conn.outgoing) {
          conn.outgoing.add(call);
@@ -144,7 +144,7 @@ class RemoteInvocationHandler implements InvocationHandler
             return null;
       }
       else if (method.getName().equals("toString"))
-         return remote.service+":"+remote.objectpath+":"+remote.iface;
+         return remote.busname+":"+remote.objectpath+":"+remote.iface;
 
       return executeRemoteMethod(remote, method, conn, iface, false, args);
    }

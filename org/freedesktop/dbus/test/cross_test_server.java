@@ -344,7 +344,7 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
    public static void main(String[] args)
    { try {
       DBusConnection conn = DBusConnection.getConnection(DBusConnection.SESSION);
-      conn.registerService("org.freedesktop.DBus.Binding.TestServer");
+      conn.requestBusName("org.freedesktop.DBus.Binding.TestServer");
       cross_test_server cts = new cross_test_server(conn);
       conn.addSigHandler(DBus.Binding.TestSignals.Trigger.class, cts);
       conn.exportObject("/Test", cts);

@@ -576,7 +576,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    jmethodID mid;
    const char* csource;
    const char* cdestination;
-   const char* cservice;
+   const char* cbusname;
    const char* cobjectpath;
    const char* ctype;
    const char* cname;
@@ -584,7 +584,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    char* cclassname;
    jstring source;
    jstring destination;
-   jstring service;
+   jstring busname;
    jstring objectpath;
    jstring type;
    jstring name;
@@ -656,9 +656,9 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
    if (NULL == cdestination) destination = NULL;
    else destination = (*env)->NewStringUTF(env, cdestination);
 
-   cservice = dbus_message_get_destination(msg);
-   if (NULL == cservice) service = NULL;
-   else service = (*env)->NewStringUTF(env, cservice);
+   cbusname = dbus_message_get_destination(msg);
+   if (NULL == cbusname) busname = NULL;
+   else busname = (*env)->NewStringUTF(env, cbusname);
 
    csig = dbus_message_get_signature(msg);
    if (NULL == csig) sig = (*env)->NewStringUTF(env, "");
@@ -696,9 +696,9 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
 
    switch (dbus_message_get_type(msg)) {
       case DBUS_MESSAGE_TYPE_METHOD_CALL:
-         if (debug) fprintf(stderr, "=> CALL: (%s) %s%s[%s.%s]() {%ld}\n",csource, cservice,cobjectpath,ctype,cname,(long int) serial);
+         if (debug) fprintf(stderr, "=> CALL: (%s) %s%s[%s.%s]() {%ld}\n",csource, cbusname,cobjectpath,ctype,cname,(long int) serial);
          mid = (*env)->GetMethodID(env, callclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;J)V");
-         jmsg = (*env)->NewObject(env, callclass, mid, source, service, objectpath, type, name, sig, params, serial);
+         jmsg = (*env)->NewObject(env, callclass, mid, source, busname, objectpath, type, name, sig, params, serial);
          if (NULL != params)
             (*env)->DeleteLocalRef(env, params);
          if (dbus_message_get_no_reply(msg)) {
@@ -1275,7 +1275,7 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1erro
  * Signature: ([Ljava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1method
-  (JNIEnv * env, jobject connobj, jint cidx, jstring service, jstring objectpath, jstring type, jstring name, jboolean noreply, jobjectArray params)
+  (JNIEnv * env, jobject connobj, jint cidx, jstring busname, jstring objectpath, jstring type, jstring name, jboolean noreply, jobjectArray params)
 {
    int rv;
    dbus_uint32_t serial = 0; // unique number to associate replies with requests
@@ -1283,9 +1283,9 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1meth
    DBusMessageIter args;
    DBusConnection* conn;
 
-   const char* cservice = NULL;
-   if (NULL != service)
-      cservice = (*env)->GetStringUTFChars(env, service, 0);
+   const char* cbusname = NULL;
+   if (NULL != busname)
+      cbusname = (*env)->GetStringUTFChars(env, busname, 0);
    const char* cobjectpath = NULL;
    if (NULL != objectpath)
       cobjectpath = (*env)->GetStringUTFChars(env, objectpath, 0);
@@ -1297,7 +1297,7 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1meth
       ctype = (*env)->GetStringUTFChars(env, type, 0);
   
    // create a message and check for errors 
-   msg = dbus_message_new_method_call(cservice, // service name to call
+   msg = dbus_message_new_method_call(cbusname, // busname name to call
          cobjectpath, // object name of the method
          ctype, // interface name of the method
          cname); // name of the method
@@ -1324,11 +1324,11 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1meth
       dbus_message_unref(msg);
       return -1;
    }
-   if (debug) fprintf(stderr, "<= CALL: %s%s[%s.%s]() {%d}\n", cservice,cobjectpath,ctype,cname,serial);
+   if (debug) fprintf(stderr, "<= CALL: %s%s[%s.%s]() {%d}\n", cbusname,cobjectpath,ctype,cname,serial);
 
    if (NULL != cname) (*env)->ReleaseStringUTFChars(env, name, cname);
    if (NULL != ctype) (*env)->ReleaseStringUTFChars(env, type, ctype);
-   if (NULL != cservice) (*env)->ReleaseStringUTFChars(env, service, cservice);
+   if (NULL != cbusname) (*env)->ReleaseStringUTFChars(env, busname, cbusname);
    if (NULL != cobjectpath) (*env)->ReleaseStringUTFChars(env, objectpath, cobjectpath);
    
    dbus_connection_flush(conn);

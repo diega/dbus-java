@@ -285,9 +285,9 @@ public class test
       conn = DBusConnection.getConnection(DBusConnection.SESSION);
       
       System.out.println("Registering Name");
-      conn.registerService("foo.bar.Test");
+      conn.requestBusName("foo.bar.Test");
       
-      /** This gets a remote object matching our service name and exported object path. */
+      /** This gets a remote object matching our bus name and exported object path. */
       Peer peer = (Peer) conn.getRemoteObject("foo.bar.Test", "/Test", Peer.class);
       DBus dbus = (DBus) conn.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
 
@@ -317,7 +317,7 @@ public class test
       conn.sendSignal(new TestSignalInterface.TestSignal("/foo/bar/Wibble", "Bar", new UInt32(42)));
       
       System.out.println("Getting our introspection data");
-      /** This gets a remote object matching our service name and exported object path. */
+      /** This gets a remote object matching our bus name and exported object path. */
       Introspectable intro = (Introspectable) conn.getRemoteObject("foo.bar.Test", "/", Introspectable.class);
       /** Get introspection data */
       String data = intro.Introspect();
@@ -335,7 +335,7 @@ public class test
       }
       
       System.out.println("Calling Method0/1");
-      /** This gets a remote object matching our service name and exported object path. */
+      /** This gets a remote object matching our bus name and exported object path. */
       TestRemoteInterface tri = (TestRemoteInterface) conn.getPeerRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface.class);
       System.out.println("Got Remote Object: "+tri);
       /** Call the remote object and get a response. */
@@ -391,12 +391,12 @@ public class test
          test.fail("Method Execution should have failed");
       } catch (UnknownObject UO) {
          System.out.println("Remote Method Failed with: "+UO.getClass().getName()+" "+UO.getMessage());
-         if (!UO.getMessage().equals("/Moofle is not an object provided by this service."))
+         if (!UO.getMessage().equals("/Moofle is not an object provided by this process."))
             test.fail("Error message was not correct");
       }
 
       System.out.println("Calling Method4/5/6/7");
-      /** This gets a remote object matching our service name and exported object path. */
+      /** This gets a remote object matching our bus name and exported object path. */
       TestRemoteInterface2 tri2 = (TestRemoteInterface2) conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);
       /** Call the remote object and get a response. */
       TestTuple<String, Integer, Boolean> rv = tri2.show(234);

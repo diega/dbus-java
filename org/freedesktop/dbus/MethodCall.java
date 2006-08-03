@@ -5,23 +5,23 @@ class MethodCall extends DBusMessage
    public static final int NO_REPLY = 1;
    public static final int ASYNC = 2;
    static long REPLY_WAIT_TIMEOUT = 20000;
-   String service;
+   String destination;
    String objectpath;
    DBusMessage reply = null;
    int flags = 0;
-   public MethodCall(String service, String objectpath, String iface, String name, Object[] args)
+   public MethodCall(String busname, String objectpath, String iface, String name, Object[] args)
    {
       super(null, iface, name, "", args, 0);
-      this.service = service;
+      this.destination = busname;
       this.objectpath = objectpath;
    }
-   protected MethodCall(String source, String service, String objectpath, String iface, String name, String sig, Object[] args, long serial)
+   protected MethodCall(String source, String busname, String objectpath, String iface, String name, String sig, Object[] args, long serial)
    {
       super(source, iface, name, sig, args, serial);
-      this.service = service;
+      this.destination = busname;
       this.objectpath = objectpath;
    }
-   public String getService() { return service; }
+   public String getDestination() { return destination; }
    public String getObjectPath() { return objectpath; }
    public synchronized boolean hasReply()
    {

@@ -68,13 +68,13 @@ Sun, or ecj+jamvm with classpath-generics newer than 0.19), and D-Bus
 D-Bus has several notions which are exposed to the users of the Java
 bindings.
 
-\subsubsection{Service Names}
+\subsubsection{Bus Names}
 
 Programs on the bus are issued a unique identifier by the bus. This
 is guaranteed to be unique within one run of the bus, but is
 assigned sequentially to each new connection. 
 
-There are also so called well-known service names which a device can
+There are also so called well-known bus names which a device can
 request on the bus. These are of the form {\em ``org.freedesktop.DBus''},
 and any program can request them if they are not already owned.
 
@@ -152,8 +152,8 @@ Introspectable intro = (Introspectable) conn.getRemoteObject(
                               Introspectable.class);
 \end{verbatim}
 
-This gets a reference to the {\em ``/Test''} object on the {\em
-``foo.bar.Test''} service. The object implements the {\tt Introspectable}
+This gets a reference to the {\em ``/Test''} object on the process with the
+name {\em ``foo.bar.Test''} . The object implements the {\tt Introspectable}
 interface, and calls may be made to methods in that interface as if it was a
 local object.
 
@@ -520,7 +520,7 @@ You can pass references to exportable objects round using their object paths.
 To do this in Java you declare a type of {\tt DBusInterface}. When the bindings
 receive an object path they will automatically convert it into the object you
 are exporting with that object path. You can pass remote objects back to their
-services in a similar fashion.
+processes in a similar fashion.
 
 
 \subsection{Multiple Return Values}
@@ -743,7 +743,7 @@ The syntax for the CreateInterface program is
 
 \begin{verbatim}
 CreateInterface [--system] [--session] [--create-files] 
-                  <service> <object>
+                  <bus name> <object>
 CreateInterface [--create-files] <introspection-file.xml>
 \end{verbatim}
 

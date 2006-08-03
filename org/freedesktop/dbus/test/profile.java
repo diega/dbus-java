@@ -102,7 +102,7 @@ public class profile
          System.exit(1);
       }
       DBusConnection conn = DBusConnection.getConnection(DBusConnection.SESSION);
-      conn.registerService("org.freedesktop.DBus.java.profiler");
+      conn.requestBusName("org.freedesktop.DBus.java.profiler");
       if ("pings".equals(args[0])) {
          int count = PING_INNER*PING_OUTER;
          System.out.print("Sending "+count+" pings...");

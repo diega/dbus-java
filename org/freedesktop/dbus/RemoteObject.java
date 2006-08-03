@@ -2,12 +2,12 @@ package org.freedesktop.dbus;
 
 class RemoteObject
 {
-   String service;
+   String busname;
    String objectpath;
    Class<? extends DBusInterface> iface;
-   public RemoteObject(String service, String objectpath, Class<? extends DBusInterface> iface)
+   public RemoteObject(String busname, String objectpath, Class<? extends DBusInterface> iface)
    {
-      this.service = service;
+      this.busname = busname;
       this.objectpath = objectpath;
       this.iface = iface;
    }
@@ -15,13 +15,13 @@ class RemoteObject
    {
       if (!(o instanceof RemoteObject)) return false;
       RemoteObject them = (RemoteObject) o;
-      if (!them.service.equals(this.service)) return false;
+      if (!them.busname.equals(this.busname)) return false;
       if (!them.objectpath.equals(this.objectpath)) return false;
       if (!them.iface.equals(this.iface)) return false;
       return true;
    }
    public int hashCode()
    {
-      return service.hashCode() + objectpath.hashCode() + iface.hashCode();
+      return busname.hashCode() + objectpath.hashCode() + iface.hashCode();
    }
 }

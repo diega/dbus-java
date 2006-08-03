@@ -529,7 +529,7 @@ public class CreateInterface
    static class Config
    {
       int bus = DBusConnection.SESSION;
-      String service = null;
+      String busname = null;
       String object = null;
       File datafile = null;
       boolean printtree = false;
@@ -542,7 +542,7 @@ public class CreateInterface
    }
    static void printSyntax(PrintStream o)
    {
-      o.println("Syntax: CreateInterface <options> [file | service object]");
+      o.println("Syntax: CreateInterface <options> [file | busname object]");
       o.println("        Options: --system -y --session -s --create-files -f --help -h");
    }
 
@@ -567,7 +567,7 @@ public class CreateInterface
             System.exit(1);
          }
          else {
-            if (null == config.service) config.service = p;
+            if (null == config.busname) config.busname = p;
             else if (null == config.object) config.object = p;
             else {
                printSyntax();
@@ -575,13 +575,13 @@ public class CreateInterface
             }
          }
       }
-      if (null == config.service) {
+      if (null == config.busname) {
          printSyntax();
          System.exit(1);
       }
       else if (null == config.object) {
-         config.datafile = new File(config.service);
-         config.service = null;
+         config.datafile = new File(config.busname);
+         config.busname = null;
       }
       return config;
    }
@@ -592,9 +592,9 @@ public class CreateInterface
 
       Reader introspectdata = null;
 
-      if (null != config.service) try {
+      if (null != config.busname) try {
          DBusConnection conn = DBusConnection.getConnection(config.bus);
-         Introspectable in = (Introspectable) conn.getRemoteObject(config.service, config.object, Introspectable.class);
+         Introspectable in = (Introspectable) conn.getRemoteObject(config.busname, config.object, Introspectable.class);
          String id = in.Introspect();
          if (null == id) {
             System.err.println("ERROR: Failed to get introspection data");
