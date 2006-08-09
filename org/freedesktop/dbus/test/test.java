@@ -40,13 +40,15 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
       } catch (InterruptedException Ie) {}
       System.out.println("Done sleeping.");
    }
-   public <A> TestTuple<String, Integer, Boolean> show(A in)
+   public <A> TestTuple<String, List<Integer>, Boolean> show(A in)
    {
       System.out.println("Showing Stuff: "+in.getClass()+"("+in+")");
       if (!(in instanceof Integer) || ((Integer) in).intValue() != 234)
          test.fail("show received the wrong arguments");
       DBusCallInfo info = DBusConnection.getCallInfo();
-      return new TestTuple<String, Integer, Boolean>(info.getSource(), 28165, true);
+      List<Integer> l = new Vector<Integer>();
+      l.add(1953);
+      return new TestTuple<String, List<Integer>, Boolean>(info.getSource(), l, true);
    }
    @SuppressWarnings("unchecked")
    public <T> T dostuff(TestStruct foo)
@@ -399,10 +401,11 @@ public class test
       /** This gets a remote object matching our bus name and exported object path. */
       TestRemoteInterface2 tri2 = (TestRemoteInterface2) conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);
       /** Call the remote object and get a response. */
-      TestTuple<String, Integer, Boolean> rv = tri2.show(234);
+      TestTuple<String, List<Integer>, Boolean> rv = tri2.show(234);
       System.out.println("Show Response = "+rv);
       if (!":1.0".equals(rv.a) ||
-            28165 != rv.b.intValue() ||
+            1 != rv.b.size() ||
+            1953 != rv.b.get(0) ||
             true != rv.c.booleanValue())
          fail("show return value incorrect");
 

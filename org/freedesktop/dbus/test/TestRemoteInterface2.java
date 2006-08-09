@@ -11,7 +11,7 @@ import java.util.List;
 public interface TestRemoteInterface2 extends DBusInterface
 {
    @Description("Test multiple return values and implicit variant parameters.")
-   public <A> TestTuple<String, Integer, Boolean> show(A in);
+   public <A> TestTuple<String, List<Integer>, Boolean> show(A in);
    @Description("Test passing structs and explicit variants, returning implicit variants")
    public <T> T dostuff(TestStruct foo);
    @Description("Test arrays, boxed arrays and lists.")
