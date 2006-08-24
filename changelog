@@ -4,9 +4,9 @@ Version 1.9:
 	* Struct optimisations
 	* Canonicalise D-Bus spelling in documentation
 	* Update documentation
-   * Implement cross-bindings test suite
-   * add getPeerRemoteObject method
-   * add addSigHandler methods which filter on sender and path
+	* Implement cross-bindings test suite
+	* add getPeerRemoteObject method
+	* add addSigHandler methods which filter on sender and path
 	* Signal handling optimisations
 	* deprecating service in favour of bus name. Deprecated registerService in
 	  favour of requestBusName
