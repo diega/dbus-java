@@ -30,15 +30,17 @@ BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
 
-VERSION = 1.9
-RELEASEVERSION = 1.8
+VERSION = 1.10
+RELEASEVERSION = 1.9
  
 all: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 
 clean:
 	-rm -rf doc
 	-rm -rf classes
-	-rm *.1 *.o *.so *.h .classes .testclasses .doc *.jar *.log pid address tmp-session-bus *.gz
+	-rm -rf libdbus-$(VERSION)
+	-rm -rf libdbus-$(RELEASEVERSION)
+	-rm *.1 *.o *.so *.h .dist .classes .testclasses .doc *.jar *.log pid address tmp-session-bus *.gz
 	
 classes: .classes
 testclasses: .testclasses
