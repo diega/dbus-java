@@ -14,7 +14,7 @@ Version 1.9:
 Version 1.8:
 
 	* stop dvips printing on wierd systems
-	* Doc patches from Dick Hollenbeck <dick@softplc.com>
+	* Doc patches from Dick Hollenbeck <dick -at- softplc -dot- com>
 	* reduce TIMEOUT to 1ms and check for outbound messages in the JNI; reduces
 	  RTT from 100ms to ~1ms
 	* Remove two java collections which were doing a lot of allocation and
