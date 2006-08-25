@@ -102,7 +102,7 @@ doc/dbus-java.ps: doc/dbus-java.dvi .doc
 doc/dbus-java.pdf: doc/dbus-java.dvi .doc
 	(cd doc; pdflatex ../dbus-java.tex)
 doc/dbus-java/index.html: dbus-java.tex .doc
-	latex2html -dir doc/dbus-java dbus-java.tex
+	latex2html -local_icons -dir doc/dbus-java dbus-java.tex
 doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java .doc
 	$(JAVADOC) -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java
 
