@@ -73,6 +73,7 @@ public abstract class DBusSignal extends DBusMessage
    protected DBusSignal(String objectpath, Object... parameters) throws DBusException
    {
       super(null, "", null, "", parameters, 0);
+      if (!objectpath.matches(DBusConnection.OBJECT_REGEX)) throw new DBusException("Invalid object path");
       Class tc = getClass();
       try {
          name = tc.getSimpleName();

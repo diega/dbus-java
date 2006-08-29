@@ -1,6 +1,7 @@
 Version 1.10:
 
 	* fix URLs to point to fdo 
+	* check for signal path validity in Java
 
 Version 1.9:
 
