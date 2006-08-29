@@ -208,10 +208,10 @@ public interface DBus extends DBusInterface
    /**
     * Signal sent to a connection when it aquires a name
     */
-   public class NameAquired extends DBusSignal
+   public class NameAcquired extends DBusSignal
    {
       public final String name;
-      public NameAquired(String path, String name) throws DBusException
+      public NameAcquired(String path, String name) throws DBusException
       {
          super(path, name);
          this.name = name;

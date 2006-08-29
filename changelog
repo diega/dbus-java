@@ -2,6 +2,7 @@ Version 1.10:
 
 	* fix URLs to point to fdo 
 	* check for signal path validity in Java
+	* fix NameAcquired spelling
 
 Version 1.9:
 

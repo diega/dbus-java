@@ -294,10 +294,10 @@ import org.freedesktop.dbus.DBusSignal;
 
 public interface DBus extends DBusInterface
 {
-   public class NameAquired extends DBusSignal
+   public class NameAcquired extends DBusSignal
    {
       public final String name;
-      public NameAquired(String path, String name) 
+      public NameAcquired(String path, String name) 
                               throws DBusException
       {
          super(path, name);
@@ -393,9 +393,9 @@ own thread.
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.DBusSigHandler;
 
-public class Handler extends DBusSigHandler<DBus.NameAquired>
+public class Handler extends DBusSigHandler<DBus.NameAcquired>
 {
-   public void handle(DBus.NameAquired sig)
+   public void handle(DBus.NameAcquired sig)
    {
          ...
    }
