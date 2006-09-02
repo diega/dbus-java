@@ -65,25 +65,22 @@ class SignalTuple
 
 class MethodTuple
 {
-   String type;
    String name;
    String sig;
-   public MethodTuple(String type, String name, String sig)
+   public MethodTuple(String name, String sig)
    {
-      this.type = type;
       this.name = name;
       this.sig = sig;
    }
    public boolean equals(Object o)
    {
       return o.getClass().equals(MethodTuple.class)
-            && ((MethodTuple) o).type.equals(this.type)
             && ((MethodTuple) o).name.equals(this.name)
             && ((MethodTuple) o).sig.equals(this.sig);
    }
    public int hashCode()
    {
-      return type.hashCode()+name.hashCode()+sig.hashCode();
+      return name.hashCode()+sig.hashCode();
    }
 }
 class ExportedObject
@@ -112,14 +109,14 @@ class ExportedObject
       for (Class i: c.getInterfaces())
          if (DBusInterface.class.equals(i)) {
             // add this class's public methods
-            if (c.getName().length > DBusConnection.MAX_NAME_LENGTH) 
+            if (c.getName().length() > DBusConnection.MAX_NAME_LENGTH) 
                throw new DBusException("Introspected interface name exceeds 255 characters. Cannot export objects of type "+c.getName()+".");
             introspectiondata += " <interface name=\""+c.getName()+"\">\n";
             introspectiondata += getAnnotations(c);
             for (Method meth: c.getDeclaredMethods()) 
                if (Modifier.isPublic(meth.getModifiers())) {
                   String ms = "";
-                  if (meth.getName().length > DBusConnection.MAX_NAME_LENGTH) 
+                  if (meth.getName().length() > DBusConnection.MAX_NAME_LENGTH) 
                      throw new DBusException("Introspected method name exceeds 255 characters. Cannot export objects with method "+meth.getName()+".");
                   introspectiondata += "  <method name=\""+meth.getName()+"\" >\n";
                   introspectiondata += getAnnotations(meth);
@@ -144,11 +141,11 @@ class ExportedObject
                         introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
                   }
                   introspectiondata += "  </method>\n";
-                  m.put(new MethodTuple(DBusConnection.dollar_pattern.matcher(c.getName()).replaceAll("."), meth.getName(), ms), meth);
+                  m.put(new MethodTuple(meth.getName(), ms), meth);
                }
             for (Class sig: c.getDeclaredClasses()) 
                if (DBusSignal.class.isAssignableFrom(sig)) {
-                  if (sig.getSimpleName().length > DBusConnection.MAX_NAME_LENGTH) 
+                  if (sig.getSimpleName().length() > DBusConnection.MAX_NAME_LENGTH) 
                      throw new DBusException("Introspected signal name exceeds 255 characters. Cannot export objects with signals of type "+sig.getSimpleName()+".");
                   introspectiondata += "  <signal name=\""+sig.getSimpleName()+"\">\n";
                   Constructor con = sig.getConstructors()[0];
@@ -380,7 +377,7 @@ public class DBusConnection
    private native DBusMessage dbus_read_write_pop(int connid, int timeoutms, EfficientQueue outgoing);
    private native int dbus_send_signal(int connid, String objectpath, String type, String name, Object... parameters);
    private native int dbus_send_error_message(int connid, String destination, String name, long replyserial, Object... params);
-   private native int dbus_call_method(int connid, String busname, String objectpath, String type, String name, boolean noreply, Object... params);
+   private native int dbus_call_method(int connid, String busname, String objectpath, String type, String name, int flags, Object... params);
    private native int dbus_reply_to_call(int connid, String destination, String type, String objectpath, String name, long replyserial, Object... params);
    static {
       System.loadLibrary("dbus-1");
@@ -1058,7 +1055,7 @@ public class DBusConnection
     */
    public void requestBusName(String busname) throws DBusException
    {
-      if (!busname.matches(BUSNAME_REGEX)||busname.length > MAX_NAME_LENGTH)
+      if (!busname.matches(BUSNAME_REGEX)||busname.length() > MAX_NAME_LENGTH)
          throw new DBusException("Invalid bus name");
       synchronized (this.busnames) {
          UInt32 rv;
@@ -1091,7 +1088,7 @@ public class DBusConnection
     */
    public void exportObject(String objectpath, DBusInterface object) throws DBusException
    {
-      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH) 
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length() > MAX_NAME_LENGTH) 
          throw new DBusException("Invalid object path ("+objectpath+")");
       if (null == objectpath || "".equals(objectpath)) 
          throw new DBusException("Must Specify an Object Path");
@@ -1127,26 +1124,37 @@ public class DBusConnection
     */
    public DBusInterface getPeerRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type) throws DBusException
    {
-      if (null == busname) throw new DBusException("Invalid busname name (null)");
-      if (null == objectpath) throw new DBusException("Invalid object path (null)");
-      if (null == type) throw new ClassCastException("Not A DBus Interface");
+      return getPeerRemoteObject(busname, objectpath, type, true);
+   }
+   /** 
+    * Return a reference to a remote object. 
+    * This method will resolve the well known name (if given) to a unique bus name when you call it.
+    * This means that if a well known name is released by one process and acquired by another calls to
+    * objects gained from this method will continue to operate on the original process.
+    * @param busname The bus name to connect to. Usually a well known bus name in dot-notation (such as "org.freedesktop.local")
+    * or may be a DBus address such as ":1-16".
+    * @param objectpath The path on which the process is exporting the object.$
+    * @param type The interface they are exporting it on. This type must have the same full class name and exposed method signatures
+    * as the interface the remote object is exporting.
+    * @param autostart Disable/Enable auto-starting of services in response to calls on this object. 
+    * Default is enabled; when calling a method with auto-start enabled, if the destination is a well-known name
+    * and is not owned the bus will attempt to start a process to take the name. When disabled an error is
+    * returned immediately.
+    * @return A reference to a remote object.
+    * @throws ClassCastException If type is not a sub-type of DBusInterface
+    * @throws DBusException If busname or objectpath are incorrectly formatted.
+    */
+   public DBusInterface getPeerRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type, boolean autostart) throws DBusException
+   {
+      if (null == busname) throw new DBusException("Invalid bus name (null)");
       
       if ((!busname.matches(BUSNAME_REGEX) && !busname.matches(CONNID_REGEX))
-            || busname.length > MAX_NAME_LENGTH) 
-         throw new DBusException("Invalid busname name ("+busname+")");
-      
-      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH) 
-         throw new DBusException("Invalid object path ("+objectpath+")");
-      
-      if (!DBusInterface.class.isAssignableFrom(type)) 
-         throw new ClassCastException("Not A DBus Interface");
+            || busname.length() > MAX_NAME_LENGTH) 
+         throw new DBusException("Invalid bus name ("+busname+")");
       
       String unique = _dbus.GetNameOwner(busname);
-      RemoteObject ro = new RemoteObject(unique, objectpath, type);
-      DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
-            new Class[] { type }, new RemoteInvocationHandler(this, ro, type));
-      importedObjects.put(i, ro);
-      return i;
+
+      return getRemoteObject(unique, objectpath, type, autostart);
    }
    /** 
     * Return a reference to a remote object. 
@@ -1164,20 +1172,42 @@ public class DBusConnection
     */
    public DBusInterface getRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type) throws DBusException
    {
-      if (null == busname) throw new DBusException("Invalid busname name (null)");
+      return getRemoteObject(busname, objectpath, type, true);
+   }
+   /** 
+    * Return a reference to a remote object. 
+    * This method will always refer to the well known name (if given) rather than resolving it to a unique bus name.
+    * In particular this means that if a process providing the well known name disappears and is taken over by another process
+    * proxy objects gained by this method will make calls on the new proccess.
+    * @param busname The bus name to connect to. Usually a well known bus name name in dot-notation (such as "org.freedesktop.local")
+    * or may be a DBus address such as ":1-16".
+    * @param objectpath The path on which the process is exporting the object.
+    * @param type The interface they are exporting it on. This type must have the same full class name and exposed method signatures
+    * as the interface the remote object is exporting.
+    * @param autostart Disable/Enable auto-starting of services in response to calls on this object. 
+    * Default is enabled; when calling a method with auto-start enabled, if the destination is a well-known name
+    * and is not owned the bus will attempt to start a process to take the name. When disabled an error is
+    * returned immediately.
+    * @return A reference to a remote object.
+    * @throws ClassCastException If type is not a sub-type of DBusInterface
+    * @throws DBusException If busname or objectpath are incorrectly formatted.
+    */
+   public DBusInterface getRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type, boolean autostart) throws DBusException
+   {
+      if (null == busname) throw new DBusException("Invalid bus name (null)");
       if (null == objectpath) throw new DBusException("Invalid object path (null)");
       if (null == type) throw new ClassCastException("Not A DBus Interface");
       
       if ((!busname.matches(BUSNAME_REGEX) && !busname.matches(CONNID_REGEX))
-         || busname.length > MAX_NAME_LENGTH)
-         throw new DBusException("Invalid busname name ("+busname+")");
+         || busname.length() > MAX_NAME_LENGTH)
+         throw new DBusException("Invalid bus name ("+busname+")");
       
-      if (!objectpath.matches(OBJECT_REGEX) || objectpath.length > MAX_NAME_LENGTH) 
+      if (!objectpath.matches(OBJECT_REGEX) || objectpath.length() > MAX_NAME_LENGTH) 
          throw new DBusException("Invalid object path ("+objectpath+")");
       
       if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Interface");
       
-      RemoteObject ro = new RemoteObject(busname, objectpath, type);
+      RemoteObject ro = new RemoteObject(busname, objectpath, type, autostart);
       DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
             new Class[] { type }, new RemoteInvocationHandler(this, ro, type));
       importedObjects.put(i, ro);
@@ -1216,7 +1246,7 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       String objectpath = importedObjects.get(object).objectpath;
-      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH)
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length() > MAX_NAME_LENGTH)
          throw new DBusException("Invalid object path ("+objectpath+")");
       removeSigHandler(new DBusMatchRule(type, null, objectpath), handler);
    }
@@ -1232,7 +1262,7 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
-      if (!source.matches(CONNID_REGEX)||source.length > MAX_NAME_LENGTH)
+      if (!source.matches(CONNID_REGEX)||source.length() > MAX_NAME_LENGTH)
          throw new DBusException("Invalid bus name ("+source+")");
       removeSigHandler(new DBusMatchRule(type, source, null), handler);
    }
@@ -1249,10 +1279,10 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
-      if (!source.matches(CONNID_REGEX)||source.length > MAX_NAME_LENGTH) 
+      if (!source.matches(CONNID_REGEX)||source.length() > MAX_NAME_LENGTH) 
          throw new DBusException("Invalid bus name ("+source+")");
       String objectpath = importedObjects.get(object).objectpath;
-      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH) 
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length() > MAX_NAME_LENGTH) 
          throw new DBusException("Invalid object path ("+objectpath+")");
       removeSigHandler(new DBusMatchRule(type, source, objectpath), handler);
    }
@@ -1302,7 +1332,7 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       String objectpath = importedObjects.get(object).objectpath;
-      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH)
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length() > MAX_NAME_LENGTH)
          throw new DBusException("Invalid object path ("+objectpath+")");
       addSigHandler(new DBusMatchRule(type, null, objectpath), handler);
    }
@@ -1319,7 +1349,7 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
-      if (!source.matches(CONNID_REGEX)||source.length > MAX_NAME_LENGTH) 
+      if (!source.matches(CONNID_REGEX)||source.length() > MAX_NAME_LENGTH) 
          throw new DBusException("Invalid bus name ("+source+")");
       addSigHandler(new DBusMatchRule(type, source, null), handler);
    }
@@ -1337,10 +1367,10 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
-      if (!source.matches(CONNID_REGEX)||source.length > MAX_NAME_LENGTH)
+      if (!source.matches(CONNID_REGEX)||source.length() > MAX_NAME_LENGTH)
          throw new DBusException("Invalid bus name ("+source+")");
       String objectpath = importedObjects.get(object).objectpath;
-      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH)
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length() > MAX_NAME_LENGTH)
          throw new DBusException("Invalid object path ("+objectpath+")");
       addSigHandler(new DBusMatchRule(type, source, objectpath), handler);
    }
@@ -1451,7 +1481,7 @@ public class DBusConnection
          eo = exportedObjects.get(null);
       }
       if (null != eo) {
-         meth = eo.methods.get(new MethodTuple(m.getType(), m.getName(), m.getSig()));
+         meth = eo.methods.get(new MethodTuple(m.getName(), m.getSig()));
       }
       if (null != meth)
          o = new _globalhandler(m.getObjectPath());
@@ -1468,7 +1498,7 @@ public class DBusConnection
                outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownObject(m.getObjectPath()+" is not an object provided by this process."))); }
             return;
          }
-         meth = eo.methods.get(new MethodTuple(m.getType(), m.getName(), m.getSig()));
+         meth = eo.methods.get(new MethodTuple(m.getName(), m.getSig()));
          if (null == meth) {
             synchronized (outgoing) {
                outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("The method `"+m.getType()+"."+m.getName()+"' does not exist on this object."))); }
@@ -1601,7 +1631,7 @@ public class DBusConnection
          try {
             synchronized (pendingCalls) {
                int flags = ((MethodCall) m).getFlags();
-               m.setSerial(dbus_call_method(connid, ((MethodCall) m).getDestination(), ((MethodCall) m).getObjectPath(), m.getType(), m.getName(), 1 == (flags & MethodCall.NO_REPLY), m.getParameters()));
+               m.setSerial(dbus_call_method(connid, ((MethodCall) m).getDestination(), ((MethodCall) m).getObjectPath(), m.getType(), m.getName(), flags, m.getParameters()));
                if (0 < m.getSerial()) {
                   if (0 == (flags & MethodCall.NO_REPLY))
                      pendingCalls.put(m.getSerial(),(MethodCall) m);

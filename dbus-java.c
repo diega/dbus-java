@@ -701,9 +701,11 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
          jmsg = (*env)->NewObject(env, callclass, mid, source, busname, objectpath, type, name, sig, params, serial);
          if (NULL != params)
             (*env)->DeleteLocalRef(env, params);
-         if (dbus_message_get_no_reply(msg)) {
+         flags = 0;
+         if (dbus_message_get_no_reply(msg)) flags |= org_freedesktop_dbus_MethodCall_NO_REPLY;
+         if (dbus_message_get_auto_start(msg)) flags |= org_freedesktop_dbus_MethodCall_AUTO_START;
+         if (flags) {
             mid = (*env)->GetMethodID(env, callclass, "setFlags", "(I)V");
-            flags = org_freedesktop_dbus_MethodCall_NO_REPLY;
             (*env)->CallVoidMethod(env, jmsg, mid, flags);
          }
          break;
@@ -1275,7 +1277,7 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1send_1erro
  * Signature: ([Ljava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1method
-  (JNIEnv * env, jobject connobj, jint cidx, jstring busname, jstring objectpath, jstring type, jstring name, jboolean noreply, jobjectArray params)
+  (JNIEnv * env, jobject connobj, jint cidx, jstring busname, jstring objectpath, jstring type, jstring name, jint flags, jobjectArray params)
 {
    int rv;
    dbus_uint32_t serial = 0; // unique number to associate replies with requests
@@ -1302,7 +1304,8 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1meth
          ctype, // interface name of the method
          cname); // name of the method
 
-   if (noreply) dbus_message_set_no_reply(msg, TRUE);
+   if (flags & org_freedesktop_dbus_MethodCall_NO_REPLY) dbus_message_set_no_reply(msg, TRUE);
+   dbus_message_set_auto_start(msg, flags & org_freedesktop_dbus_MethodCall_AUTO_START);
    
    if (NULL == msg) 
       return -1;

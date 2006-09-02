@@ -4,6 +4,7 @@ class MethodCall extends DBusMessage
 {
    public static final int NO_REPLY = 1;
    public static final int ASYNC = 2;
+   public static final int AUTO_START = 4;
    static long REPLY_WAIT_TIMEOUT = 20000;
    String destination;
    String objectpath;

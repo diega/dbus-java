@@ -4,6 +4,8 @@ Version 1.10:
 	* check for signal path validity in Java
 	* fix NameAcquired spelling
 	* check array lengths and name lengths
+	* support method calls with empty interfaces
+	* support for non-activating remote objects
 
 Version 1.9:
 

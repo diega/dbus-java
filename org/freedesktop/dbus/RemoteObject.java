@@ -5,11 +5,13 @@ class RemoteObject
    String busname;
    String objectpath;
    Class<? extends DBusInterface> iface;
-   public RemoteObject(String busname, String objectpath, Class<? extends DBusInterface> iface)
+   boolean autostart;
+   public RemoteObject(String busname, String objectpath, Class<? extends DBusInterface> iface, boolean autostart)
    {
       this.busname = busname;
       this.objectpath = objectpath;
       this.iface = iface;
+      this.autostart = autostart;
    }
    public boolean equals(Object o)
    {
@@ -23,5 +25,13 @@ class RemoteObject
    public int hashCode()
    {
       return busname.hashCode() + objectpath.hashCode() + iface.hashCode();
+   }
+   public boolean autoStarting() { return autostart; }
+   public String getBusName() { return busname; }
+   public String getObjectPath() { return objectpath; }
+   public Class<? extends DBusInterface>  getInterface() { return iface; }
+   public String toString()
+   {
+      return busname+":"+objectpath+":"+iface;
    }
 }
