@@ -112,11 +112,15 @@ class ExportedObject
       for (Class i: c.getInterfaces())
          if (DBusInterface.class.equals(i)) {
             // add this class's public methods
+            if (c.getName().length > DBusConnection.MAX_NAME_LENGTH) 
+               throw new DBusException("Introspected interface name exceeds 255 characters. Cannot export objects of type "+c.getName()+".");
             introspectiondata += " <interface name=\""+c.getName()+"\">\n";
             introspectiondata += getAnnotations(c);
             for (Method meth: c.getDeclaredMethods()) 
                if (Modifier.isPublic(meth.getModifiers())) {
                   String ms = "";
+                  if (meth.getName().length > DBusConnection.MAX_NAME_LENGTH) 
+                     throw new DBusException("Introspected method name exceeds 255 characters. Cannot export objects with method "+meth.getName()+".");
                   introspectiondata += "  <method name=\""+meth.getName()+"\" >\n";
                   introspectiondata += getAnnotations(meth);
                   for (Class ex: meth.getExceptionTypes())
@@ -144,9 +148,10 @@ class ExportedObject
                }
             for (Class sig: c.getDeclaredClasses()) 
                if (DBusSignal.class.isAssignableFrom(sig)) {
+                  if (sig.getSimpleName().length > DBusConnection.MAX_NAME_LENGTH) 
+                     throw new DBusException("Introspected signal name exceeds 255 characters. Cannot export objects with signals of type "+sig.getSimpleName()+".");
                   introspectiondata += "  <signal name=\""+sig.getSimpleName()+"\">\n";
                   Constructor con = sig.getConstructors()[0];
-                  //Constructor con = org.freedesktop.dbus.test.TestSignalInterface.TestSignal.class.getConstructors()[0];
                   Type[] ts = con.getGenericParameterTypes();
                   for (int j = 1; j < ts.length; j++)
                      for (String s: DBusConnection.getDBusType(ts[j]))
@@ -168,9 +173,8 @@ class ExportedObject
    public ExportedObject(DBusInterface object) throws DBusException
    {
       this.object = object;
-      methods = new HashMap<MethodTuple,Method>();
       introspectiondata = "";
-      methods.putAll(getExportedMethods(object.getClass()));
+      methods = getExportedMethods(object.getClass());
       introspectiondata += 
          " <interface name=\"org.freedesktop.DBus.Introspectable\">\n"+
          "  <method name=\"Introspect\">\n"+
@@ -353,6 +357,8 @@ public class DBusConnection
    static final String CONNID_REGEX = "^:[0-9]*\\.[0-9]*$";
    static final String OBJECT_REGEX = "^/([-_a-zA-Z0-9]+(/[-_a-zA-Z0-9]+)*)?$";
    static final byte THREADCOUNT = 4;
+   static final int MAX_ARRAY_LENGTH = 67108864;
+   static final int MAX_NAME_LENGTH = 255;
 
    private Map<String,ExportedObject> exportedObjects;
    private Map<DBusInterface,RemoteObject> importedObjects;
@@ -766,10 +772,12 @@ public class DBusConnection
       }
 
       else if (type instanceof GenericArrayType) {
+         if (((Object[]) parameter).length > MAX_ARRAY_LENGTH) throw new DBusException("Array exceeds maximum length of "+MAX_ARRAY_LENGTH);
          Type t = ((GenericArrayType) type).getGenericComponentType();
          if (!(t instanceof Class) || !((Class) t).isPrimitive())
             parameter = new ListContainer((Object[]) parameter, t);
       } else if (type instanceof Class && ((Class) type).isArray()) {
+         if (Array.getLength(parameter) > MAX_ARRAY_LENGTH) throw new DBusException("Array exceeds maximum length of "+MAX_ARRAY_LENGTH);
          if (!((Class) type).getComponentType().isPrimitive())
             parameter = new ListContainer((Object[]) parameter, ((Class) type).getComponentType());
       }
@@ -1050,7 +1058,8 @@ public class DBusConnection
     */
    public void requestBusName(String busname) throws DBusException
    {
-      if (!busname.matches(BUSNAME_REGEX)) throw new DBusException("Invalid bus name");
+      if (!busname.matches(BUSNAME_REGEX)||busname.length > MAX_NAME_LENGTH)
+         throw new DBusException("Invalid bus name");
       synchronized (this.busnames) {
          UInt32 rv;
          try { 
@@ -1082,7 +1091,8 @@ public class DBusConnection
     */
    public void exportObject(String objectpath, DBusInterface object) throws DBusException
    {
-      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path");
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH) 
+         throw new DBusException("Invalid object path ("+objectpath+")");
       if (null == objectpath || "".equals(objectpath)) 
          throw new DBusException("Must Specify an Object Path");
       synchronized (exportedObjects) {
@@ -1117,12 +1127,20 @@ public class DBusConnection
     */
    public DBusInterface getPeerRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type) throws DBusException
    {
-      if (null == busname) throw new DBusException("Invalid busname name ("+busname+")");
-      if (null == objectpath) throw new DBusException("Invalid object path");
+      if (null == busname) throw new DBusException("Invalid busname name (null)");
+      if (null == objectpath) throw new DBusException("Invalid object path (null)");
       if (null == type) throw new ClassCastException("Not A DBus Interface");
-      if (!busname.matches(BUSNAME_REGEX) && !busname.matches(CONNID_REGEX)) throw new DBusException("Invalid busname name ("+busname+")");
-      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
-      if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Interface");
+      
+      if ((!busname.matches(BUSNAME_REGEX) && !busname.matches(CONNID_REGEX))
+            || busname.length > MAX_NAME_LENGTH) 
+         throw new DBusException("Invalid busname name ("+busname+")");
+      
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH) 
+         throw new DBusException("Invalid object path ("+objectpath+")");
+      
+      if (!DBusInterface.class.isAssignableFrom(type)) 
+         throw new ClassCastException("Not A DBus Interface");
+      
       String unique = _dbus.GetNameOwner(busname);
       RemoteObject ro = new RemoteObject(unique, objectpath, type);
       DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
@@ -1146,12 +1164,19 @@ public class DBusConnection
     */
    public DBusInterface getRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type) throws DBusException
    {
-      if (null == busname) throw new DBusException("Invalid busname name ("+busname+")");
-      if (null == objectpath) throw new DBusException("Invalid object path");
+      if (null == busname) throw new DBusException("Invalid busname name (null)");
+      if (null == objectpath) throw new DBusException("Invalid object path (null)");
       if (null == type) throw new ClassCastException("Not A DBus Interface");
-      if (!busname.matches(BUSNAME_REGEX) && !busname.matches(CONNID_REGEX)) throw new DBusException("Invalid busname name ("+busname+")");
-      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      
+      if ((!busname.matches(BUSNAME_REGEX) && !busname.matches(CONNID_REGEX))
+         || busname.length > MAX_NAME_LENGTH)
+         throw new DBusException("Invalid busname name ("+busname+")");
+      
+      if (!objectpath.matches(OBJECT_REGEX) || objectpath.length > MAX_NAME_LENGTH) 
+         throw new DBusException("Invalid object path ("+objectpath+")");
+      
       if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Interface");
+      
       RemoteObject ro = new RemoteObject(busname, objectpath, type);
       DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
             new Class[] { type }, new RemoteInvocationHandler(this, ro, type));
@@ -1191,7 +1216,8 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       String objectpath = importedObjects.get(object).objectpath;
-      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH)
+         throw new DBusException("Invalid object path ("+objectpath+")");
       removeSigHandler(new DBusMatchRule(type, null, objectpath), handler);
    }
    /** 
@@ -1206,7 +1232,8 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
-      if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
+      if (!source.matches(CONNID_REGEX)||source.length > MAX_NAME_LENGTH)
+         throw new DBusException("Invalid bus name ("+source+")");
       removeSigHandler(new DBusMatchRule(type, source, null), handler);
    }
    /** 
@@ -1222,9 +1249,11 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
-      if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
+      if (!source.matches(CONNID_REGEX)||source.length > MAX_NAME_LENGTH) 
+         throw new DBusException("Invalid bus name ("+source+")");
       String objectpath = importedObjects.get(object).objectpath;
-      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH) 
+         throw new DBusException("Invalid object path ("+objectpath+")");
       removeSigHandler(new DBusMatchRule(type, source, objectpath), handler);
    }
    private <T extends DBusSignal> void removeSigHandler(DBusMatchRule rule, DBusSigHandler<T> handler) throws DBusException
@@ -1273,7 +1302,8 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       String objectpath = importedObjects.get(object).objectpath;
-      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH)
+         throw new DBusException("Invalid object path ("+objectpath+")");
       addSigHandler(new DBusMatchRule(type, null, objectpath), handler);
    }
    /** 
@@ -1289,7 +1319,8 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
-      if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
+      if (!source.matches(CONNID_REGEX)||source.length > MAX_NAME_LENGTH) 
+         throw new DBusException("Invalid bus name ("+source+")");
       addSigHandler(new DBusMatchRule(type, source, null), handler);
    }
    /** 
@@ -1306,9 +1337,11 @@ public class DBusConnection
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
       if (source.matches(BUSNAME_REGEX)) throw new DBusException("Cannot watch for signals based on well known bus name as source, only unique names.");
-      if (!source.matches(CONNID_REGEX)) throw new DBusException("Invalid bus name ("+source+")");
+      if (!source.matches(CONNID_REGEX)||source.length > MAX_NAME_LENGTH)
+         throw new DBusException("Invalid bus name ("+source+")");
       String objectpath = importedObjects.get(object).objectpath;
-      if (!objectpath.matches(OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length > MAX_NAME_LENGTH)
+         throw new DBusException("Invalid object path ("+objectpath+")");
       addSigHandler(new DBusMatchRule(type, source, objectpath), handler);
    }
    private <T extends DBusSignal> void addSigHandler(DBusMatchRule rule, DBusSigHandler<T> handler) throws DBusException

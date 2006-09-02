@@ -3,6 +3,7 @@ Version 1.10:
 	* fix URLs to point to fdo 
 	* check for signal path validity in Java
 	* fix NameAcquired spelling
+	* check array lengths and name lengths
 
 Version 1.9:
 
