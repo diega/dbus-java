@@ -769,7 +769,7 @@ public class DBusConnection
       }
 
       else if (type instanceof GenericArrayType) {
-         if (((Object[]) parameter).length > MAX_ARRAY_LENGTH) throw new DBusException("Array exceeds maximum length of "+MAX_ARRAY_LENGTH);
+         if (Array.getLength(parameter) > MAX_ARRAY_LENGTH) throw new DBusException("Array exceeds maximum length of "+MAX_ARRAY_LENGTH);
          Type t = ((GenericArrayType) type).getGenericComponentType();
          if (!(t instanceof Class) || !((Class) t).isPrimitive())
             parameter = new ListContainer((Object[]) parameter, t);
