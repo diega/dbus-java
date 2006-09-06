@@ -1377,7 +1377,6 @@ public class DBusConnection
    private <T extends DBusSignal> void addSigHandler(DBusMatchRule rule, DBusSigHandler<T> handler) throws DBusException
    {
       try {
-         System.err.println(rule.toString());
          _dbus.AddMatch(rule.toString());
       } catch (DBusExecutionException DBEe) {
          if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
