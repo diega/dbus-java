@@ -6,6 +6,7 @@ Version 1.10:
 	* check array lengths and name lengths
 	* support method calls with empty interfaces
 	* support for non-activating remote objects
+	* remove errant debug statemant left in 1.9
 
 Version 1.9:
 
