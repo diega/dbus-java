@@ -40,7 +40,7 @@ clean:
 	-rm -rf classes
 	-rm -rf libdbus-$(VERSION)
 	-rm -rf libdbus-$(RELEASEVERSION)
-	-rm *.1 *.o *.so *.h .dist .classes .testclasses .doc *.jar *.log pid address tmp-session-bus *.gz
+	-rm *.1 *.o *.so *.h .dist .classes .testclasses .doc *.jar *.log pid address tmp-session-bus *.gz .viewerclasses
 	
 classes: .classes
 testclasses: .testclasses
