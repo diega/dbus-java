@@ -32,8 +32,19 @@ class ListContainer
       }
       this.sig = sig;
       for (int i = 0; i < content.length; i++) {
-         this.values[i] = content[i];
+         if (content[i].getClass().isArray()) {
+            this.values[i] = new ListContainer(content[i]);
+         } else
+            this.values[i] = content[i];
       }
+   }
+   private ListContainer(Object content) throws DBusException
+   {
+      this.values = ArrayFrob.wrap(content);
+
+      String[] s = DBusConnection.getDBusType(content.getClass().getComponentType());
+      if (1 != s.length) throw new DBusException("List Contents not single type");
+      sig = s[0];
    }
    public ListContainer(Object[] content, Type t) throws DBusException
    {

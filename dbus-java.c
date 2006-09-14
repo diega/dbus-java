@@ -677,6 +677,8 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
       params = NULL;
 
    if ((*env)->ExceptionOccurred(env)) {
+      if (NULL != getenv("DBUS_JAVA_EXCEPTION_DEBUG"))
+         (*env)->ExceptionDescribe(env);
       (*env)->ExceptionClear(env);
       char* cname = "org.freedesktop.dbus.DBusExecutionException";
       jstring name = (*env)->NewStringUTF(env, cname);
@@ -784,6 +786,8 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
 
 
    if ((*env)->ExceptionOccurred(env)) {
+      if (NULL != getenv("DBUS_JAVA_EXCEPTION_DEBUG"))
+         (*env)->ExceptionDescribe(env);
       (*env)->ExceptionClear(env);
       char* cname = "org.freedesktop.dbus.DBusExecutionException";
       jstring name = (*env)->NewStringUTF(env, cname);

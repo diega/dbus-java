@@ -30,4 +30,6 @@ public interface TestRemoteInterface2 extends DBusInterface
    public int overload(byte b);
    @Description("Parameter-overloaded method (void)")
    public int overload();
+   @Description("Nested List Check")
+   public List<List<Integer>> checklist(List<List<Integer>> lli);
 }
