@@ -360,7 +360,7 @@ public class test
       
       System.out.println("Calling Method0/1");
       /** This gets a remote object matching our bus name and exported object path. */
-      TestRemoteInterface tri = (TestRemoteInterface) conn.getPeerRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface.class);
+      TestRemoteInterface tri = (TestRemoteInterface) conn.getPeerRemoteObject("foo.bar.Test", "/Test");
       System.out.println("Got Remote Object: "+tri);
       /** Call the remote object and get a response. */
       String rname = tri.getName();

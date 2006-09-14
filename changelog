@@ -11,6 +11,8 @@ Version 1.10:
 	  <remi.emonet -at- inrialpes -dot- fr>
 	* Fix OBJECT_PATH handling; bug spotted by Remi Emonet
 	  <remi.emonet -at- inrialpes -dot- fr>
+	* added getRemoteObject and getPeerRemoteObject methods with
+     introspection support to guess interfaces.
 
 Version 1.9:
 
