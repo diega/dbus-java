@@ -800,6 +800,13 @@ public class DBusConnection
          parameter = ((ListContainer) parameter).getList(type);
       }
 
+      // its an object path, get/create the proxy
+      if (parameter instanceof ObjectPath) {
+         parameter = ((ObjectPath) parameter).conn.getExportedObject(
+               ((ObjectPath) parameter).source,
+               ((ObjectPath) parameter).path);
+      }
+      
       // it should be a struct. create it
       if (parameter instanceof Object[] && 
             type instanceof Class &&
@@ -1011,11 +1018,54 @@ public class DBusConnection
       throw new DBusException("Not an object exported or imported by this connection"); 
    }
 
-   DBusInterface getExportedObject(String s) throws DBusException
+   DBusInterface dynamicProxy(String source, String path) throws DBusException
    {
-      ExportedObject o = exportedObjects.get(s);
-      if (null == o) throw new DBusException("Not an object exported by this connection");
-      else return o.object;
+      try {
+         DBus.Introspectable intro = (DBus.Introspectable) getRemoteObject(source, path, DBus.Introspectable.class);
+         String data = intro.Introspect();
+         String[] tags = data.split("[<>]");
+         Vector<String> ifaces = new Vector<String>();
+         for (String tag: tags) {
+            if (tag.startsWith("interface")) {
+               ifaces.add(tag.replaceAll("^interface *name *= *['\"]([^'\"]*)['\"].*$", "$1"));
+            }
+         }
+         Class[] ifcs = new Class[ifaces.size()];
+         int i = 0;
+         for(String iface: ifaces) {
+            int j = 0;
+            while (null == ifcs[i] && j >= 0) {
+               try {
+                  ifcs[i] = Class.forName(iface);
+               } catch (Exception e) {}
+               j = iface.lastIndexOf(".");
+               char[] cs = iface.toCharArray();
+               if (j >= 0) {
+                  cs[j] = '$';
+                  iface = String.valueOf(cs);
+               }
+            }
+            if (null == ifcs[i]) throw new ClassNotFoundException(iface);
+            if (!DBusInterface.class.isAssignableFrom(ifcs[i])) throw new ClassCastException("Not A DBus Interface");
+            i++;
+         }
+
+         RemoteObject ro = new RemoteObject(source, path, null, false);
+         DBusInterface newi =  (DBusInterface) Proxy.newProxyInstance(ifcs[0].getClassLoader(), ifcs, new RemoteInvocationHandler(this, ro));
+         importedObjects.put(newi, ro);
+         return newi;
+      } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+         throw new DBusException("Failed to create proxy object for "+path+" exported by "+source+". Reason: "+e.getMessage());
+      }
+   }
+   
+   DBusInterface getExportedObject(String source, String path) throws DBusException
+   {
+      ExportedObject o = exportedObjects.get(path);
+      if (null != o) return o.object;
+      if (null == source) throw new DBusException("Not an object exported by this connection and no remote specified");
+      return dynamicProxy(source, path);
    }
 
    /**
@@ -1209,7 +1259,7 @@ public class DBusConnection
       
       RemoteObject ro = new RemoteObject(busname, objectpath, type, autostart);
       DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
-            new Class[] { type }, new RemoteInvocationHandler(this, ro, type));
+            new Class[] { type }, new RemoteInvocationHandler(this, ro));
       importedObjects.put(i, ro);
       return i;
    }
@@ -1457,7 +1507,7 @@ public class DBusConnection
 
       try {
          Method me = ro.iface.getMethod(m, types);
-         return (DBusAsyncReply) RemoteInvocationHandler.executeRemoteMethod(ro, me, this, ro.iface, true, parameters);
+         return (DBusAsyncReply) RemoteInvocationHandler.executeRemoteMethod(ro, me, this, true, parameters);
       } catch (DBusExecutionException DBEe) {
          if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
          throw DBEe;
@@ -1506,15 +1556,6 @@ public class DBusConnection
          o = eo.object;
       }
 
-      try {
-         Type[] ts = meth.getGenericParameterTypes();
-         m.parameters = deSerializeParameters(m.parameters, ts);
-      } catch (Exception e) {
-         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
-         synchronized (outgoing) {
-            outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); }
-      }
-
       // now execute it
       final Method me = meth;
       final Object ob = o;
@@ -1525,6 +1566,16 @@ public class DBusConnection
       { 
          public void run() 
          { 
+            try {
+               Type[] ts = me.getGenericParameterTypes();
+               m.parameters = deSerializeParameters(m.parameters, ts);
+            } catch (Exception e) {
+               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+               synchronized (outqueue) {
+                  outqueue.add(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); }
+               return;
+            }
+
             try { 
                synchronized (infomap) {
                   infomap.put(Thread.currentThread(), info);

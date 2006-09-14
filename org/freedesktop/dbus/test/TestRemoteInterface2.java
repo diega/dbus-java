@@ -32,4 +32,6 @@ public interface TestRemoteInterface2 extends DBusInterface
    public int overload();
    @Description("Nested List Check")
    public List<List<Integer>> checklist(List<List<Integer>> lli);
+   @Description("Get new objects as object paths.")
+   public TestNewInterface getNew();
 }

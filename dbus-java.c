@@ -230,7 +230,7 @@ JNIEXPORT void JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1disconnect
    if (debug) fprintf(stderr, "<disconnect>\n");
 }
 
-jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject connobj)
+jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject connobj, jstring jsource)
 {
    DBusMessageIter sub;
    jobject vval, jval = NULL;
@@ -356,9 +356,9 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
          case DBUS_TYPE_OBJECT_PATH:
             dbus_message_iter_get_basic(args, &cstringval);
             vval = (*env)->NewStringUTF(env, cstringval);
-            fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/DBusConnection");
-            mid = (*env)->GetMethodID(env, fooclass, "getExportedObject", "(Ljava/lang/String;)Lorg/freedesktop/dbus/DBusInterface;");
-            jval = (*env)->CallObjectMethod(env, connobj, mid, vval);
+            fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/ObjectPath");
+            mid = (*env)->GetMethodID(env, fooclass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Lorg/freedesktop/dbus/DBusConnection;)V");
+            jval = (*env)->NewObject(env, fooclass, mid, jsource, vval, connobj);
             if (NULL == jval) break;
             (*env)->SetObjectArrayElement(env, params, i, jval);
             (*env)->DeleteLocalRef(env, jval);
@@ -371,13 +371,13 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
             else for (j = 1; dbus_message_iter_has_next(&sub); j++) 
                dbus_message_iter_next(&sub);
             dbus_message_iter_recurse(args, &sub);
-            jval = read_params(env, &sub, j, connobj);
+            jval = read_params(env, &sub, j, connobj, jsource);
             (*env)->SetObjectArrayElement(env, params, i, jval);
             (*env)->DeleteLocalRef(env, jval);
             break;
          case DBUS_TYPE_VARIANT:
             dbus_message_iter_recurse(args, &sub);
-            members = read_params(env, &sub, 1, connobj);
+            members = read_params(env, &sub, 1, connobj, jsource);
             vval = (*env)->GetObjectArrayElement(env, members, 0);
             fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/Variant");
             mid = (*env)->GetMethodID(env, fooclass, "<init>", "(Ljava/lang/Object;)V");
@@ -466,7 +466,7 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
                      (*env)->DeleteLocalRef(env, fooclass);
                   } else {
                      dbus_message_iter_recurse(args, &sub);
-                     members = read_params(env, &sub, j, connobj);
+                     members = read_params(env, &sub, j, connobj, jsource);
                   }
                   fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/MapContainer");
                   mid = (*env)->GetMethodID(env, fooclass, "<init>", "([[Ljava/lang/Object;Ljava/lang/String;)V");
@@ -492,7 +492,7 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
                      (*env)->DeleteLocalRef(env, fooclass);
                   } else {
                      dbus_message_iter_recurse(args, &sub);
-                     members = read_params(env, &sub, j, connobj);
+                     members = read_params(env, &sub, j, connobj, jsource);
                   }
 
                   fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/ListContainer");
@@ -545,7 +545,7 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
          case DBUS_TYPE_DICT_ENTRY:
             // recurse over array
             dbus_message_iter_recurse(args, &sub);
-            jval = read_params(env, &sub, 2, connobj);
+            jval = read_params(env, &sub, 2, connobj, jsource);
             
             (*env)->SetObjectArrayElement(env, params, i, jval);
             (*env)->DeleteLocalRef(env, jval);
@@ -672,7 +672,7 @@ JNIEXPORT jobject JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1read_1w
          fprintf(stderr, "Reinitialising arguments failed\n");
          return NULL;
       }
-      params = read_params(env, &args, len, connobj);
+      params = read_params(env, &args, len, connobj, source);
    } else
       params = NULL;
 
@@ -1331,6 +1331,9 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1meth
       dbus_message_unref(msg);
       return -1;
    }
+
+   dbus_connection_flush(conn);
+
    if (debug) fprintf(stderr, "<= CALL: %s%s[%s.%s]() {%d}\n", cbusname,cobjectpath,ctype,cname,serial);
 
    if (NULL != cname) (*env)->ReleaseStringUTFChars(env, name, cname);
@@ -1338,8 +1341,6 @@ JNIEXPORT jint JNICALL Java_org_freedesktop_dbus_DBusConnection_dbus_1call_1meth
    if (NULL != cbusname) (*env)->ReleaseStringUTFChars(env, busname, cbusname);
    if (NULL != cobjectpath) (*env)->ReleaseStringUTFChars(env, objectpath, cobjectpath);
    
-   dbus_connection_flush(conn);
-
    // free the message 
    dbus_message_unref(msg);
    return serial;

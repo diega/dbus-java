@@ -266,6 +266,7 @@ public interface DBus extends DBusInterface
             super(message);
          }
       }
+
    }
    /**
     * Description of the interface or method, returned in the introspection data

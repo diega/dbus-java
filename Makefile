@@ -118,6 +118,12 @@ cross-test-server: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(
 cross-test-client: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_client
 
+two-part-server: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.two_part_test_server
+
+two-part-client: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.two_part_test_client
+
 profilerun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.profile $(PROFILE)
 
@@ -139,6 +145,14 @@ internal-cross-test: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
 	  make -s cross-test-server > server.log &\
 	  make -s cross-test-client > client.log ;\
+	  kill $$(cat pid) ; )
+
+two-part-test: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	( dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
+	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
+	  make -s two-part-server &\
+	  sleep 1;\
+	  make -s two-part-client  ;\
 	  kill $$(cat pid) ; )
 
 profile:

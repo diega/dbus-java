@@ -73,7 +73,7 @@ class RemoteInvocationHandler implements InvocationHandler
             }
       }
    }
-   public static Object executeRemoteMethod(RemoteObject ro, Method m, DBusConnection conn, Class<? extends DBusInterface> iface, boolean async, Object... args) throws DBusExecutionException
+   public static Object executeRemoteMethod(RemoteObject ro, Method m, DBusConnection conn, boolean async, Object... args) throws DBusExecutionException
    {
       Type[] ts = m.getGenericParameterTypes();
       try {
@@ -82,7 +82,11 @@ class RemoteInvocationHandler implements InvocationHandler
          if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusExecutionException(e.getMessage());
       }
-      MethodCall call = new MethodCall(ro.busname, ro.objectpath, DBusConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), m.getName(), args);
+      MethodCall call;
+      if (null == ro.iface)
+         call = new MethodCall(ro.busname, ro.objectpath, null, m.getName(), args);
+      else
+         call = new MethodCall(ro.busname, ro.objectpath, DBusConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), m.getName(), args);
       if (ro.autostart) call.setFlags(MethodCall.AUTO_START);
       if (async) call.setFlags(MethodCall.ASYNC);
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) call.setFlags(MethodCall.NO_REPLY);
@@ -96,7 +100,7 @@ class RemoteInvocationHandler implements InvocationHandler
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) return null;
 
       DBusMessage reply = call.getReply();
-      if (null == reply) throw new DBusExecutionException("No reply within specified time");
+      if (null == reply) throw new NoReply("No reply within specified time");
                
       if (reply instanceof DBusErrorMessage)
          ((DBusErrorMessage) reply).throwException();
@@ -106,10 +110,8 @@ class RemoteInvocationHandler implements InvocationHandler
 
    DBusConnection conn;
    RemoteObject remote;
-   Class<? extends DBusInterface> iface;
-   public RemoteInvocationHandler(DBusConnection conn, RemoteObject remote, Class<? extends DBusInterface> iface)
+   public RemoteInvocationHandler(DBusConnection conn, RemoteObject remote)
    {
-      this.iface = iface;
       this.remote = remote;
       this.conn = conn;
    }
@@ -126,7 +128,7 @@ class RemoteInvocationHandler implements InvocationHandler
          }
       }
       else if (method.getName().equals("finalize")) return null;
-      else if (method.getName().equals("getClass")) return iface;
+      else if (method.getName().equals("getClass")) return DBusInterface.class;
       else if (method.getName().equals("hashCode")) return remote.hashCode();
       else if (method.getName().equals("notify")) {
          remote.notify();
@@ -148,7 +150,7 @@ class RemoteInvocationHandler implements InvocationHandler
       else if (method.getName().equals("toString"))
          return remote.toString();
 
-      return executeRemoteMethod(remote, method, conn, iface, false, args);
+      return executeRemoteMethod(remote, method, conn, false, args);
    }
 }
 

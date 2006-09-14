@@ -25,6 +25,15 @@ import org.freedesktop.DBus.Error.UnknownObject;
 import org.freedesktop.DBus.Peer;
 import org.freedesktop.DBus.Introspectable;
 
+class testnewclass implements TestNewInterface
+{
+   public boolean isRemote() { return false; }
+   public String getName()
+   {
+      return toString();
+   }
+}
+
 class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignalInterface
 {
    private DBusConnection conn;
@@ -203,6 +212,15 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    public List<List<Integer>> checklist(List<List<Integer>> lli)
    {
       return lli;
+   }
+   public TestNewInterface getNew()
+   {
+      testnewclass n = new testnewclass();
+      try {
+         conn.exportObject("/new", n);
+      } catch (DBusException DBe) 
+      { throw new DBusExecutionException(DBe.getMessage()); }
+      return n;
    }
 }
 
@@ -488,6 +506,11 @@ public class test
           reti.get(0).size() != 1 ||
           reti.get(0).get(0) != 1)
          test.fail("Failed to check nested lists");
+      System.out.println("done");
+
+      System.out.print("Testing dynamic object creation...");
+      TestNewInterface tni = tri2.getNew();
+      System.out.print(tni.getName()+" ");
       System.out.println("done");
 
       /** Pause while we wait for the DBus messages to go back and forth. */

@@ -9,6 +9,8 @@ Version 1.10:
 	* remove errant debug statemant left in 1.9
 	* Fix List<List<Integer>> bug spotted by Remi Emonet
 	  <remi.emonet -at- inrialpes -dot- fr>
+	* Fix OBJECT_PATH handling; bug spotted by Remi Emonet
+	  <remi.emonet -at- inrialpes -dot- fr>
 
 Version 1.9:
 
