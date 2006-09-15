@@ -348,6 +348,12 @@ public class test
       if (null == data || !data.startsWith("<!DOCTYPE"))
          fail("Introspection data invalid");
       System.out.println("Got Introspection Data: \n"+data);
+      intro = (Introspectable) conn.getRemoteObject("foo.bar.Test", "/Test", Introspectable.class);
+      /** Get introspection data */
+      data = intro.Introspect();
+      if (null == data || !data.startsWith("<!DOCTYPE"))
+         fail("Introspection data invalid");
+      System.out.println("Got Introspection Data: \n"+data);
       
       System.out.println("Pinging ourselves");
       /** Call ping. */

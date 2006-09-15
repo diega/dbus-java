@@ -290,28 +290,14 @@ public class DBusConnection
       public void Ping() { return; }
       public String Introspect() 
       {
-         if ("/".equals(objectpath)) {
-            String data = "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\" "+
-         "\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"+
-         "<node name=\"/\">\n";
-            for (String path: exportedObjects.keySet()) {
-               if (null == path) continue;
-               data += "<node name=\""+path+"\">\n"
-                  + exportedObjects.get(path).introspectiondata
-                  + "</node>\n";
-            }
-            data += "</node>";
-            return data;
-         }
-         ExportedObject eo = exportedObjects.get(objectpath);
-         if (null == eo) 
-            throw new DBusExecutionException("Introspecting on non-existant object");
+         System.out.println(objectTree);
+         System.out.println("|"+objectpath+"|");
+         String intro =  objectTree.Introspect(objectpath);
+         if (null == intro) 
+            throw new DBus.Error.UnknownObject("Introspecting on non-existant object");
          else return 
             "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\" "+
-         "\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"+
-         "<node name=\""+objectpath+"\">\n"+
-            eo.introspectiondata +
-         "</node>";
+               "\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"+intro;
       }
    }
    private class _workerthread extends Thread
@@ -358,6 +344,7 @@ public class DBusConnection
    static final int MAX_NAME_LENGTH = 255;
 
    private Map<String,ExportedObject> exportedObjects;
+   private ObjectTree objectTree;
    private Map<DBusInterface,RemoteObject> importedObjects;
    private Map<SignalTuple,Vector<DBusSigHandler>> handledSignals;
    private EfficientMap pendingCalls;
@@ -913,6 +900,7 @@ public class DBusConnection
       pendingErrors = new LinkedList<DBusErrorMessage>();
       runnables = new LinkedList<Runnable>();
       workers = new LinkedList<_workerthread>();
+      objectTree = new ObjectTree();
       synchronized (workers) {
          for (int i = 0; i < THREADCOUNT; i++) {
             _workerthread t = new _workerthread();
@@ -1145,7 +1133,9 @@ public class DBusConnection
       synchronized (exportedObjects) {
          if (null != exportedObjects.get(objectpath)) 
             throw new DBusException("Object already exported");
-         exportedObjects.put(objectpath, new ExportedObject(object));
+         ExportedObject eo = new ExportedObject(object);
+         exportedObjects.put(objectpath, eo);
+         objectTree.add(objectpath, object, eo.introspectiondata);
       }
    }
    /** 

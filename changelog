@@ -13,6 +13,8 @@ Version 1.10:
 	  <remi.emonet -at- inrialpes -dot- fr>
 	* added getRemoteObject and getPeerRemoteObject methods with
      introspection support to guess interfaces.
+	* changed introspection to recurse over the exported object tree
+	  and show sub-objects.
 
 Version 1.9:
 
