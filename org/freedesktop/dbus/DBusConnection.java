@@ -290,8 +290,6 @@ public class DBusConnection
       public void Ping() { return; }
       public String Introspect() 
       {
-         System.out.println(objectTree);
-         System.out.println("|"+objectpath+"|");
          String intro =  objectTree.Introspect(objectpath);
          if (null == intro) 
             throw new DBus.Error.UnknownObject("Introspecting on non-existant object");
