@@ -1,2 +1,3 @@
  * support Enums as UInt32s
  * use native java backend
+ * support DBUS_TYPE_SIGNATURE as an argument type (it's a string, can be multiple types. Convert to a Class[])
