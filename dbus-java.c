@@ -330,10 +330,11 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
             break;
          case DBUS_TYPE_UINT64:
             dbus_message_iter_get_basic(args, &culongval);
-            jlongval = culongval;
+            jlongval = culongval/4;
+            jlong ofs = culongval%4;
             fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/UInt64");
-            mid = (*env)->GetMethodID(env, fooclass, "<init>", "(J)V");
-            jval = (*env)->NewObject(env, fooclass, mid, jlongval);
+            mid = (*env)->GetMethodID(env, fooclass, "<init>", "(JJ)V");
+            jval = (*env)->NewObject(env, fooclass, mid, jlongval, ofs);
             (*env)->SetObjectArrayElement(env, params, i, jval);
             (*env)->DeleteLocalRef(env, jval);
             (*env)->DeleteLocalRef(env, fooclass);
@@ -832,7 +833,7 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
    int64_t clongval;
    uint16_t cushortval;
    uint32_t cuintval;
-   uint64_t culongval;
+   unsigned long long culongval;
    const char* cstringval;
    char* str;
 
@@ -883,8 +884,11 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
             return -1;
       }
       else if (0 == strncmp(ctype, "org.freedesktop.dbus.UInt64", slen)) {
-         mid = (*env)->GetMethodID(env, clazz, "longValue", "()J");
+         mid = (*env)->GetMethodID(env, clazz, "longValueDiv", "()J");
          culongval = (*env)->CallLongMethod(env, item, mid);
+         culongval*=4;
+         mid = (*env)->GetMethodID(env, clazz, "longValueMod", "()I");
+         culongval += (*env)->CallIntMethod(env, item, mid);
          if (!dbus_message_iter_append_basic(args, DBUS_TYPE_UINT64, &culongval)) 
             return -1;
       }

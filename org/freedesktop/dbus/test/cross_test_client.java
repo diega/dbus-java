@@ -89,6 +89,20 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
          Object o = m.invoke(proxy, parameters);
          if (null != rv && rv.getClass().isArray()) {
             compareArray(iface.getName()+"."+method, rv,o); 
+         } else if (rv instanceof Map) {
+            if (o instanceof Map) {
+               Map a = (Map) o;
+               Map b = (Map) rv;
+               if (a.keySet().size() != b.keySet().size()) 
+                  fail(iface.getName()+"."+method, "Incorrect return value; expected "+rv+" got "+o);
+               else for (Object k: a.keySet())
+                  if (!a.get(k).equals(b.get(k))) {
+                     fail(iface.getName()+"."+method, "Incorrect return value; expected "+rv+" got "+o);
+                     return;
+                  }
+               pass(iface.getName()+"."+method);
+            } else
+               fail(iface.getName()+"."+method, "Incorrect return value; expected "+rv+" got "+o);
          } else {
             if (o == rv || (o != null && o.equals(rv)))
                pass(iface.getName()+"."+method);
@@ -191,7 +205,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       int i;
       test(DBus.Peer.class, peer, "Ping", null); 
 
-      try { if (intro.Introspect().startsWith("<!DOCTYPE")) pass("org.freedesktop.DBus.Introspectable.Introspect");
+      try { System.err.println("DEBUG:"+intro.Introspect()); if (intro.Introspect().startsWith("<!DOCTYPE")) pass("org.freedesktop.DBus.Introspectable.Introspect");
             else fail("org.freedesktop.DBus.Introspectable.Introspect", "Didn't get valid xml data back");
       } catch (DBusExecutionException DBEe) { fail("org.freedesktop.DBus.Introspectable.Introspect", "Got exception during execution ("+DBEe.getClass().getName()+"): "+DBEe.getMessage());
       }
@@ -256,7 +270,8 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       
       test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(0), new UInt64(0)); 
       test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(1), new UInt64(1)); 
-      test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(UInt64.MAX_VALUE), new UInt64(UInt64.MAX_VALUE)); 
+      test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(UInt64.MAX_LONG_VALUE), new UInt64(UInt64.MAX_LONG_VALUE)); 
+      test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(UInt64.MAX_BIG_VALUE), new UInt64(UInt64.MAX_BIG_VALUE)); 
       test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(UInt64.MIN_VALUE), new UInt64(UInt64.MIN_VALUE)); 
       i = r.nextInt();
       i = i > 0 ? i : -i;

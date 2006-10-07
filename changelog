@@ -15,6 +15,10 @@ Version 1.10:
      introspection support to guess interfaces.
 	* changed introspection to recurse over the exported object tree
 	  and show sub-objects.
+	* compare maps unordered in tests; spotted by Simon McVittie 
+	  <simon -dot- mcvittie -at- collabora -dot- co -dot- uk>
+	* implement UInt64 with BigInteger to allow full-range UInt64s
+	* fix $ in introspection data for nested interfaces
 
 Version 1.9:
 

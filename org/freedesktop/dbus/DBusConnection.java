@@ -111,7 +111,7 @@ class ExportedObject
             // add this class's public methods
             if (c.getName().length() > DBusConnection.MAX_NAME_LENGTH) 
                throw new DBusException("Introspected interface name exceeds 255 characters. Cannot export objects of type "+c.getName()+".");
-            introspectiondata += " <interface name=\""+c.getName()+"\">\n";
+            introspectiondata += " <interface name=\""+DBusConnection.dollar_pattern.matcher(c.getName()).replaceAll(".")+"\">\n";
             introspectiondata += getAnnotations(c);
             for (Method meth: c.getDeclaredMethods()) 
                if (Modifier.isPublic(meth.getModifiers())) {
