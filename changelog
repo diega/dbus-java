@@ -19,6 +19,7 @@ Version 1.10:
 	  <simon -dot- mcvittie -at- collabora -dot- co -dot- uk>
 	* implement UInt64 with BigInteger to allow full-range UInt64s
 	* fix $ in introspection data for nested interfaces
+	* fix the required dbus version in the docs
 
 Version 1.9:
 
