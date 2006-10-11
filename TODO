@@ -1,4 +1,5 @@
  * support Enums as UInt32s
  * use native java backend
  * support DBUS_TYPE_SIGNATURE as an argument type (it's a string, can be multiple types. Convert to a Class[])
- * rewrite type system to pass Class's around with Variants to allow proper variant handling.
+ * rewrite type system to pass Class's around with Variants to allow proper variant handling. (recursive dynamic types)
+ * rewrite (or steal someone else's rewrite) Tuples to handle recursive dynamic types
