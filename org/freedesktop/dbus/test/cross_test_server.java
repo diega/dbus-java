@@ -270,7 +270,7 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       done.add("org.freedesktop.DBus.Binding.Tests.Primitize");
       notdone.remove("org.freedesktop.DBus.Binding.Tests.Primitize");
       List<Variant> vs = new Vector<Variant>();
-      
+     /* 
       // it's a list
       if (List.class.isAssignableFrom(a.getType())) {
          for (Object o: (List) a.getValue())
@@ -295,7 +295,7 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       // it's already a primative in an variant, add it to the list
       } else { 
          vs.add(a); 
-      }
+      }*/
       return vs;
    }
    @DBus.Description("inverts it's input")

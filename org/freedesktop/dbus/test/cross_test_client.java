@@ -151,7 +151,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
    private static List<Variant> Primitize(Variant a)
    {
       List<Variant> vs = new Vector<Variant>();
-
+/*
       // it's a list
       if (List.class.isAssignableFrom(a.getType())) {
          for (Object o: (List) a.getValue())
@@ -176,7 +176,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
          // it's already a primative in an variant, add it to the list
       } else {
          vs.add(a);
-      }
+      }*/
       return vs;
    }
 

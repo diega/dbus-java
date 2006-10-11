@@ -21,6 +21,7 @@ Version 1.10:
 	* fix $ in introspection data for nested interfaces
 	* fix the required dbus version in the docs
 	* can now send DBUS_TYPE_SIGNATURE as Type[]
+	* rewrite Variant handling to work with complex types
 
 Version 1.9:
 

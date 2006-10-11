@@ -34,4 +34,6 @@ public interface TestRemoteInterface2 extends DBusInterface
    public List<List<Integer>> checklist(List<List<Integer>> lli);
    @Description("Get new objects as object paths.")
    public TestNewInterface getNew();
+   @Description("Test Complex Variants")
+   public void complexv(Variant v);
 }

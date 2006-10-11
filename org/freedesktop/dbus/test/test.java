@@ -236,6 +236,14 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
          || ! Integer.class.equals(((ParameterizedType) s[1]).getActualTypeArguments()[1]))
          test.fail("Didn't send types correctly");
    }
+   public void complexv(Variant v)
+   {
+      if (!"a{ss}".equals(v.getSig())
+         || ! (v.getValue() instanceof Map)
+         || ((Map) v.getValue()).size() != 1
+         || !"moo".equals(((Map) v.getValue()).get("cow")))
+         test.fail("Didn't send variant correctly");
+   }
 }
 
 /**
@@ -505,6 +513,12 @@ public class test
       TestSerializable<String> s = new TestSerializable<String>(1, "woo", v);
       tri2.testSerializable((byte) 12, s, 13);
       
+      System.out.println("done");
+
+      System.out.print("testing complex variants...");
+      Map m = new HashMap();
+      m.put("cow", "moo");
+      tri2.complexv(new Variant(m, "a{ss}"));
       System.out.println("done");
       
       System.out.print("testing recursion...");

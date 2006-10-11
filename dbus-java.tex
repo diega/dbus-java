@@ -448,7 +448,14 @@ with lists, maps must be fully parameterised. (e.g.
 
 \subsection{Variants}
 
-D-Bus has support for a Variant type. This is similar to declaring that a method takes a parameter of type {\tt Object}, in that a Variant may contain any other type. Variants can either be declared using the {\tt Variant\footnote{\javadocroot/org/freedesktop/dbus/Variant.html}} class, or as a Type Variable. In the latter case the value is automatically unwrapped and passed to the function. Variants in compound types (Arrays, Maps, etc) must be declared using the Variant class and manually unwrapped.
+D-Bus has support for a Variant type. This is similar to declaring that a
+method takes a parameter of type {\tt Object}, in that a Variant may contain
+any other type. Variants can either be declared using the {\tt
+Variant\footnote{\javadocroot/org/freedesktop/dbus/Variant.html}} class, or as
+a Type Variable. In the latter case the value is automatically unwrapped and
+passed to the function. Variants in compound types (Arrays, Maps, etc) must be
+declared using the Variant class with the full type passed to the Variant
+constructor and manually unwrapped.
 
 Both these methods use variants:
 

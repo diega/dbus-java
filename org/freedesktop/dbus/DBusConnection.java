@@ -821,6 +821,14 @@ public class DBusConnection
          parameter = new Variant<Object>(parameter);
       }
 
+      // recurse on Variants
+      else if (parameter instanceof Variant)
+      {
+         parameter = new Variant(convertParameter(((Variant) parameter).getValue(),
+                                                   ((Variant) parameter).getType()),
+                                 ((Variant) parameter).getType());
+      }
+
       // wrap TypeSignatures
       else if (parameter instanceof Type[])
          parameter = new TypeSignature((Type[]) parameter);
@@ -886,6 +894,13 @@ public class DBusConnection
       if (type instanceof TypeVariable 
             && parameter instanceof Variant) {
          parameter = ((Variant)parameter).getValue();
+      }
+
+      // recurse on these
+      if (parameter instanceof Variant) {
+         parameter = new Variant(deSerializeParameter(((Variant) parameter).getValue(),
+                                                      ((Variant) parameter).getType()),
+                                 ((Variant) parameter).getType());
       }
 
       // its a wrapped map, unwrap it
