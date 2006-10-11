@@ -20,6 +20,7 @@ Version 1.10:
 	* implement UInt64 with BigInteger to allow full-range UInt64s
 	* fix $ in introspection data for nested interfaces
 	* fix the required dbus version in the docs
+	* can now send DBUS_TYPE_SIGNATURE as Type[]
 
 Version 1.9:
 

@@ -551,6 +551,17 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
             (*env)->SetObjectArrayElement(env, params, i, jval);
             (*env)->DeleteLocalRef(env, jval);
             break;
+         case DBUS_TYPE_SIGNATURE:
+            dbus_message_iter_get_basic(args, &cstringval);
+            fooclass = (*env)->FindClass(env, "org/freedesktop/dbus/TypeSignature");
+            sig = (*env)->NewStringUTF(env, cstringval);
+            mid = (*env)->GetMethodID(env, fooclass, "<init>", "(Ljava/lang/String;)V");
+            jval = (*env)->NewObject(env, fooclass, mid, sig);
+            (*env)->SetObjectArrayElement(env, params, i, jval);
+            (*env)->DeleteLocalRef(env, jval);
+            (*env)->DeleteLocalRef(env, sig);
+            (*env)->DeleteLocalRef(env, fooclass);
+            break;
          default:
             fprintf(stderr, "Ignoring invalid type signature (%c = %d)\n", 
                   dbus_message_iter_get_arg_type(args),dbus_message_iter_get_arg_type(args));
@@ -1114,8 +1125,8 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          dbus_message_iter_close_container(args, &sub);
 
          (*env)->DeleteLocalRef(env, vitem);
-         (*env)->DeleteLocalRef(env, sig);
          (*env)->ReleaseStringUTFChars(env, sig, cstringval);
+         (*env)->DeleteLocalRef(env, sig);
          (*env)->DeleteLocalRef(env, members);
          (*env)->DeleteLocalRef(env, values);
       }
@@ -1138,6 +1149,15 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          if (0 > append_args(env, args, values, connobj)) return -1;
 
          (*env)->DeleteLocalRef(env, values);
+      }
+      else if (0 == strncmp(ctype, "org.freedesktop.dbus.TypeSignature", slen)) {
+         mid = (*env)->GetMethodID(env, clazz, "getSig", "()Ljava/lang/String;");
+         sig = (*env)->CallObjectMethod(env, item, mid);
+         cstringval = (*env)->GetStringUTFChars(env, sig, 0);
+         if (!dbus_message_iter_append_basic(args, DBUS_TYPE_SIGNATURE, &cstringval)) 
+            return -1;
+         (*env)->ReleaseStringUTFChars(env, sig, cstringval);
+         (*env)->DeleteLocalRef(env, sig);
       }
       else {
          fprintf(stderr, "Unknown type %s\n", ctype);

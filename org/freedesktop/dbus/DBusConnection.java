@@ -488,11 +488,15 @@ public class DBusConnection
             out[level].append('}');
          }
          else if (List.class.isAssignableFrom((Class) p.getRawType())) {
-            out[level].append('a');
             for (Type t: p.getActualTypeArguments()) {
-               String[] s = recursiveGetDBusType(t, false, level+1);
-               if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
-               out[level].append(s[0]);
+               if (Type.class.equals(t)) 
+                  out[level].append('g');
+               else {
+                  String[] s = recursiveGetDBusType(t, false, level+1);
+                  if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
+                  out[level].append('a');
+                  out[level].append(s[0]);
+               }
             }
          } 
          else if (p.getRawType().equals(Variant.class)) {
@@ -525,10 +529,14 @@ public class DBusConnection
       else if (c instanceof Class && 
             DBusInterface.class.isAssignableFrom((Class) c)) out[level].append('o');
       else if (c instanceof Class && ((Class) c).isArray()) {
-         out[level].append('a');
-         String[] s = recursiveGetDBusType(((Class) c).getComponentType(), false, level+1);
-         if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
-         out[level].append(s[0]);
+         if (Type.class.equals(((Class) c).getComponentType()))
+            out[level].append('g');
+         else {
+            out[level].append('a');
+            String[] s = recursiveGetDBusType(((Class) c).getComponentType(), false, level+1);
+            if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
+            out[level].append(s[0]);
+         }
       } else if (c instanceof Class && 
             Struct.class.isAssignableFrom((Class) c)) {
          out[level].append('(');
@@ -641,6 +649,12 @@ public class DBusConnection
                if (null != imports) imports.add("org.freedesktop.dbus.DBusInterface");
                if (fullnames) return "org.freedesktop.dbus.DBusInterface";
                else return "DBusInterface";
+            case 'g':
+               if (null != imports) imports.add("java.lang.reflect.Type");
+               if (container) {
+                  if (fullnames) return "java.lang.reflect.List";
+                  else return "List<Type>";
+               } else return "Type[]";
             case 'q':
                if (null != imports) imports.add("org.freedesktop.dbus.UInt16");
                if (fullnames) return "org.freedesktop.dbus.UInt16";
@@ -674,6 +688,94 @@ public class DBusConnection
             default:
                throw new DBusException("Failed to parse DBus type signature: "+dbus);
          }
+      } catch (IndexOutOfBoundsException IOOBe) {
+         if (DBusConnection.EXCEPTION_DEBUG) IOOBe.printStackTrace();
+         throw new DBusException("Failed to parse DBus type signature: "+dbus);
+      }
+   }
+   /**
+    * Converts a dbus type string into Java Type objects, 
+    * @param dbus The DBus type or types.
+    * @param rv Vector to return the types in.
+    * @param limit Maximum number of types to parse (-1 == nolimit).
+    * @return number of characters parsed from the type string.
+    */
+   public static int getJavaType(String dbus, List<Type> rv, int limit) throws DBusException
+   {
+      if (null == dbus || "".equals(dbus) || 0 == limit) return 0;
+
+      try {
+         int i = 0;
+         for (; i < dbus.length() && (-1 == limit || limit > rv.size()); i++) 
+            switch(dbus.charAt(i)) {
+               case '(':
+                  int j = i+1;
+                  for (int c = 1; c > 0; j++) {
+                     if (')' == dbus.charAt(j)) c--;
+                     else if ('(' == dbus.charAt(j)) c++;
+                  }
+
+                  Vector<Type> contained = new Vector<Type>();
+                  int c = getJavaType(dbus.substring(i+1, j-1), contained, -1);
+                  rv.add(new DBusStructType(contained.toArray(new Type[0])));
+                  i = j;
+                  break;                     
+               case 'a':
+                  if ('{' == dbus.charAt(i+1)) {
+                     contained = new Vector<Type>();
+                     c = getJavaType(dbus.substring(i+2), contained, 2);
+                     rv.add(new DBusMapType(contained.get(0), contained.get(1)));
+                     i += (c+2);
+                  } else {
+                     contained = new Vector<Type>();
+                     c = getJavaType(dbus.substring(i+1), contained, 1);
+                     rv.add(new DBusArrayType(contained.get(0)));
+                     i += c;
+                  }
+                  break;
+               case 'v':
+                  rv.add(Variant.class);
+                  break;
+               case 'b':
+                  rv.add(Boolean.class);
+                  break;
+               case 'n':
+                  rv.add(Short.class);
+                  break;
+               case 'y':
+                  rv.add(Byte.class);
+                  break;
+               case 'o':
+                  rv.add(DBusInterface.class);
+                  break;
+               case 'q':
+                  rv.add(UInt16.class);
+                  break;
+               case 'i':
+                  rv.add(Integer.class);
+                  break;
+               case 'u':
+                  rv.add(UInt32.class);
+                  break;
+               case 'x':
+                  rv.add(Long.class);
+                  break;
+               case 't':
+                  rv.add(UInt64.class);
+                  break;
+               case 'd':
+                  rv.add(Double.class);
+                  break;
+               case 's':
+                  rv.add(String.class);
+                  break;
+               case 'g':
+                  rv.add(Type[].class);
+                  break;
+               default:
+                  throw new DBusException("Failed to parse DBus type signature: "+dbus+" ("+dbus.charAt(i)+")");
+            }
+         return i;
       } catch (IndexOutOfBoundsException IOOBe) {
          if (DBusConnection.EXCEPTION_DEBUG) IOOBe.printStackTrace();
          throw new DBusException("Failed to parse DBus type signature: "+dbus);
@@ -718,6 +820,10 @@ public class DBusConnection
             !(parameter instanceof Variant)) {
          parameter = new Variant<Object>(parameter);
       }
+
+      // wrap TypeSignatures
+      else if (parameter instanceof Type[])
+         parameter = new TypeSignature((Type[]) parameter);
 
       // its something parameterised
       else if (type instanceof ParameterizedType) {
@@ -770,6 +876,12 @@ public class DBusConnection
       if (null == parameter) 
          return null;
 
+      // it's a TypeSignature, turn it into a Type[]
+      if (parameter instanceof TypeSignature) {
+         Vector<Type> ts = new Vector<Type>();
+         getJavaType(((TypeSignature) parameter).sig, ts, -1);
+         parameter = ts.toArray(new Type[0]);
+      }
       // its a wrapped variant, unwrap it
       if (type instanceof TypeVariable 
             && parameter instanceof Variant) {

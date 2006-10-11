@@ -1,5 +1,8 @@
 package org.freedesktop.dbus.test;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -222,6 +225,17 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
       { throw new DBusExecutionException(DBe.getMessage()); }
       return n;
    }
+   public void sig(Type[] s)
+   {
+      if (s.length != 2
+         || !s[0].equals(Byte.class) 
+         || ! (s[1] instanceof ParameterizedType)
+         || ! Map.class.equals(((ParameterizedType) s[1]).getRawType())
+         || ((ParameterizedType) s[1]).getActualTypeArguments().length != 2
+         || ! String.class.equals(((ParameterizedType) s[1]).getActualTypeArguments()[0])
+         || ! Integer.class.equals(((ParameterizedType) s[1]).getActualTypeArguments()[1]))
+         test.fail("Didn't send types correctly");
+   }
 }
 
 /**
@@ -400,6 +414,11 @@ public class test
          if (!Te.getMessage().equals("test"))
             test.fail("Error message was not correct");
       }
+
+      /* Test type signatures */
+      Vector<Type> ts = new Vector<Type>();
+      DBusConnection.getJavaType("ya{si}", ts, -1);
+      tri.sig(ts.toArray(new Type[0]));
      
       /** Try and call an invalid remote object */
       try {

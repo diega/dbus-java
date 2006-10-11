@@ -5,6 +5,8 @@ import org.freedesktop.dbus.UInt16;
 import org.freedesktop.DBus.Description;
 import org.freedesktop.DBus.Method;
 
+import java.lang.reflect.Type;
+
 import java.util.Map;
 import java.util.List;
 /**
@@ -26,4 +28,6 @@ public interface TestRemoteInterface extends DBusInterface
    public void waitawhile();
    @Description("Interface-overloaded method")
    public int overload();
+   @Description("Testing Type Signatures")
+   public void sig(Type[] s);
 }
