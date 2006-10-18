@@ -12,7 +12,7 @@ Version 1.10:
 	* Fix OBJECT_PATH handling; bug spotted by Remi Emonet
 	  <remi.emonet -at- inrialpes -dot- fr>
 	* added getRemoteObject and getPeerRemoteObject methods with
-     introspection support to guess interfaces.
+	  introspection support to guess interfaces.
 	* changed introspection to recurse over the exported object tree
 	  and show sub-objects.
 	* compare maps unordered in tests; spotted by Simon McVittie 
@@ -22,6 +22,8 @@ Version 1.10:
 	* fix the required dbus version in the docs
 	* can now send DBUS_TYPE_SIGNATURE as Type[]
 	* rewrite Variant handling to work with complex types
+	* add $JAVA_HOME/include and $JAVA_HOME/include/linux to CFLAGS
+	  (Fix from Joshua Nichols <nichoj -at- gentoo -dot- org>)
 
 Version 1.9:
 
