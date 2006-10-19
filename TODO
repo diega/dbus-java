@@ -1,4 +1,3 @@
  * support Enums as UInt32s
  * use native java backend
  * rewrite (or steal someone else's rewrite) Tuples to handle recursive dynamic types
- * licence headers and COPYING file
