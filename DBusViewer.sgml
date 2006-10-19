@@ -76,8 +76,8 @@ manpage.1: manpage.sgml
 
     <para>This manual page was written by &dhusername; &dhemail;. Permission is
       granted to copy, distribute and/or modify this document under
-      the terms of the &gnu; General Public License, Version 2 any 
-	  later version published by the Free Software Foundation.
+      the terms of the &gnu; General Public License, Version 2 as
+      published by the Free Software Foundation.
     </para>
 	<para>
 	  On Debian systems, the complete text of the GNU General Public
