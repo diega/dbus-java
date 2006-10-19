@@ -24,6 +24,8 @@ Version 1.10:
 	* rewrite Variant handling to work with complex types
 	* add $JAVA_HOME/include and $JAVA_HOME/include/linux to CFLAGS
 	  (Fix from Joshua Nichols <nichoj -at- gentoo -dot- org>)
+	* remove unneccessary build warnings
+	  (Fix from Joshua Nichols <nichoj -at- gentoo -dot- org>)
 
 Version 1.9:
 

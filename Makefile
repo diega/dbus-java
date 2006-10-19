@@ -36,25 +36,25 @@ RELEASEVERSION = 1.9
 all: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 
 clean:
-	-rm -rf doc
-	-rm -rf classes
-	-rm -rf libdbus-$(VERSION)
-	-rm -rf libdbus-$(RELEASEVERSION)
-	-rm *.1 *.o *.so *.h .dist .classes .testclasses .doc *.jar *.log pid address tmp-session-bus *.gz .viewerclasses
+	rm -rf doc
+	rm -rf classes
+	rm -rf libdbus-$(VERSION)
+	rm -rf libdbus-$(RELEASEVERSION)
+	rm -f *.1 *.o *.so *.h .dist .classes .testclasses .doc *.jar *.log pid address tmp-session-bus *.gz .viewerclasses
 	
 classes: .classes
 testclasses: .testclasses
 viewerclasses: .viewerclasses
 .testclasses: $(SRCDIR)/dbus/test/*.java .classes
-	-mkdir classes
+	mkdir -p classes
 	$(JAVAC) -d classes $(JCFLAGS) $(SRCDIR)/dbus/test/*.java
 	touch .testclasses 
 .viewerclasses: $(SRCDIR)/dbus/viewer/*.java .classes
-	-mkdir classes
+	mkdir -p classes
 	$(JAVAC) -d classes $(JCFLAGS) $(SRCDIR)/dbus/viewer/*.java
 	touch .viewerclasses 
 .classes: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java  
-	-mkdir classes
+	mkdir -p classes
 	$(JAVAC) -d classes $(JCFLAGS) $^
 	touch .classes
 
@@ -90,8 +90,8 @@ dbus-java-viewer-$(VERSION).jar: .viewerclasses
 jar: libdbus-java-$(VERSION).jar
 doc: doc/dbus-java.dvi doc/dbus-java.ps doc/dbus-java.pdf doc/dbus-java/index.html doc/api/index.html
 .doc:
-	-mkdir doc
-	-mkdir doc/dbus-java
+	mkdir -p doc
+	mkdir -p doc/dbus-java
 	touch .doc
 doc/dbus-java.dvi: dbus-java.tex .doc
 	(cd doc; latex ../dbus-java.tex)
@@ -164,11 +164,11 @@ profile:
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
 
 uninstall: 
-	-rm $(JARPREFIX)/dbus.jar $(JARPREFIX)/dbus-$(VERSION).jar $(JARPREFIX)/dbus-viewer.jar $(JARPREFIX)/dbus-viewer-$(VERSION).jar
-	-rm $(LIBPREFIX)/libdbus-java.so
-	-rm -rf $(DOCPREFIX)
-	-rm $(MANPREFIX)/CreateInterface.1 $(MANPREFIX)/ListDBus.1  $(MANPREFIX)/DBusViewer.1
-	-rm $(BINPREFIX)/CreateInterface $(BINPREFIX)/ListDBus  $(BINPREFIX)/DBusViewer
+	rm -f $(JARPREFIX)/dbus.jar $(JARPREFIX)/dbus-$(VERSION).jar $(JARPREFIX)/dbus-viewer.jar $(JARPREFIX)/dbus-viewer-$(VERSION).jar
+	rm -f $(LIBPREFIX)/libdbus-java.so
+	rm -rf $(DOCPREFIX)
+	rm -f $(MANPREFIX)/CreateInterface.1 $(MANPREFIX)/ListDBus.1  $(MANPREFIX)/DBusViewer.1
+	rm -f $(BINPREFIX)/CreateInterface $(BINPREFIX)/ListDBus  $(BINPREFIX)/DBusViewer
 
 install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-java.so doc bin/CreateInterface bin/ListDBus bin/DBusViewer CreateInterface.1 ListDBus.1 DBusViewer.1 changelog
 	install -d $(JARPREFIX)
@@ -200,15 +200,15 @@ install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-jav
 
 dist: .dist
 .dist: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog
-	-mkdir libdbus-java-$(VERSION)
+	mkdir -p libdbus-java-$(VERSION)
 	cp -fa $^ libdbus-java-$(VERSION)
 	touch .dist
 tar: libdbus-java-$(VERSION).tar.gz
 
 distclean:
-	-rm -rf libdbus-java-$(VERSION)
-	-rm -rf libdbus-java-$(VERSION).tar.gz
-	-rm .dist
+	rm -rf libdbus-java-$(VERSION)
+	rm -rf libdbus-java-$(VERSION).tar.gz
+	rm -f .dist
 
 libdbus-java-$(VERSION): .dist
 
@@ -216,7 +216,7 @@ libdbus-java-$(VERSION).tar.gz: .dist
 	tar zcf $@ libdbus-java-$(VERSION)
 	
 libdbus-java-$(RELEASEVERSION).tar.gz: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog
-	-mkdir libdbus-java-$(RELEASEVERSION)/
+	mkdir -p libdbus-java-$(RELEASEVERSION)/
 	cp -fa $^ libdbus-java-$(RELEASEVERSION)/
 	tar zcf $@ libdbus-java-$(RELEASEVERSION)
 
