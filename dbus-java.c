@@ -260,6 +260,9 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
    const char* cstringval;
    jsize i, j;
    void* data;
+   jboolean* buf2;
+   dbus_bool_t* buf1;
+   int a;
 
    jclass fooclass;
    
@@ -421,41 +424,43 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
                case DBUS_TYPE_INT64:
                case DBUS_TYPE_DOUBLE:
 
-                  j = dbus_message_iter_get_array_len(&sub); // size, not length
+                  // dbus_message_iter_get_fixed_array returns the element count, 
+                  // dbus_message_iter_get_array_len is deprecated.
+                  j = 0;
 
                   switch (cstringval[0]) {
                      case DBUS_TYPE_BYTE:
-                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
                         jval = (*env)->NewByteArray(env, j);
                         if (0 != j) (*env)->SetByteArrayRegion(env, (jbyteArray) jval, 0, j, (jbyte*) data);
                         break;
                      case DBUS_TYPE_BOOLEAN:
-                        j/=sizeof(dbus_bool_t);
-                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        buf2 = malloc(j*sizeof(jboolean));
+                        buf1 = data;
+                        for (a = 0; a < j; a++)
+                           buf2[a] = buf1[a];
                         jval = (*env)->NewBooleanArray(env, j);
-                        if (0 != j) (*env)->SetBooleanArrayRegion(env, (jbooleanArray) jval, 0, j, (jboolean*) data);
+                        if (0 != j) (*env)->SetBooleanArrayRegion(env, (jbooleanArray) jval, 0, j, buf2);
+                        free(buf2);
                         break;
                      case DBUS_TYPE_INT16:
-                        j/=sizeof(dbus_int16_t);
-                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
                         jval = (*env)->NewShortArray(env, j);
                         if (0 != j) (*env)->SetShortArrayRegion(env, (jshortArray) jval, 0, j, (jshort*) data);
                         break;
                      case DBUS_TYPE_INT32:
-                        j/=sizeof(dbus_int32_t);
-                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
                         jval = (*env)->NewIntArray(env, j);
                         if (0 != j) (*env)->SetIntArrayRegion(env, (jintArray) jval, 0, j, (jint*) data);
                         break;
                      case DBUS_TYPE_INT64:
-                        j/=sizeof(dbus_int64_t);
-                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
                         jval = (*env)->NewLongArray(env, j);
                         if (0 != j) (*env)->SetLongArrayRegion(env, (jlongArray) jval, 0, j, (jlong*) data);
                         break;
                      case DBUS_TYPE_DOUBLE:
-                        j/=sizeof(double);
-                        if (0 != j) dbus_message_iter_get_fixed_array(&sub,&data,&j);
+                        dbus_message_iter_get_fixed_array(&sub,&data,&j);
                         jval = (*env)->NewDoubleArray(env, j);
                         if (0 != j) (*env)->SetDoubleArrayRegion(env, (jdoubleArray) jval, 0, j, (jdouble*) data);
                         break;
