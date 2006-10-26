@@ -1,3 +1,8 @@
  * support Enums as UInt32s
  * use native java backend
  * rewrite (or steal someone else's rewrite) Tuples to handle recursive dynamic types
+ * make it work with free VM/Compilers:
+   make CFLAGS="`pkg-config --cflags dbus-1` -I/opt/java-generics/include" CLASSPATH=/opt/java-generics/share/classpath/glibj.zip:. LD_LIBRARY_PATH=/opt/java-generics/lib/classpath/ JAVAC="ecj -1.5" JAVA_HOME=/opt/java-generics/ JCFLAGS="-cp classes -bootclasspath /opt/java-generics/share/classpath/glibj.zip" JAVA=jamvm  check
+   after installing eclipse eclipse-ecj jamvm and compiling classpath-generics with prefix=/opt/java-generics
+   Current failure with 0.92:java.lang.IncompatibleClassChangeError: unimplemented interface on AnnotatedElement.getAnnotations().
+   http://builder.classpath.org/japi/jdk15-generics.html suggests that this is fixed in HEAD

@@ -110,25 +110,25 @@ doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/Hal/*.java 
 	docbook-to-man $< > $@
 	
 testrun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
 
 cross-test-server: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_server
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_server
 
 cross-test-client: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_client
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_client
 
 two-part-server: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.two_part_test_server
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.two_part_test_server
 
 two-part-client: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.two_part_test_client
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.two_part_test_client
 
 profilerun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.profile $(PROFILE)
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.profile $(PROFILE)
 
 viewer: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) libdbus-java-$(VERSION).jar:dbus-java-viewer-$(VERSION).jar org.freedesktop.dbus.viewer.DBusViewer
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-viewer-$(VERSION).jar org.freedesktop.dbus.viewer.DBusViewer
 
 check:
 	( PASS=false; \
