@@ -86,7 +86,6 @@ public class Variant<T>
          throw new IllegalArgumentException("Can't wrap a "+sig+" in a Variant ("+DBe.getMessage()+")");
       }
       this.o = o;
-      System.err.println("DEBUG: Created variant Type: "+type+", sig: "+sig);
    }
    /** Return the wrapped value. */
    public T getValue() { return o; }
