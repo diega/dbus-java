@@ -32,6 +32,7 @@ import javax.swing.event.ListSelectionListener;
 import org.freedesktop.DBus.Introspectable;
 import org.freedesktop.dbus.CreateInterface;
 
+@SuppressWarnings("serial")
 final class IntrospectAction extends AbstractAction implements ListSelectionListener
 {
 	private final JTable table;

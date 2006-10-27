@@ -15,6 +15,7 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
+@SuppressWarnings("serial")
 class DBusTableModel extends AbstractTableModel
 {
 	private static final String INTROSPECTABLE = "introspectable?";

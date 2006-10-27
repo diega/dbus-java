@@ -285,7 +285,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(UInt64.MIN_VALUE), new UInt64(UInt64.MIN_VALUE)); 
       i = r.nextInt();
       i = i > 0 ? i : -i;
-      test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(i%UInt64.MAX_VALUE), new UInt64(i%UInt64.MAX_VALUE)); 
+      test(DBus.Binding.Tests.class, tests, "IdentityUInt64", new UInt64(i%UInt64.MAX_LONG_VALUE), new UInt64(i%UInt64.MAX_LONG_VALUE)); 
       
       test(DBus.Binding.Tests.class, tests, "IdentityDouble", 0.0, 0.0); 
       test(DBus.Binding.Tests.class, tests, "IdentityDouble", 1.0, 1.0); 

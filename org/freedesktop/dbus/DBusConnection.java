@@ -889,6 +889,7 @@ public class DBusConnection
       }
       return parameter;
    }
+   @SuppressWarnings("unchecked")
    static Object deSerializeParameter(Object parameter, Type type) throws Exception
    {
       if (null == parameter) 

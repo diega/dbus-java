@@ -15,6 +15,7 @@ import java.util.NoSuchElementException;
 
 import javax.swing.JTabbedPane;
 
+@SuppressWarnings("serial")
 class SaveAllAction extends TabbedSaveAction
 {
 
