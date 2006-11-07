@@ -26,6 +26,10 @@ Version 1.10:
 	  (Fix from Joshua Nichols <nichoj -at- gentoo -dot- org>)
 	* remove unneccessary build warnings
 	  (Fix from Joshua Nichols <nichoj -at- gentoo -dot- org>)
+	* seperate install and install-doc targets
+	  (Suggested by Ralf Kistner <ralf.kistner -at- gmail -dot- com>)
+	* add -fno-stack-protector flag
+	  (Suggested by Ralf Kistner <ralf.kistner -at- gmail -dot- com>)
 
 Version 1.9:
 

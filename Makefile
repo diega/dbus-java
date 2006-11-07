@@ -12,7 +12,7 @@ JAVA?=java
 JAVAH?=javah
 JAVADOC?=javadoc
 JAR?=jar
-CFLAGS?=`pkg-config --cflags dbus-1` -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux -Os -Wall -Werror
+CFLAGS?=`pkg-config --cflags dbus-1` -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux -Os -Wall -Werror -fno-stack-protector
 LDFLAGS?=`pkg-config --libs dbus-1`
 CC?=gcc
 LD?=ld
@@ -170,7 +170,7 @@ uninstall:
 	rm -f $(MANPREFIX)/CreateInterface.1 $(MANPREFIX)/ListDBus.1  $(MANPREFIX)/DBusViewer.1
 	rm -f $(BINPREFIX)/CreateInterface $(BINPREFIX)/ListDBus  $(BINPREFIX)/DBusViewer
 
-install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-java.so doc bin/CreateInterface bin/ListDBus bin/DBusViewer CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COPYING
+install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-java.so bin/CreateInterface bin/ListDBus bin/DBusViewer 
 	install -d $(JARPREFIX)
 	install -m 644 libdbus-java-$(VERSION).jar $(JARPREFIX)/dbus-$(VERSION).jar
 	install -m 644 dbus-java-viewer-$(VERSION).jar $(JARPREFIX)/dbus-viewer-$(VERSION).jar
@@ -182,6 +182,8 @@ install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-jav
 	install bin/DBusViewer $(BINPREFIX)
 	install bin/CreateInterface $(BINPREFIX)
 	install bin/ListDBus $(BINPREFIX)
+
+install-doc: doc CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COPYING
 	install -d $(DOCPREFIX)
 	install -m 644 changelog $(DOCPREFIX)
 	install -m 644 COPYING $(DOCPREFIX)
