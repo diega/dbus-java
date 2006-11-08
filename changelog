@@ -30,6 +30,7 @@ Version 1.10:
 	  (Suggested by Ralf Kistner <ralf.kistner -at- gmail -dot- com>)
 	* add -fno-stack-protector flag
 	  (Suggested by Ralf Kistner <ralf.kistner -at- gmail -dot- com>)
+	* Revamp tuples
 
 Version 1.9:
 
