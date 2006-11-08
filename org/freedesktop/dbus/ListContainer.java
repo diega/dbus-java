@@ -29,14 +29,19 @@ class ListContainer
    {
       Class c;
       try {
-         String name = DBusConnection.getJavaType(sig, null, null, true, true);
-         c = Class.forName(name);
+         Vector<Type> vt = new Vector<Type>();
+         DBusConnection.getJavaType(sig, vt, 1);
+         if (vt.get(0) instanceof ParameterizedType)
+            c = (Class) ((ParameterizedType) vt.get(0)).getRawType();
+         else
+            c = (Class) vt.get(0);
+
          if (Map.class.isAssignableFrom(c)) 
             c = MapContainer.class;
          if (List.class.isAssignableFrom(c)) 
             c = ListContainer.class;
          this.values = (Object[]) Array.newInstance(c, content.length);
-      } catch (ClassNotFoundException CNFe) {
+      } catch (Exception CNFe) {
          if (DBusConnection.EXCEPTION_DEBUG) CNFe.printStackTrace();
          throw new DBusException("Map contains invalid type: "+CNFe.getMessage());
       }

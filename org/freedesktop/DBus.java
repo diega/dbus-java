@@ -393,7 +393,7 @@ public interface DBus extends DBusInterface
          @Description("Given a map of A => B, should return a map of B => a list of all the As which mapped to B")
          public Map<String, List<String>> InvertMapping(Map<String, String> a);
          @Description("This method returns the contents of a struct as separate values")
-         public Triplet<String, UInt32, Short> DeStruct(TestStruct a);
+         public Tuple DeStruct(TestStruct a);
          @Description("Given any compound type as a variant, return all the primitive types recursively contained within as an array of variants")
          public List<Variant> Primitize(Variant a);
          @Description("inverts it's input")
@@ -438,19 +438,6 @@ public interface DBus extends DBusInterface
          public final Short c;
          public TestStruct(String a, UInt32 b, Short c)
          {
-            this.a = a;
-            this.b = b;
-            this.c = c;
-         }
-      }
-      public final class Triplet<A,B,C> extends Tuple
-      {
-         public final A a;
-         public final B b;
-         public final C c;
-         public Triplet(A a, B b, C c)
-         {
-            super(a, b, c);
             this.a = a;
             this.b = b;
             this.c = c;

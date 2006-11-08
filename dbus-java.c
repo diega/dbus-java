@@ -272,6 +272,7 @@ jobjectArray read_params(JNIEnv* env, DBusMessageIter* args, jsize len, jobject 
 
    i = 0;
    do {
+      fprintf(stderr, "DEBUG: %d / %c\n", i, dbus_message_iter_get_arg_type(args));
       if ((*env)->ExceptionOccurred(env)) {
          return params;
       }

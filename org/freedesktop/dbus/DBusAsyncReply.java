@@ -52,9 +52,12 @@ public class DBusAsyncReply<ReturnType>
             error = ((DBusErrorMessage) m).getException();
          else if (m instanceof MethodReply) {
             try {
-               rval = (ReturnType) RemoteInvocationHandler.convertRV(m.getParameters(), me);
+               rval = (ReturnType) RemoteInvocationHandler.convertRV(m.getSig(), m.getParameters(), me);
             } catch (DBusExecutionException DBEe) {
                error = DBEe;
+            } catch (DBusException DBe) {
+               if (DBusConnection.EXCEPTION_DEBUG) DBe.printStackTrace();
+               error = new DBusExecutionException(DBe.getMessage());
             }
          }
       }

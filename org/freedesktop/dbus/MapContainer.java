@@ -17,6 +17,7 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 class MapContainer
 {
@@ -31,19 +32,23 @@ class MapContainer
    {
       Class[] cs = new Class[2];
       try {
-         sig = sig.substring(1);
-         String name = DBusConnection.getJavaType(sig, null, null, true, true);
-         cs[0] = Class.forName(name);
+         Vector<Type> vt = new Vector<Type>();
+         DBusConnection.getJavaType(sig.substring(1), vt, 2);
+         if (vt.get(0) instanceof ParameterizedType)
+            cs[0] = (Class) ((ParameterizedType) vt.get(0)).getRawType();
+         else
+            cs[0] = (Class) vt.get(0);
          this.keys = (Object[]) Array.newInstance(cs[0], content.length);
-         sig = sig.substring(1);
-         name = DBusConnection.getJavaType(sig, null, null, true, true);
-         cs[1] = Class.forName(name);
+         if (vt.get(1) instanceof ParameterizedType)
+            cs[1] = (Class) ((ParameterizedType) vt.get(1)).getRawType();
+         else
+            cs[1] = (Class) vt.get(1);
          if (Map.class.isAssignableFrom(cs[1])) 
             cs[1] = MapContainer.class;
          if (List.class.isAssignableFrom(cs[1])) 
             cs[1] = ListContainer.class;
          this.values = (Object[]) Array.newInstance(cs[1], content.length);
-      } catch (ClassNotFoundException CNFe) {
+      } catch (Exception CNFe) {
          if (DBusConnection.EXCEPTION_DEBUG) CNFe.printStackTrace();
          throw new DBusException("Map contains invalid type: "+CNFe.getMessage());
       }

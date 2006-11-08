@@ -24,7 +24,7 @@ import org.freedesktop.DBus;
 
 class RemoteInvocationHandler implements InvocationHandler
 {
-   public static Object convertRV(Object[] rp, Method m)
+   public static Object convertRV(String sig, Object[] rp, Method m) throws DBusException
    {
       Class c = m.getReturnType();
 
@@ -56,31 +56,7 @@ class RemoteInvocationHandler implements InvocationHandler
             if (!Tuple.class.isAssignableFrom(c))
                throw new DBusExecutionException("Wrong return type (not expecting Tuple)");
             
-            ParameterizedType p = (ParameterizedType) m.getGenericReturnType();
-            
-            // check we have the correct number of args
-            Type[] ts = p.getActualTypeArguments();
-            if (ts.length != rp.length) 
-               throw new DBusExecutionException("Incorrect number of return values. Expected "+ts.length+" got "+rp.length);
-
-            Constructor con;
-            try { 
-               // convert everything to the correct types
-               rp = DBusConnection.deSerializeParameters(rp, ts);
-
-               con = ((Class) p.getRawType()).getDeclaredConstructors()[0]; 
-            }
-            catch (Exception e) { 
-               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
-               throw new DBusExecutionException("Wrong return type (Tuple type invalid: "+e.getMessage()+")");
-            }
-
-            // create tuple and return stuff
-            try { return con.newInstance(rp); }
-            catch (Exception e) {
-               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
-               throw new DBusExecutionException("Wrong return type (failed to create Tuple, contents probably invalid)");
-            }
+           return new Tuple(sig, rp); 
       }
    }
    public static Object executeRemoteMethod(RemoteObject ro, Method m, DBusConnection conn, boolean async, Object... args) throws DBusExecutionException
@@ -115,7 +91,12 @@ class RemoteInvocationHandler implements InvocationHandler
       if (reply instanceof DBusErrorMessage)
          ((DBusErrorMessage) reply).throwException();
 
-      return convertRV(reply.getParameters(), m);
+      try {
+         return convertRV(reply.getSig(), reply.getParameters(), m);
+      } catch (DBusException e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+         throw new DBusExecutionException(e.getMessage());
+      }
    }
 
    DBusConnection conn;

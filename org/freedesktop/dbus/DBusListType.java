@@ -10,18 +10,27 @@
 */
 package org.freedesktop.dbus;
 
-import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.List;
 
-class DBusArrayType implements GenericArrayType
+public class DBusListType implements ParameterizedType
 {
    Type v;
-   public DBusArrayType(Type v)
+   public DBusListType(Type v)
    {
       this.v = v;
    }
-   public Type getGenericComponentType()
+   public Type[] getActualTypeArguments()
    {
-      return v;
+      return new Type[] { v };
+   }
+   public Type getRawType()
+   {
+      return List.class;
+   }
+   public Type getOwnerType()
+   {
+      return null;
    }
 }

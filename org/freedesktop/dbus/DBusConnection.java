@@ -141,9 +141,10 @@ class ExportedObject
                      }
                   if (!Void.TYPE.equals(meth.getGenericReturnType())) {
                      if (Tuple.class.isAssignableFrom((Class) meth.getReturnType())) {
-                        for (Type t: ((ParameterizedType) meth.getGenericReturnType()).getActualTypeArguments())
-                           for (String s: DBusConnection.getDBusType(t))
-                              introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
+                        for (Annotation a: meth.getAnnotations())
+                           if (a instanceof TupleParameters)
+                              for (String s: ((TupleParameters) a).value())
+                                 introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
                      } else if (Object[].class.equals(meth.getGenericReturnType())) {
                         throw new DBusException("Return type of Object[] cannot be introspected properly");
                      } else
@@ -598,7 +599,7 @@ public class DBusConnection
 
       return new String[] { out[level].toString() };
    }
-   /**
+   /*
     * Converts a dbus type string into a Java type name, 
     * putting any needed import lines into imports.
     * If you set container to be true then no primative types will
@@ -609,7 +610,7 @@ public class DBusConnection
     * @param container Indicates this is a container type and no primitive types should be used.
     * @param fullnames Will return fully qualified type names if true.
     */
-   public static String getJavaType(String dbus, Set<String> imports, Map<StructStruct,String> structs, boolean container, boolean fullnames) throws DBusException
+   /*public static String getJavaType(String dbus, Set<String> imports, Map<StructStruct,String> structs, boolean container, boolean fullnames) throws DBusException
    {
       if (null == dbus || "".equals(dbus)) return "";
       
@@ -702,7 +703,7 @@ public class DBusConnection
          if (DBusConnection.EXCEPTION_DEBUG) IOOBe.printStackTrace();
          throw new DBusException("Failed to parse DBus type signature: "+dbus);
       }
-   }
+   }*/
    /**
     * Converts a dbus type string into Java Type objects, 
     * @param dbus The DBus type or types.
@@ -739,7 +740,7 @@ public class DBusConnection
                   } else {
                      contained = new Vector<Type>();
                      c = getJavaType(dbus.substring(i+1), contained, 1);
-                     rv.add(new DBusArrayType(contained.get(0)));
+                     rv.add(new DBusListType(contained.get(0)));
                      i += c;
                   }
                   break;

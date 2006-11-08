@@ -14,7 +14,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 
-class DBusMapType implements ParameterizedType
+public class DBusMapType implements ParameterizedType
 {
    Type k;
    Type v;

@@ -10,47 +10,74 @@
 */
 package org.freedesktop.dbus;
 
-import java.util.Arrays;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Vector;
 
-/**
- * Tuples allow multiple values to be returned from a method.
- * You should create a sub class of this tuple with the correct
- * number of parameters (a 'Pair' or a 'Triplet'). The constructor
- * <b>Must</b> call the super constructor with all the values
- * <i>in order</i>.
- */
-public abstract class Tuple
+public class Tuple
 {
-   private final Object[] parameters;
-   /**
-    * Initialise the Tuple.
-    */
-   public Tuple(Object... parameters)
+   String sig;
+   Type[] types;
+   Object[] parameters;
+   public Tuple(Type[] types, Object... parameters) throws DBusExecutionException
    {
-      this.parameters = parameters;
+      try {
+         this.types = types;
+         StringBuffer sb = new StringBuffer();
+         for (Type t: types) {
+            String[] ss = DBusConnection.getDBusType(t);
+            for (String s: ss)
+               sb.append(s);
+         }
+         sig = sb.toString();
+         this.parameters = DBusConnection.convertParameters(parameters, types);
+      } catch (DBusException DBe) { throw new DBusExecutionException(DBe.getMessage());
+      } catch (Exception e) { 
+         throw new DBusExecutionException("Tuple construction failure: "+e.getMessage()); 
+      }
    }
-   /** Get all the values in order. */
-   public final Object[] getParameters()
+   public Tuple(String typesig, Object... parameters) throws DBusExecutionException
+   {
+      try {
+         this.sig = typesig;
+         Vector<Type> v = new Vector<Type>();
+         DBusConnection.getJavaType(typesig, v, -1);
+         types = v.toArray(new Type[0]);
+         this.parameters = DBusConnection.deSerializeParameters(parameters, types);
+      } catch (DBusException DBe) { throw new DBusExecutionException(DBe.getMessage()); 
+      } catch (Exception e) { 
+         throw new DBusExecutionException("Tuple construction failure: "+e.getMessage()); 
+      }
+   }
+   public String getString()
+   {
+      return sig;
+   }
+   public Type[] getTypes()
+   {
+      return types;
+   }
+   public Object[] getParameters()
    {
       return parameters;
    }
-   /** A String representation of the Tuple. */
-   public final String toString()
+   public String toString()
    {
-      String s = getClass().getName()+"<";
-      Object[] os = getParameters();
-      if (null == os || 0 == os.length) {
-         return s+">";
+      StringBuffer s = new StringBuffer();
+      s.append("Tuple<");
+      for (Type t: types) {
+         if (t instanceof Class)
+            s.append(((Class) t).getName());
+         else if (t instanceof ParameterizedType)
+            s.append(((Class) ((ParameterizedType) t).getRawType()).getName());
+         s.append(',');
       }
-      for (Object o: os)
-         s += o+", ";
-      return s.replaceAll(", $", ">");
-   }
-   /** Compare the contents of this tuple with another */
-   public boolean equals(Object other)
-   {
-      if (null == other) return false;
-      if (!(other instanceof Tuple)) return false;
-      return Arrays.equals(this.parameters, ((Tuple) other).parameters);
+      s.append("> {");
+      for (Object o: parameters) {
+         s.append(o.toString());
+         s.append(',');
+      }
+      s.append('}');
+      return s.toString();
    }
 }

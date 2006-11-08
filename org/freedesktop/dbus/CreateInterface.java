@@ -58,7 +58,7 @@ public class CreateInterface
             sig += "void ";
             break;
          case 1:
-            sig += DBusConnection.getJavaType(out.get(0).getAttribute("type"), imports, structs, false, false)+" ";
+            //TODO sig += DBusConnection.getJavaType(out.get(0).getAttribute("type"), imports, structs, false, false)+" ";
             break;
          case 2:
          case 3:
@@ -74,7 +74,7 @@ public class CreateInterface
             tuples.put(name, out.size());
             sig += name + "<";
             for (Element arg: out)
-               sig += DBusConnection.getJavaType(arg.getAttribute("type"), imports, structs, true, false)+", ";
+               //TODO sig += DBusConnection.getJavaType(arg.getAttribute("type"), imports, structs, true, false)+", ";
             sig = sig.replaceAll(", $","> ");
             break;
       }
@@ -129,7 +129,7 @@ public class CreateInterface
       char defaultname = 'a';
       String params = "";
       for (Element arg: in) {
-         String type = DBusConnection.getJavaType(arg.getAttribute("type"), imports, structs, false, false);
+         String type = ""; // TODO DBusConnection.getJavaType(arg.getAttribute("type"), imports, structs, false, false);
          String name = arg.getAttribute("name");
          if (null == name || "".equals(name)) name = ""+(defaultname++);
          params += type+" "+name+", ";         
@@ -157,7 +157,7 @@ public class CreateInterface
             annotations += parseAnnotation((Element) a, imports, anns);
          else {
             Element arg = (Element) a;
-            String type = DBusConnection.getJavaType(arg.getAttribute("type"), imports, structs, false, false);
+            String type = "";// TODO  DBusConnection.getJavaType(arg.getAttribute("type"), imports, structs, false, false);
             String name = arg.getAttribute("name");
             if (null == name || "".equals(name)) name = ""+(defaultname++);
             params.put(name, type);
@@ -278,7 +278,7 @@ public class CreateInterface
       for (int i = 0; i < s.length(); i++) {
          switch (s.charAt(i)) {
             case 'a':
-               types.add(DBusConnection.getJavaType(s.substring(i), imports, structs, true, false));
+               //TODO types.add(DBusConnection.getJavaType(s.substring(i), imports, structs, true, false));
                if ('{' == s.charAt(i+1))  {
                   int c = 1;
                   int j;
@@ -294,7 +294,7 @@ public class CreateInterface
                break;
 
             case '(':
-               types.add(DBusConnection.getJavaType(s.substring(i), imports, structs, true, false));
+               //TODO types.add(DBusConnection.getJavaType(s.substring(i), imports, structs, true, false));
                int c = 1;
                int j;
                for (j = i+1; c > 0; j++)
@@ -306,7 +306,7 @@ public class CreateInterface
                break;
 
             default:
-                  types.add(DBusConnection.getJavaType(s.substring(i,i+1), imports, structs, true, false));
+                  //TODO types.add(DBusConnection.getJavaType(s.substring(i,i+1), imports, structs, true, false));
          }
       }
       for (String im: imports) out.println("import "+im+";");

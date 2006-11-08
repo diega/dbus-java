@@ -10,6 +10,8 @@
 */
 package org.freedesktop.dbus.test;
 
+import java.lang.reflect.Type;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,7 @@ import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.Struct;
+import org.freedesktop.dbus.Tuple;
 import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
@@ -267,11 +270,11 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       return m;
    }
    @DBus.Description("This method returns the contents of a struct as separate values")
-   public DBus.Binding.Triplet<String, UInt32, Short> DeStruct(DBus.Binding.TestStruct a)
+   public Tuple DeStruct(DBus.Binding.TestStruct a)
    {
       done.add("org.freedesktop.DBus.Binding.Tests.DeStruct");
       notdone.remove("org.freedesktop.DBus.Binding.Tests.DeStruct");
-      return new DBus.Binding.Triplet<String, UInt32, Short>(a.a, a.b, a.c);
+      return new Tuple(new Type[] {String.class, UInt32.class, Short.class}, a.a, a.b, a.c);
    }
    @DBus.Description("Given any compound type as a variant, return all the primitive types recursively contained within as an array of variants")
    @SuppressWarnings("unchecked")

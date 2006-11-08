@@ -24,8 +24,10 @@ import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.DBusListType;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.DBusSignal;
+import org.freedesktop.dbus.Tuple;
 import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
@@ -62,7 +64,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
       } catch (InterruptedException Ie) {}
       System.out.println("Done sleeping.");
    }
-   public <A> TestTuple<String, List<Integer>, Boolean> show(A in)
+   public <A> Tuple show(A in)
    {
       System.out.println("Showing Stuff: "+in.getClass()+"("+in+")");
       if (!(in instanceof Integer) || ((Integer) in).intValue() != 234)
@@ -70,7 +72,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
       DBusCallInfo info = DBusConnection.getCallInfo();
       List<Integer> l = new Vector<Integer>();
       l.add(1953);
-      return new TestTuple<String, List<Integer>, Boolean>(info.getSource(), l, true);
+      return new Tuple(new Type[] { String.class, new DBusListType(Integer.class), Boolean.class }, info.getSource(), l, true);
    }
    @SuppressWarnings("unchecked")
    public <T> T dostuff(TestStruct foo)
@@ -466,13 +468,19 @@ public class test
       /** This gets a remote object matching our bus name and exported object path. */
       TestRemoteInterface2 tri2 = (TestRemoteInterface2) conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);
       /** Call the remote object and get a response. */
-   /*   TestTuple<String, List<Integer>, Boolean> rv = tri2.show(234);
-      System.out.println("Show Response = "+rv);
-      if (!":1.0".equals(rv.a) ||
-            1 != rv.b.size() ||
-            1953 != rv.b.get(0) ||
-            true != rv.c.booleanValue())
-         fail("show return value incorrect");*/
+      Tuple rv = tri2.show(234);
+      Object[] rvs = rv.getParameters();
+      Type[] rvts = rv.getTypes();
+      if (3 != rvs.length ||
+            !":1.0".equals(rvs[0]) ||
+            1 != ((List<Integer>) rvs[1]).size() ||
+            1953 != ((List<Integer>) rvs[1]).get(0) ||
+            true != ((Boolean) rvs[2]).booleanValue() ||
+            3 != rvts.length ||
+            !String.class.isAssignableFrom((Class) rvts[0]) ||
+            !List.class.isAssignableFrom((Class) ((ParameterizedType) rvts[1]).getRawType()) ||
+            !Boolean.class.isAssignableFrom((Class) rvts[2]))
+         fail("show return value incorrect ("+rv+")");
 
       
       System.out.println("Doing stuff asynchronously");
