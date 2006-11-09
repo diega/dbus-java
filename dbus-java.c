@@ -11,7 +11,6 @@
 #include "org_freedesktop_dbus_DBusConnection.h"
 #include "org_freedesktop_dbus_DBusErrorMessage.h"
 #include "org_freedesktop_dbus_MethodCall.h"
-#define DBUS_API_SUBJECT_TO_CHANGE
 #include <dbus/dbus.h>
 #include <stdbool.h>
 #include <string.h>
