@@ -817,6 +817,22 @@ public class DBusConnection
                   System.arraycopy(types, i+1, expand, i+newtypes.length, types.length-i-1); 
                   types = expand;
                }
+         } else if (types[i].equals(Tuple.class)) {
+            Tuple t = (Tuple) parameters[i];
+            // expand types
+            Type[] newtypes = t.getTypes();
+            Object expand = new Type[types.length + newtypes.length - 1];
+            System.arraycopy(types, 0, expand, 0, i); 
+            System.arraycopy(newtypes, 0, expand, i, newtypes.length); 
+            System.arraycopy(types, i+1, expand, i+newtypes.length, types.length-i-1); 
+            types = (Type[]) expand;
+            // expand parameters
+            Object[] newparams = t.getParameters();
+            expand = new Type[parameters.length + newparams.length - 1];
+            System.arraycopy(parameters, 0, expand, 0, i); 
+            System.arraycopy(newparams, 0, expand, i, newparams.length); 
+            System.arraycopy(parameters, i+1, expand, i+newparams.length, parameters.length-i-1); 
+            parameters = (Object[]) expand;
          } else 
             parameters[i] = convertParameter(parameters[i], types[i]);
         
@@ -1781,7 +1797,7 @@ public class DBusConnection
                }
                Object result;
                try {
-               result = me.invoke(ob, m.parameters);
+                  result = me.invoke(ob, m.parameters);
                } catch (InvocationTargetException ITe) {
                   if (DBusConnection.EXCEPTION_DEBUG) ITe.getCause().printStackTrace();
                   throw ITe.getCause();

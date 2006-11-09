@@ -469,6 +469,7 @@ public class test
       TestRemoteInterface2 tri2 = (TestRemoteInterface2) conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);
       /** Call the remote object and get a response. */
       Tuple rv = tri2.show(234);
+      System.out.println("Show returned: "+rv);
       Object[] rvs = rv.getParameters();
       Type[] rvts = rv.getTypes();
       if (3 != rvs.length ||
