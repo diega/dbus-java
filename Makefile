@@ -1,10 +1,8 @@
 #
 # For profiling/debug builds use:
 #
-# make CFLAGS="-I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include" STRIP=touch
-# JCFLAGS="-cp classes:$(CLASSPATH) -Xlint:all"
-# JFLAGS="-Djava.library.path=.:/usr/lib
-# -Xrunhprof:heap=sites,cpu=samples,monitor=y,thread=y,doe=y -classic" check
+# make CFLAGS="" STRIP=touch JCFLAGS="-Xlint:all"
+# JFLAGS="-Xrunhprof:heap=sites,cpu=samples,monitor=y,thread=y,doe=y -classic" check
 #
 
 JAVAC?=javac
@@ -12,14 +10,18 @@ JAVA?=java
 JAVAH?=javah
 JAVADOC?=javadoc
 JAR?=jar
-CFLAGS?=`pkg-config --cflags dbus-1` -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux -Os -Wall -Werror -fno-stack-protector
+INCLUDES?=`pkg-config --cflags dbus-1` -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
+CFLAGS?= -Os -Wall -Werror 
+CFLAGS+=$(INCLUDES)
+CFLAGS+=$(call cc-option,-fno-stack-protector,)
 LDFLAGS?=`pkg-config --libs dbus-1`
 CC?=gcc
 LD?=ld
 STRIP?=strip
 CPFLAG?=-classpath
-JCFLAGS?=-cp classes:$(CLASSPATH) -Xlint:all -O -g:none
-JFLAGS?=-Djava.library.path=.:/usr/lib
+JCFLAGS?=-Xlint:all -O -g:none
+JCFLAGS+=-cp classes:$(CLASSPATH)
+JFLAGS+=-Djava.library.path=.:/usr/lib
 SRCDIR=org/freedesktop
 CLASSDIR=classes/org/freedesktop/dbus
 
@@ -32,6 +34,11 @@ MANPREFIX?=$(PREFIX)/share/man/man1
 
 VERSION = 1.10
 RELEASEVERSION = 1.9
+
+# Usage: cflags-y += $(call cc-option, -march=winchip-c6, -march=i586)
+cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
+> /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
+
  
 all: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 

@@ -28,9 +28,10 @@ Version 1.10:
 	  (Fix from Joshua Nichols <nichoj -at- gentoo -dot- org>)
 	* seperate install and install-doc targets
 	  (Suggested by Ralf Kistner <ralf.kistner -at- gmail -dot- com>)
-	* add -fno-stack-protector flag
+	* add -fno-stack-protector flag (only for gcc 4.1 or later)
 	  (Suggested by Ralf Kistner <ralf.kistner -at- gmail -dot- com>)
 	* Revamp tuples
+	* Build without DBUS_API_SUBJECT_TO_CHANGE set
 
 Version 1.9:
 
