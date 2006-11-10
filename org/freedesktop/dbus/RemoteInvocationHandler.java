@@ -55,8 +55,20 @@ class RemoteInvocationHandler implements InvocationHandler
             // check we are meant to return multiple values
             if (!Tuple.class.isAssignableFrom(c))
                throw new DBusExecutionException("Wrong return type (not expecting Tuple)");
-            
-           return new Tuple(sig, rp); 
+            try {
+               rp = DBusConnection.deSerializeParameters(rp, ((ParameterizedType) m.getGenericReturnType()).getActualTypeArguments());
+            } catch (Exception e) { 
+               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+               throw new DBusExecutionException("Wrong return type (failed to de-serialize correct types: "+e.getMessage()+")");
+            }
+            Constructor cons = c.getConstructors()[0];
+            try {
+               return cons.newInstance(rp);
+            } catch (Exception e) {
+               if (DBusConnection.EXCEPTION_DEBUG)
+                  e.printStackTrace();
+               throw new DBusException(e.getMessage());
+            }
       }
    }
    public static Object executeRemoteMethod(RemoteObject ro, Method m, DBusConnection conn, boolean async, Object... args) throws DBusExecutionException

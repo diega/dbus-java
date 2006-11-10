@@ -20,7 +20,7 @@ class MethodReply extends DBusMessage
       super(source, type, name, sig, parameters, serial, replyserial);
       this.objectpath = objectpath;
    }
-   public MethodReply(MethodCall m, Object... parameters)
+   public MethodReply(MethodCall m, Object... parameters) throws DBusException
    {
       super(null, m.getType(), m.getName(), "", null, 0, m.getReplySerial());
       if (1 == parameters.length && parameters[0] instanceof Tuple) 

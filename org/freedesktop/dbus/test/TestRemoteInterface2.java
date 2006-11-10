@@ -12,8 +12,6 @@ package org.freedesktop.dbus.test;
 
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusListType;
-import org.freedesktop.dbus.Tuple;
-import org.freedesktop.dbus.ReturnType;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.DBus.Description;
@@ -24,8 +22,7 @@ import java.util.List;
 public interface TestRemoteInterface2 extends DBusInterface
 {
    @Description("Test multiple return values and implicit variant parameters.")
-   @ReturnType({"s", "ai", "b"})
-   public <A> Tuple show(A in);
+   public <A> TestTuple<String,List<Integer>,Boolean> show(A in);
    @Description("Test passing structs and explicit variants, returning implicit variants")
    public <T> T dostuff(TestStruct foo);
    @Description("Test arrays, boxed arrays and lists.")

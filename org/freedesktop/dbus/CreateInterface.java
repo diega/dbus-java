@@ -25,6 +25,10 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -41,7 +45,7 @@ import org.xml.sax.SAXException;
  */
 public class CreateInterface
 {
-   private String collapseType(Type t, Set<String> imports, Map<StructStruct, Type[]> structs, boolean container, boolean fullnames) throws DBusException
+   private static String collapseType(Type t, Set<String> imports, Map<StructStruct, Type[]> structs, boolean container, boolean fullnames) throws DBusException
    {
       if (t instanceof ParameterizedType) {
          String s;
@@ -60,7 +64,7 @@ public class CreateInterface
          s += '<';
          Type[] ts = ((ParameterizedType) t).getActualTypeArguments();
          for (Type st: ts)
-            s += collapseType(st, imports, container, fullnames)+',';
+            s += collapseType(st, imports, structs, container, fullnames)+',';
          s.replaceAll(",$", ">");
          return s;
       } else if (t instanceof Class) {
@@ -76,11 +80,11 @@ public class CreateInterface
                Field f = c.getField("TYPE");
                Class d = (Class) f.get(c);
                return d.getSimpleName();
-            } catch (NoSuchFieldException NSFe) {
+            } catch (Exception e) {
                return c.getSimpleName();
             }
          }
-      }
+      } else return "";
    }
    private static String getJavaType(String dbus, Set<String> imports, Map<StructStruct,Type[]> structs, boolean container, boolean fullnames) throws DBusException
    {
@@ -106,8 +110,8 @@ public class CreateInterface
          case 0:
             sig += "void ";
             break;
-         case 2:
-            //TODO sig += DBusConnection.getJavaType(out.get(0).getAttribute("type"), imports, structs, false, false)+" ";
+         case 1:
+            sig += getJavaType(out.get(0).getAttribute("type"), imports, structs, false, false)+" ";
             break;
          case 2:
          case 3:
@@ -123,7 +127,7 @@ public class CreateInterface
             tuples.put(name, out.size());
             sig += name + "<";
             for (Element arg: out)
-               //TODO sig += DBusConnection.getJavaType(arg.getAttribute("type"), imports, structs, true, false)+", ";
+               sig += getJavaType(arg.getAttribute("type"), imports, structs, true, false)+", ";
             sig = sig.replaceAll(", $","> ");
             break;
       }
@@ -178,7 +182,7 @@ public class CreateInterface
       char defaultname = 'a';
       String params = "";
       for (Element arg: in) {
-         String type = ""; // TODO DBusConnection.getJavaType(arg.getAttribute("type"), imports, structs, false, false);
+         String type = getJavaType(arg.getAttribute("type"), imports, structs, false, false);
          String name = arg.getAttribute("name");
          if (null == name || "".equals(name)) name = ""+(defaultname++);
          params += type+" "+name+", ";         
@@ -206,7 +210,7 @@ public class CreateInterface
             annotations += parseAnnotation((Element) a, imports, anns);
          else {
             Element arg = (Element) a;
-            String type = "";// TODO  DBusConnection.getJavaType(arg.getAttribute("type"), imports, structs, false, false);
+            String type = getJavaType(arg.getAttribute("type"), imports, structs, false, false);
             String name = arg.getAttribute("name");
             if (null == name || "".equals(name)) name = ""+(defaultname++);
             params.put(name, type);

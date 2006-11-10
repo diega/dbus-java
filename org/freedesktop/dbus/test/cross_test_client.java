@@ -32,7 +32,6 @@ import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.Struct;
-import org.freedesktop.dbus.Tuple;
 import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
@@ -337,7 +336,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       }
       test(DBus.Binding.SingleTests.class, singletests, "Sum", new UInt32(res<0?-res:res), bs); 
 
-      test(DBus.Binding.Tests.class, tests, "DeStruct", new Tuple(new Type[] { String.class,UInt32.class,Short.class}, "hi", new UInt32(12), new Short((short) 99)), new DBus.Binding.TestStruct("hi", new UInt32(12), new Short((short) 99))); 
+      test(DBus.Binding.Tests.class, tests, "DeStruct", new DBus.Binding.Triplet<String,UInt32,Short>("hi", new UInt32(12), new Short((short) 99)), new DBus.Binding.TestStruct("hi", new UInt32(12), new Short((short) 99))); 
 
       Map<String, String> in = new HashMap<String, String>();
       Map<String, List<String>> out = new HashMap<String, List<String>>();

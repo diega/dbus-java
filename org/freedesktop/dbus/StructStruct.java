@@ -10,16 +10,17 @@
 */
 package org.freedesktop.dbus;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.HashMap;
 
 class StructStruct
 {
-   public static Map<StructStruct, String> fillPackages(Map<StructStruct, String> structs, String pack)
+   public static Map<StructStruct, Type[]> fillPackages(Map<StructStruct, Type[]> structs, String pack)
    {
-      Map<StructStruct, String> newmap = new HashMap<StructStruct, String>();
+      Map<StructStruct, Type[]> newmap = new HashMap<StructStruct, Type[]>();
       for (StructStruct ss: structs.keySet()) {
-         String type = structs.get(ss);
+         Type[] type = structs.get(ss);
          if (null == ss.pack) ss.pack = pack;
          newmap.put(ss, type);
       }
