@@ -13,10 +13,18 @@ package org.freedesktop.dbus;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
+/**
+ * The type of a struct.
+ * Should be used whenever you need a Type variable for a struct.
+ */
 public class DBusStructType implements ParameterizedType
 {
-   Type[] contents;
-   public DBusStructType(Type[] contents)
+   private Type[] contents;
+   /**
+    * Create a struct type.
+    * @param contents The types contained in this struct.
+    */
+   public DBusStructType(Type... contents)
    {
       this.contents = contents;
    }

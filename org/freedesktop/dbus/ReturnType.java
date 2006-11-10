@@ -16,13 +16,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Type Annotation. Declares the DBus return signature of methods which return
- * Tuple
+ * Return Type Annotation. 
+ * Declares the D-Bus return signature of methods which return
+ * Tuple.
+ * This should be used to annotate all methods returning Tuple and
+ * should be given an array containing the types of each element:
+ * <tt>@ReturnType({"ai", "s", "b"}) public Tuple returnsStuff();</tt>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface TupleParameters
+public @interface ReturnType
 {
-   /** The order of this field in the Struct. */
+   /** The D-Bus type signature. */
    String[] value();
 }

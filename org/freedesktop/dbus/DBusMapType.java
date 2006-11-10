@@ -14,10 +14,19 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 
+/**
+ * The type of a map.
+ * Should be used whenever you need a Type variable for a map.
+ */
 public class DBusMapType implements ParameterizedType
 {
-   Type k;
-   Type v;
+   private Type k;
+   private Type v;
+   /** 
+    * Create a map type.
+    * @param k The type of the keys.
+    * @param v The type of the values.
+    */
    public DBusMapType(Type k, Type v)
    {
       this.k = k;

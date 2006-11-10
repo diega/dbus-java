@@ -141,10 +141,10 @@ class ExportedObject
                      }
                   if (!Void.TYPE.equals(meth.getGenericReturnType())) {
                      if (Tuple.class.isAssignableFrom((Class) meth.getReturnType())) {
-                        for (Annotation a: meth.getAnnotations())
-                           if (a instanceof TupleParameters)
-                              for (String s: ((TupleParameters) a).value())
-                                 introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
+                        ReturnType a =  meth.getAnnotation(ReturnType.class);
+                        if (null == a) throw new DBusException("Returning Tuple from "+meth.getName()+" without annotation. Methods must be annotated with real return type.");
+                        for (String s: ((ReturnType) a).value())
+                           introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
                      } else if (Object[].class.equals(meth.getGenericReturnType())) {
                         throw new DBusException("Return type of Object[] cannot be introspected properly");
                      } else
@@ -599,111 +599,7 @@ public class DBusConnection
 
       return new String[] { out[level].toString() };
    }
-   /*
-    * Converts a dbus type string into a Java type name, 
-    * putting any needed import lines into imports.
-    * If you set container to be true then no primative types will
-    * be returned. 
-    * @param dbus The DBus type.
-    * @param imports This is populated with any required imports lines.
-    * @param structs This is populated with any structs which should be created.
-    * @param container Indicates this is a container type and no primitive types should be used.
-    * @param fullnames Will return fully qualified type names if true.
-    */
-   /*public static String getJavaType(String dbus, Set<String> imports, Map<StructStruct,String> structs, boolean container, boolean fullnames) throws DBusException
-   {
-      if (null == dbus || "".equals(dbus)) return "";
-      
-      try {
-         switch(dbus.charAt(0)) {
-            case '(':
-               String name = "Struct";
-               if (null != structs) {
-                  int num = 1;
-                  while (null != structs.get(new StructStruct(name+num))) num++;
-                  name = name+num;
-                  structs.put(new StructStruct(name), dbus.substring(1, dbus.length()-1));
-               }
-               if (fullnames) return "org.freedesktop.dbus.Struct";
-               else return name;
-            case 'a':
-               if ('{' == dbus.charAt(1)) {
-                  if (null != imports) imports.add("java.util.Map");
-                  if (fullnames) return "java.util.Map";
-                  else return "Map<"+getJavaType(dbus.substring(2,3), imports, structs, true, false)+", "+
-                     getJavaType(dbus.substring(3,dbus.length()-1), imports, structs, true, false)+">";
-               }
-               if (null != imports) imports.add("java.util.List");
-               if (fullnames) return "java.util.List";
-               else return "List<"+getJavaType(dbus.substring(1), imports, structs, true, false) + ">";
-            case 'v':
-               if (null != imports) imports.add("org.freedesktop.dbus.Variant");
-               if (fullnames) return "org.freedesktop.dbus.Variant";
-               else return "Variant";
-            case 'b':
-               if (container) {
-                  if (fullnames) return "java.lang.Boolean";
-                  else return "Boolean";
-               }
-               else return "boolean";
-            case 'n':
-               if (container) {
-                  if (fullnames) return "java.lang.Short";
-                  else return "Short";
-               } else return "short";
-            case 'y':
-               if (container) {
-                  if (fullnames) return "java.lang.Byte";
-                  else return "Byte";
-               } else return "byte";
-            case 'o':
-               if (null != imports) imports.add("org.freedesktop.dbus.DBusInterface");
-               if (fullnames) return "org.freedesktop.dbus.DBusInterface";
-               else return "DBusInterface";
-            case 'g':
-               if (null != imports) imports.add("java.lang.reflect.Type");
-               if (container) {
-                  if (fullnames) return "java.lang.reflect.List";
-                  else return "List<Type>";
-               } else return "Type[]";
-            case 'q':
-               if (null != imports) imports.add("org.freedesktop.dbus.UInt16");
-               if (fullnames) return "org.freedesktop.dbus.UInt16";
-               else return "UInt16";
-            case 'i':
-               if (container) {
-                  if (fullnames) return "java.lang.Integer";
-                  else return "Integer";
-               } else return "int";
-            case 'u':
-               if (null != imports) imports.add("org.freedesktop.dbus.UInt32");
-               if (fullnames) return "org.freedesktop.dbus.UInt32";
-               else return "UInt32";
-            case 'x':
-               if (container) {
-                  if (fullnames) return "java.lang.Long";
-                  else return "Long";
-               } else return "long";
-            case 't':
-               if (null != imports) imports.add("org.freedesktop.dbus.UInt64");
-               if (fullnames) return "org.freedesktop.dbus.UInt64";
-               else return "UInt64";
-            case 'd':
-               if (container) {
-                  if (fullnames) return "java.lang.Double";
-                  else return "Double";
-               } else return "double";
-            case 's':
-               if (fullnames) return "java.lang.String";
-               else return "String";
-            default:
-               throw new DBusException("Failed to parse DBus type signature: "+dbus);
-         }
-      } catch (IndexOutOfBoundsException IOOBe) {
-         if (DBusConnection.EXCEPTION_DEBUG) IOOBe.printStackTrace();
-         throw new DBusException("Failed to parse DBus type signature: "+dbus);
-      }
-   }*/
+
    /**
     * Converts a dbus type string into Java Type objects, 
     * @param dbus The DBus type or types.

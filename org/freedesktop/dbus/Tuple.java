@@ -14,11 +14,25 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Vector;
 
+/**
+ * Class used for multiple return values.
+ * When a D-Bus method returns multiple values this can't be directly
+ * represented in Java. Instead you have to declare that the method 
+ * returns a Tuple, and then annotate the method with the return type.
+ * @see ReturnType
+ */
 public class Tuple
 {
-   String sig;
-   Type[] types;
-   Object[] parameters;
+   private String sig;
+   private Type[] types;
+   private Object[] parameters;
+   /**
+    * Create a Tuple.
+    * @param types The types of the following parameters, as an
+    * array of Type objects. For complex types use the DBusMapType/DBusStructType/DBusListType
+    * classes.
+    * @param parameters The parameters being returned in this tuple.
+    */
    public Tuple(Type[] types, Object... parameters) throws DBusExecutionException
    {
       try {
@@ -36,6 +50,11 @@ public class Tuple
          throw new DBusExecutionException("Tuple construction failure: "+e.getMessage()); 
       }
    }
+   /**
+    * Create a Tuple.
+    * @param typesig The D-Bus type string for this tuple.
+    * @param parameters The parameters being returned in this tuple.
+    */
    public Tuple(String typesig, Object... parameters) throws DBusExecutionException
    {
       try {
@@ -49,18 +68,46 @@ public class Tuple
          throw new DBusExecutionException("Tuple construction failure: "+e.getMessage()); 
       }
    }
-   public String getString()
+   /**
+    * Returns the D-Bus signature of the tuple.
+    */
+   public String getSig()
    {
       return sig;
    }
+   /**
+    * Returns the Java types of the tuple contents.
+    */
    public Type[] getTypes()
    {
       return types;
    }
+   /**
+    * Returns all the contents of the tuple.
+    */
    public Object[] getParameters()
    {
       return parameters;
    }
+   /**
+    * Returns the tuple element at the given index.
+    * @param index Element to return.
+    */
+   public Object get(int index)
+   {
+      return parameters[index];
+   }
+   /**
+    * Returns the tuple element type at the given index.
+    * @param index Element to return type for.
+    */
+   public Type type(int index)
+   {
+      return types[index];
+   }
+   /**
+    * Returns this Tuple represented as a String.
+    */
    public String toString()
    {
       StringBuffer s = new StringBuffer();

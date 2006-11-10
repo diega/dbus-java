@@ -41,6 +41,55 @@ import org.xml.sax.SAXException;
  */
 public class CreateInterface
 {
+   private String collapseType(Type t, Set<String> imports, Map<StructStruct, Type[]> structs, boolean container, boolean fullnames) throws DBusException
+   {
+      if (t instanceof ParameterizedType) {
+         String s;
+         Class c = (Class) ((ParameterizedType) t).getRawType();
+         if (null != structs && t instanceof DBusStructType) {
+            int num = 1;
+            String name = "Struct";
+            while (null != structs.get(new StructStruct(name+num))) num++;
+            name = name+num;
+            structs.put(new StructStruct(name), ((ParameterizedType) t).getActualTypeArguments());
+            return name;
+         }
+         if (null != imports) imports.add(c.getName());
+         if (fullnames) return c.getName();
+         else s = c.getSimpleName();
+         s += '<';
+         Type[] ts = ((ParameterizedType) t).getActualTypeArguments();
+         for (Type st: ts)
+            s += collapseType(st, imports, container, fullnames)+',';
+         s.replaceAll(",$", ">");
+         return s;
+      } else if (t instanceof Class) {
+         Class c = (Class) t;
+         Package p = c.getPackage();
+         if (null != imports && 
+               !"java.lang".equals(p.getName())) imports.add(c.getName());
+         if (container) {
+            if (fullnames) return c.getName();
+            else return c.getSimpleName();
+         } else {
+            try {
+               Field f = c.getField("TYPE");
+               Class d = (Class) f.get(c);
+               return d.getSimpleName();
+            } catch (NoSuchFieldException NSFe) {
+               return c.getSimpleName();
+            }
+         }
+      }
+   }
+   private static String getJavaType(String dbus, Set<String> imports, Map<StructStruct,Type[]> structs, boolean container, boolean fullnames) throws DBusException
+   {
+      if (null == dbus || "".equals(dbus)) return "";
+      Vector<Type> v = new Vector<Type>();
+      int c = DBusConnection.getJavaType(dbus, v, 1);
+      Type t = v.get(0);
+      return collapseType(t, imports, structs, container, fullnames);
+   }
    public String comment = "";
 
    public CreateInterface(PrintStreamFactory factory)
@@ -48,7 +97,7 @@ public class CreateInterface
       this.factory = factory;
    }
    @SuppressWarnings("fallthrough")
-   String parseReturns(Vector<Element> out, Set<String> imports, Map<String,Integer> tuples, Map<StructStruct, String> structs) throws DBusException
+   String parseReturns(Vector<Element> out, Set<String> imports, Map<String,Integer> tuples, Map<StructStruct, Type[]> structs) throws DBusException
    {
       String[] names = new String[] { "Pair", "Triplet", "Quad", "Quintuple", "Sextuple", "Septuple" };
       String sig = "";
@@ -57,7 +106,7 @@ public class CreateInterface
          case 0:
             sig += "void ";
             break;
-         case 1:
+         case 2:
             //TODO sig += DBusConnection.getJavaType(out.get(0).getAttribute("type"), imports, structs, false, false)+" ";
             break;
          case 2:
@@ -80,7 +129,7 @@ public class CreateInterface
       }
       return sig;
    }
-   String parseMethod(Element meth, Set<String> imports, Map<String,Integer> tuples, Map<StructStruct, String> structs, Set<String> exceptions, Set<String> anns) throws DBusException
+   String parseMethod(Element meth, Set<String> imports, Map<String,Integer> tuples, Map<StructStruct, Type[]> structs, Set<String> exceptions, Set<String> anns) throws DBusException
    {
       Vector<Element> in = new Vector<Element>();
       Vector<Element> out = new Vector<Element>();
@@ -139,7 +188,7 @@ public class CreateInterface
          params.replaceAll("..$", "")+")"+
          (null == throwses? "": " throws "+throwses)+";";
    }
-   String parseSignal(Element signal, Set<String> imports, Map<StructStruct, String> structs, Set<String> anns) throws DBusException
+   String parseSignal(Element signal, Set<String> imports, Map<StructStruct, Type[]> structs, Set<String> anns) throws DBusException
    {
       Map<String, String> params = new HashMap<String, String>();
       Vector<String> porder = new Vector<String>();
@@ -197,7 +246,7 @@ public class CreateInterface
       return s += ")\n";
    }
 
-   void parseInterface(Element iface, PrintStream out, Map<String,Integer> tuples, Map<StructStruct, String> structs, Set<String> exceptions, Set<String> anns) throws DBusException
+   void parseInterface(Element iface, PrintStream out, Map<String,Integer> tuples, Map<StructStruct, Type[]> structs, Set<String> exceptions, Set<String> anns) throws DBusException
    {
       if (null == iface.getAttribute("name") ||
             "".equals(iface.getAttribute("name"))) {
@@ -264,14 +313,15 @@ public class CreateInterface
       out.println("   String value();");
       out.println("}");
    }
-   void createStruct(String name, String type, String pack, PrintStream out, Map<StructStruct, String> existing) throws DBusException, IOException
+   void createStruct(String name, Type[] type, String pack, PrintStream out, Map<StructStruct, Type[]> existing) throws DBusException, IOException
    {
+      /* TODO Write this to take Type[] 
       out.println("package "+pack+";");
 
       Set<String> imports = new TreeSet<String>();
       imports.add("org.freedesktop.dbus.Position");
       imports.add("org.freedesktop.dbus.Struct");
-      Map<StructStruct,String> structs = new HashMap<StructStruct, String>(existing);
+      Map<StructStruct, Type[]> structs = new HashMap<StructStruct, Type[]>(existing);
       Vector<String> types = new Vector<String>();
       
       String s = type;
@@ -331,9 +381,9 @@ public class CreateInterface
       out.println("}");
       
       structs = StructStruct.fillPackages(structs, pack);
-      Map<StructStruct,String> tocreate = new HashMap<StructStruct,String>(structs);
+      Map<StructStruct, Type[]> tocreate = new HashMap<StructStruct, Type[]>(structs);
       for (StructStruct ss: existing.keySet()) tocreate.remove(ss);
-      createStructs(tocreate, structs);
+      createStructs(tocreate, structs);*/
    }
    void createTuple(String name, int num, String pack, PrintStream out) throws DBusException
    {
@@ -374,7 +424,7 @@ public class CreateInterface
    }
    void parseRoot(Element root) throws DBusException, IOException
    {
-      Map<StructStruct, String> structs = new HashMap<StructStruct, String>();
+      Map<StructStruct, Type[]> structs = new HashMap<StructStruct, Type[]>();
       Set<String> exceptions = new TreeSet<String>();
       Set<String> annotations = new TreeSet<String>();
 
@@ -435,7 +485,7 @@ public class CreateInterface
                factory.createPrintStream(path, name));
       }
    }
-   private void createStructs(Map<StructStruct, String> structs, Map<StructStruct, String> existing) throws DBusException, IOException
+   private void createStructs(Map<StructStruct, Type[]> structs, Map<StructStruct, Type[]> existing) throws DBusException, IOException
    {
       for (StructStruct ss: structs.keySet())  {
          String file = ss.name.replaceAll("\\.","/")+".java";
