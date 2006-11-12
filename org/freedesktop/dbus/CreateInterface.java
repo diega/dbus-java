@@ -325,50 +325,16 @@ public class CreateInterface
    }
    void createStruct(String name, Type[] type, String pack, PrintStream out, Map<StructStruct, Type[]> existing) throws DBusException, IOException
    {
-      /* TODO Write this to take Type[] 
       out.println("package "+pack+";");
 
       Set<String> imports = new TreeSet<String>();
       imports.add("org.freedesktop.dbus.Position");
       imports.add("org.freedesktop.dbus.Struct");
       Map<StructStruct, Type[]> structs = new HashMap<StructStruct, Type[]>(existing);
-      Vector<String> types = new Vector<String>();
-      
-      String s = type;
-      for (int i = 0; i < s.length(); i++) {
-         switch (s.charAt(i)) {
-            case 'a':
-               //TODO types.add(DBusConnection.getJavaType(s.substring(i), imports, structs, true, false));
-               if ('{' == s.charAt(i+1))  {
-                  int c = 1;
-                  int j;
-                  for (j = i+2; c > 0; j++)
-                     switch (s.charAt(j)) {
-                        case '{': c++; break;
-                        case '}': c--; break;
-                     }
-                  i = j;
-               }
-               else 
-                  i++;
-               break;
+      String[] types = new String[type.length];
+      for (int i = 0; i < type.length; i++)
+         types[i] = collapseType(type[i], imports, structs, false, false);
 
-            case '(':
-               //TODO types.add(DBusConnection.getJavaType(s.substring(i), imports, structs, true, false));
-               int c = 1;
-               int j;
-               for (j = i+1; c > 0; j++)
-                  switch (s.charAt(j)) {
-                     case '(': c++; break;
-                     case ')': c--; break;
-                  }
-               i = j;
-               break;
-
-            default:
-                  //TODO types.add(DBusConnection.getJavaType(s.substring(i,i+1), imports, structs, true, false));
-         }
-      }
       for (String im: imports) out.println("import "+im+";");
       
       out.println("public final class "+name+" extends Struct");
@@ -393,11 +359,12 @@ public class CreateInterface
       structs = StructStruct.fillPackages(structs, pack);
       Map<StructStruct, Type[]> tocreate = new HashMap<StructStruct, Type[]>(structs);
       for (StructStruct ss: existing.keySet()) tocreate.remove(ss);
-      createStructs(tocreate, structs);*/
+      createStructs(tocreate, structs);
    }
    void createTuple(String name, int num, String pack, PrintStream out) throws DBusException
    {
       out.println("package "+pack+";");
+      out.println("import org.freedesktop.dbus.Position;");
       out.println("import org.freedesktop.dbus.Tuple;");
       out.println("/** Just a typed container class */");
       out.print("public final class "+name);
@@ -410,8 +377,10 @@ public class CreateInterface
 
       char t = 'A';
       char n = 'a';
-      for (int i = 0; i < num; i++,t++,n++)
+      for (int i = 0; i < num; i++,t++,n++) {
+         out.println("   @Position("+i+")");
          out.println("   public final "+t+" "+n+";");
+      }
 
       out.print("   public "+name+"(");
       String sig = "";
@@ -494,9 +463,7 @@ public class CreateInterface
             continue;
          String path = pack.replaceAll("\\.", "/");
          String file = name.replaceAll("\\.","/")+".java";
-         System.err.println("factory.init("+file+", "+path+")");
          factory.init(file, path);
-      System.err.println("createException("+name+", "+pack+", factory.createPrintStream("+path+", "+name+"))");
          createException(name, pack,
                factory.createPrintStream(path, name));
       }

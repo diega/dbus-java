@@ -11,8 +11,6 @@
 package org.freedesktop.dbus.test;
 
 import org.freedesktop.dbus.DBusInterface;
-import org.freedesktop.dbus.DBusListType;
-import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.DBus.Description;
 
