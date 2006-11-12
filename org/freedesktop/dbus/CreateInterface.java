@@ -64,24 +64,28 @@ public class CreateInterface
          s += '<';
          Type[] ts = ((ParameterizedType) t).getActualTypeArguments();
          for (Type st: ts)
-            s += collapseType(st, imports, structs, container, fullnames)+',';
-         s.replaceAll(",$", ">");
+            s += collapseType(st, imports, structs, true, fullnames)+',';
+         s = s.replaceAll(",$", ">");
          return s;
       } else if (t instanceof Class) {
          Class c = (Class) t;
-         Package p = c.getPackage();
-         if (null != imports && 
-               !"java.lang".equals(p.getName())) imports.add(c.getName());
-         if (container) {
-            if (fullnames) return c.getName();
-            else return c.getSimpleName();
+         if (c.isArray()) {
+            return collapseType(c.getComponentType(), imports, structs, container, fullnames)+"[]";
          } else {
-            try {
-               Field f = c.getField("TYPE");
-               Class d = (Class) f.get(c);
-               return d.getSimpleName();
-            } catch (Exception e) {
-               return c.getSimpleName();
+            Package p = c.getPackage();
+            if (null != imports && 
+                  !"java.lang".equals(p.getName())) imports.add(c.getName());
+            if (container) {
+               if (fullnames) return c.getName();
+               else return c.getSimpleName();
+            } else {
+               try {
+                  Field f = c.getField("TYPE");
+                  Class d = (Class) f.get(c);
+                  return d.getSimpleName();
+               } catch (Exception e) {
+                  return c.getSimpleName();
+               }
             }
          }
       } else return "";
@@ -95,10 +99,12 @@ public class CreateInterface
       return collapseType(t, imports, structs, container, fullnames);
    }
    public String comment = "";
+   boolean builtin;
 
-   public CreateInterface(PrintStreamFactory factory)
+   public CreateInterface(PrintStreamFactory factory, boolean builtin)
    {
       this.factory = factory;
+      this.builtin = builtin;
    }
    @SuppressWarnings("fallthrough")
    String parseReturns(Vector<Element> out, Set<String> imports, Map<String,Integer> tuples, Map<StructStruct, Type[]> structs) throws DBusException
@@ -415,11 +421,6 @@ public class CreateInterface
          sig += t+" "+n+", ";
       out.println(sig.replaceAll(", $", ")"));
       out.println("   {");
-      out.print("      super(");
-      sig = "";
-      for (char v = 'a'; v < 'a'+num; v++) 
-         sig += v+", ";
-      out.println(sig.replaceAll(", $", ");"));
       for (char v = 'a'; v < 'a'+num; v++) 
          out.println("      this."+v+" = "+v+";");
       out.println("   }");
@@ -446,6 +447,9 @@ public class CreateInterface
             String path = file.replaceAll("/[^/]*$", "");
             String pack = name.replaceAll("\\.[^.]*$","");
 
+            // don't create interfaces in org.freedesktop.DBus by default
+            if (pack.startsWith("org.freedesktop.DBus") && !builtin) continue;
+
             factory.init(file, path);
             parseInterface((Element) iface, 
                   factory.createPrintStream(file), tuples, structs, exceptions, annotations);
@@ -470,6 +474,9 @@ public class CreateInterface
       for (String fqn: annotations) {
          String name = fqn.replaceAll("^.*\\.([^.]*)$", "$1");
          String pack = fqn.replaceAll("\\.[^.]*$","");
+         // don't create things in org.freedesktop.DBus by default
+         if (pack.startsWith("org.freedesktop.DBus") && !builtin)
+            continue;
          String path = pack.replaceAll("\\.", "/");
          String file = name.replaceAll("\\.","/")+".java";
          factory.init(file, path);
@@ -482,9 +489,14 @@ public class CreateInterface
       for (String fqn: exceptions) {
          String name = fqn.replaceAll("^.*\\.([^.]*)$", "$1");
          String pack = fqn.replaceAll("\\.[^.]*$","");
+         // don't create things in org.freedesktop.DBus by default
+         if (pack.startsWith("org.freedesktop.DBus") && !builtin)
+            continue;
          String path = pack.replaceAll("\\.", "/");
          String file = name.replaceAll("\\.","/")+".java";
+         System.err.println("factory.init("+file+", "+path+")");
          factory.init(file, path);
+      System.err.println("createException("+name+", "+pack+", factory.createPrintStream("+path+", "+name+"))");
          createException(name, pack,
                factory.createPrintStream(path, name));
       }
@@ -539,19 +551,18 @@ public class CreateInterface
          public
          void init(String file, String path)
          {
-            System.out.println("/* File: "+file+" */");
          }
 
       @Override
          public
          PrintStream createPrintStream(String file) throws IOException
          {
+            System.out.println("/* File: "+file+" */");
             return System.out;
          }
 
       public PrintStream createPrintStream(String path, String tname) throws IOException
       {
-         System.out.println("/* File: "+path+"/"+tname+".java */");
          return super.createPrintStream(path, tname);
       }
 
@@ -598,6 +609,7 @@ public class CreateInterface
       File datafile = null;
       boolean printtree = false;
       boolean fileout = false;
+      boolean builtin = false;
    }
 
    static void printSyntax()
@@ -607,7 +619,7 @@ public class CreateInterface
    static void printSyntax(PrintStream o)
    {
       o.println("Syntax: CreateInterface <options> [file | busname object]");
-      o.println("        Options: --system -y --session -s --create-files -f --help -h");
+      o.println("        Options: --no-ignore-builtin --system -y --session -s --create-files -f --help -h");
    }
 
    static Config parseParams(String[] args)
@@ -618,6 +630,8 @@ public class CreateInterface
             config.bus = DBusConnection.SYSTEM;
          else if ("--session".equals(p) || "-s".equals(p)) 
             config.bus = DBusConnection.SESSION;
+         else if ("--no-ignore-builtin".equals(p)) 
+            config.builtin = true;
          else if ("--create-files".equals(p) || "-f".equals(p)) 
             config.fileout = true;
          else if ("--print-tree".equals(p) || "-p".equals(p)) 
@@ -681,7 +695,7 @@ public class CreateInterface
       }
       try {
          PrintStreamFactory factory = config.fileout  ? new FileStreamFactory() : new ConsoleStreamFactory();
-         CreateInterface createInterface = new CreateInterface(factory);
+         CreateInterface createInterface = new CreateInterface(factory, config.builtin);
          createInterface.createInterface(introspectdata);
       } catch (DBusException DBe) {
          System.err.println("ERROR: "+DBe.getMessage());
