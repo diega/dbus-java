@@ -32,6 +32,8 @@ Version 1.10:
 	  (Suggested by Ralf Kistner <ralf.kistner -at- gmail -dot- com>)
 	* Revamp tuples
 	* Build without DBUS_API_SUBJECT_TO_CHANGE set
+	* fix LDFLAGS to work properly with --as-needed
+	  (Suggested by TFKyle)
 
 Version 1.9:
 

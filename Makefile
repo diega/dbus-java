@@ -14,7 +14,7 @@ INCLUDES?=`pkg-config --cflags dbus-1` -I${JAVA_HOME}/include -I${JAVA_HOME}/inc
 CFLAGS?= -Os -Wall -Werror 
 CFLAGS+=$(INCLUDES)
 CFLAGS+=$(call cc-option,-fno-stack-protector,)
-LDFLAGS?=`pkg-config --libs dbus-1`
+LIBS?=`pkg-config --libs dbus-1`
 CC?=gcc
 LD?=ld
 STRIP?=strip
@@ -84,7 +84,7 @@ dbus-java.o: dbus-java.c org_freedesktop_dbus_DBusConnection.h org_freedesktop_d
 	$(CC) $(CFLAGS) -fpic -c $< -o $@
 
 libdbus-java.so: dbus-java.o
-	$(LD) $(LDFLAGS) -fpic -shared -o $@ $^
+	$(LD) $(LDFLAGS) -fpic -shared -o $@ $^ $(LIBS)
 	$(STRIP) $@
 libdbus-java-$(VERSION).jar: .classes
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/Hal/*.class)
