@@ -281,34 +281,7 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
    {
       done.add("org.freedesktop.DBus.Binding.Tests.Primitize");
       notdone.remove("org.freedesktop.DBus.Binding.Tests.Primitize");
-      List<Variant> vs = new Vector<Variant>();
-     /* 
-      // it's a list
-      if (List.class.isAssignableFrom(a.getType())) {
-         for (Object o: (List) a.getValue())
-            vs.addAll(Primitize(new Variant(o)));
-      
-      // it's a map
-      } else if (Map.class.isAssignableFrom(a.getType())) {
-         for (Object o: ((Map) a.getValue()).keySet()) {
-            vs.addAll(Primitize(new Variant(o)));
-            vs.addAll(Primitize(new Variant(((Map)a.getValue()).get(o))));
-         }
-      
-      // it's a struct
-      } else if (Struct.class.isAssignableFrom(a.getType())) {
-         try {
-            for (Object o: ((Struct) a.getValue()).getParameters())
-               vs.addAll(Primitize(new Variant(o)));
-         } catch (DBusException DBe) {
-            throw new DBusExecutionException(DBe.getMessage());
-         }
-      
-      // it's already a primative in an variant, add it to the list
-      } else { 
-         vs.add(a); 
-      }*/
-      return vs;
+      return cross_test_client.PrimitizeRecurse(a.getValue(), a.getType());
    }
    @DBus.Description("inverts it's input")
    public boolean Invert(boolean a)

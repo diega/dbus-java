@@ -142,11 +142,7 @@ class ExportedObject
                   if (!Void.TYPE.equals(meth.getGenericReturnType())) {
                      if (Tuple.class.isAssignableFrom((Class) meth.getReturnType())) {
                         ParameterizedType tc = (ParameterizedType) meth.getGenericReturnType();
-                        Type[] ts = Container.getTypeCache((Type) meth.getReturnType());
-                        if (null == ts) {
-                           ts = tc.getActualTypeArguments();
-                           Container.putTypeCache((Type) meth.getReturnType(), ts);
-                        }
+                        Type[] ts = tc.getActualTypeArguments();
 
                         for (Type t: ts)
                            if (t != null)
@@ -763,14 +759,12 @@ public class DBusConnection
          // its a struct or tuple, recurse over it
          else if (Container.class.isAssignableFrom(r)) {
             Constructor con = r.getDeclaredConstructors()[0];
-            Field[] fs = r.getDeclaredFields();
-            Type[] ts = new Type[fs.length];
-            for (Field f : fs) {
-               Position pos = f.getAnnotation(Position.class);
-               if (null == pos) continue;
-               ts[pos.value()] = f.getGenericType();
-            }
-            Object[] newparams = ((Container) parameter).getParameters();
+            Object[] newparams;
+            if (Tuple.class.isAssignableFrom(r)) {
+               Type[] ts = p.getActualTypeArguments();
+               newparams = ((Container) parameter).getParameters(ts);
+            } else
+               newparams = ((Container) parameter).getParameters();
             try {
                parameter = con.newInstance(newparams);
             } catch (Exception e) {
@@ -836,7 +830,7 @@ public class DBusConnection
       // it should be a struct. create it
       if (parameter instanceof Object[] && 
             type instanceof Class &&
-            Container.class.isAssignableFrom((Class) type)) {
+            Struct.class.isAssignableFrom((Class) type)) {
          Type[] ts = Container.getTypeCache(type);
          if (null == ts) {
             Field[] fs = ((Class) type).getDeclaredFields();
@@ -1696,11 +1690,11 @@ public class DBusConnection
                   if (Void.TYPE.equals(me.getReturnType())) 
                      reply = new MethodReply(m);
                   else {
-                     // need to initialize Tuple type maps with 
-                     // their parameterized types.
+                     // need to recursively convert Tuple with types
                      if (Tuple.class.isAssignableFrom(me.getReturnType()))
-                        Container.putTypeCache(me.getReturnType(), ((ParameterizedType) me.getGenericReturnType()).getActualTypeArguments());
-                     result = convertParameter(result, me.getGenericReturnType());
+                        ((Tuple) result).getParameters(((ParameterizedType) me.getGenericReturnType()).getActualTypeArguments());
+                     else
+                        result = convertParameter(result, me.getGenericReturnType());
                      reply = new MethodReply(m, result);
                   }
                   synchronized (outqueue) {

@@ -13,6 +13,7 @@ package org.freedesktop.dbus.test;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 import java.util.Arrays;
@@ -30,6 +31,8 @@ import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.DBusListType;
+import org.freedesktop.dbus.DBusMapType;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.Struct;
 import org.freedesktop.dbus.UInt16;
@@ -152,43 +155,53 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
    }
    public static boolean setCompareLists(List<Variant> a, List<Variant> b)
    {
-      Set<Variant> as = new TreeSet<Variant>();
-      as.addAll(a);
-      Set<Variant> bs = new TreeSet<Variant>();
-      bs.addAll(b);
-      return as.equals(bs);
+      if (a.size() != b.size()) return false;
+      for (Variant v: a)
+         if (!b.contains(v)) return false;
+      return true;
    }
    @SuppressWarnings("unchecked")
-   private static List<Variant> Primitize(Variant a)
+   public static List<Variant> PrimitizeRecurse(Object a, Type t)
    {
       List<Variant> vs = new Vector<Variant>();
-/*
-      // it's a list
-      if (List.class.isAssignableFrom(a.getType())) {
-         for (Object o: (List) a.getValue())
-            vs.addAll(Primitize(new Variant(o)));
+      if (t instanceof ParameterizedType) {
+         Class c = (Class) ((ParameterizedType) t).getRawType();
+         if (List.class.isAssignableFrom(c)) {
+            Object[] os = ((List) a).toArray();
+            Type[] ts = ((ParameterizedType) t).getActualTypeArguments();
+            for (int i = 0; i < os.length; i++)
+               vs.addAll(PrimitizeRecurse(os[i], ts[0]));
+         } else if (Map.class.isAssignableFrom(c)) {
+            Object[] os = ((Map) a).keySet().toArray();
+            Object[] ks = ((Map) a).values().toArray();
+            Type[] ts = ((ParameterizedType) t).getActualTypeArguments();
+            for (int i = 0; i < ks.length; i++)
+               vs.addAll(PrimitizeRecurse(ks[i], ts[0]));
+            for (int i = 0; i < os.length; i++)
+               vs.addAll(PrimitizeRecurse(os[i], ts[1]));
+         } else if (Struct.class.isAssignableFrom(c)) {
+            Object[] os;
+            try {
+               os = ((Struct) a).getParameters();
+            } catch (DBusException DBe) {
+               throw new DBusExecutionException(DBe.getMessage());
+            }
+            Type[] ts = ((ParameterizedType) t).getActualTypeArguments();
+            for (int i = 0; i < os.length; i++)
+               vs.addAll(PrimitizeRecurse(os[i], ts[i]));
 
-         // it's a map
-      } else if (Map.class.isAssignableFrom(a.getType())) {
-         for (Object o: ((Map) a.getValue()).keySet()) {
-            vs.addAll(Primitize(new Variant(o)));
-            vs.addAll(Primitize(new Variant(((Map)a.getValue()).get(o))));
+         } else if (Variant.class.isAssignableFrom(c)) {
+            vs.addAll(PrimitizeRecurse(((Variant) a).getValue(), ((Variant) a).getType()));
          }
+      } else vs.add(new Variant(a));
 
-         // it's a struct
-      } else if (Struct.class.isAssignableFrom(a.getType())) {
-         try {
-            for (Object o: ((Struct) a.getValue()).getParameters())
-               vs.addAll(Primitize(new Variant(o)));
-         } catch (DBusException DBe) {
-            throw new DBusExecutionException(DBe.getMessage());
-         }
-
-         // it's already a primative in an variant, add it to the list
-      } else {
-         vs.add(a);
-      }*/
       return vs;
+   }
+
+   @SuppressWarnings("unchecked")
+   public static List<Variant> Primitize(Variant a)
+   {
+      return PrimitizeRecurse(a.getValue(), a.getType());
    }
 
    @SuppressWarnings("unchecked")
@@ -359,6 +372,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       test(DBus.Binding.Tests.class, tests, "InvertMapping", out, in);
       
       primitizeTest(tests, new Integer(1));
+      primitizeTest(tests, new Variant<Map<String,String>>(in, new DBusMapType(String.class,String.class)));
 
       test(DBus.Binding.Tests.class, tests, "Trigger", null, "/Test", new UInt64(21389479283L));
 

@@ -10,6 +10,7 @@
 */
 package org.freedesktop.dbus;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.lang.reflect.Field;
@@ -34,11 +35,12 @@ public abstract class Container
    private String sig = null;
    private Object[] parameters = null;
    public Container() {}
-   private void setup() throws DBusException
+   private void setup(Type[] types) throws DBusException
    {
       Field[] fs = getClass().getDeclaredFields();
       Object[] args = new Object[fs.length];
-      Type[] ts = getTypeCache(getClass());
+      Type[] ts = types;
+      if (null == ts) ts = getTypeCache(getClass());
       if (null == ts) ts = new Type[fs.length];
 
       int diff = 0;
@@ -77,7 +79,13 @@ public abstract class Container
    public final Object[] getParameters() throws DBusException
    {
       if (null != parameters) return parameters;
-      setup();
+      setup(null);
+      return parameters;
+   }
+   final Object[] getParameters(Type[] ts) throws DBusException
+   {
+      if (null != parameters) return parameters;
+      setup(ts);
       return parameters;
    }
    /**
@@ -87,7 +95,7 @@ public abstract class Container
    public final String getSig() throws DBusException
    {
       if (null != sig) return sig;
-      setup();
+      setup(null);
       return sig;
    }
    /** Returns this struct as a string. */
@@ -101,5 +109,21 @@ public abstract class Container
       for (Object o: parameters)
          s += o+", ";
       return s.replaceAll(", $", ">");
+   }
+   public final boolean equals(Object other)
+   {
+      try {
+         if (other instanceof Container)  {
+            Container that = (Container) other;
+            if (this.getClass().equals(that.getClass()))
+               return Arrays.equals(this.getParameters(), that.getParameters());
+            else return false;
+         }
+         else return false;
+      } catch (DBusException DBe) {
+         if (DBusConnection.EXCEPTION_DEBUG)
+            DBe.printStackTrace();
+         return false;
+      }
    }
 }

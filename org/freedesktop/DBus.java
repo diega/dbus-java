@@ -393,7 +393,7 @@ public interface DBus extends DBusInterface
          @Description("Given a map of A => B, should return a map of B => a list of all the As which mapped to B")
          public Map<String, List<String>> InvertMapping(Map<String, String> a);
          @Description("This method returns the contents of a struct as separate values")
-         public Tuple DeStruct(TestStruct a);
+         public Triplet<String, UInt32, Short> DeStruct(TestStruct a);
          @Description("Given any compound type as a variant, return all the primitive types recursively contained within as an array of variants")
          public List<Variant> Primitize(Variant a);
          @Description("inverts it's input")
