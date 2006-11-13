@@ -82,7 +82,7 @@ final class IntrospectAction extends AbstractAction implements ListSelectionList
 				{
 					
 					StringStreamFactory factory = new StringStreamFactory();
-					CreateInterface createInterface = new CreateInterface(factory);
+					CreateInterface createInterface = new CreateInterface(factory, false);
 					try
 					{
 						String xml = introspectable.Introspect();

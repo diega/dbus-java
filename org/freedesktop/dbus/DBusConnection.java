@@ -438,6 +438,7 @@ public class DBusConnection
          }
       }
    }
+   private static Map<Type, String[]> typeCache = new HashMap<Type, String[]>();
    /**
     * Will return the DBus type corresponding to the given Java type.
     * Note, container type should have their ParameterizedType not their
@@ -448,7 +449,11 @@ public class DBusConnection
     */
    public static String[] getDBusType(Type c) throws DBusException
    {
-      return getDBusType(c, false);
+      String[] cached = typeCache.get(c);
+      if (null != cached) return cached;
+      cached = getDBusType(c, false);
+      typeCache.put(c, cached);
+      return cached;
    }
    /**
     * Will return the DBus type corresponding to the given Java type.

@@ -128,6 +128,15 @@ manpage.1: manpage.sgml
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term>
+          <option>--no-ignore-builtin</option>
+        </term>
+        <listitem>
+          <para>Do not ignore builtin (org.freedesktop.DBus)
+          interfaces while parsing introspection data</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-h</option>
           <option>--help</option>
         </term>
