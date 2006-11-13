@@ -35,6 +35,7 @@ Version 1.10:
 	* fix LDFLAGS to work properly with --as-needed
 	  (Suggested by TFKyle)
 	* Update CreateInterface to new API
+	* More speed fixes with type introspection
 
 Version 1.9:
 
