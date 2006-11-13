@@ -9,6 +9,7 @@ To compile and install these bindings you will need:
    A Java 1.5-compliant VM and Compiler (at time of writing
          only the Sun VM and Compiler is known to work).
    A C compiler and toolchain.
+   D-Bus 1.0 libraries
 
 To build and install the documentation you will also need:
 
