@@ -199,11 +199,13 @@ install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-jav
 	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%LIBPATH\%,$(LIBPREFIX),' < bin/ListDBus > $(BINPREFIX)/ListDBus
 	chmod +x $(BINPREFIX)/ListDBus
 
-install-doc: doc CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COPYING
+install-doc: doc CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COPYING README INSTALL
 	install -d $(DOCPREFIX)
 	install -m 644 changelog $(DOCPREFIX)
 	install -m 644 COPYING $(DOCPREFIX)
 	install -m 644 AUTHORS $(DOCPREFIX)
+	install -m 644 README $(DOCPREFIX)
+	install -m 644 INSTALL $(DOCPREFIX)
 	install -m 644 doc/dbus-java.dvi $(DOCPREFIX)
 	install -m 644 doc/dbus-java.ps $(DOCPREFIX)
 	install -m 644 doc/dbus-java.pdf $(DOCPREFIX)
@@ -219,7 +221,7 @@ install-doc: doc CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COP
 	install -m 644 DBusViewer.1 $(MANPREFIX)/DBusViewer.1
 
 dist: .dist
-.dist: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING
+.dist: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL
 	mkdir -p libdbus-java-$(VERSION)
 	cp -fa $^ libdbus-java-$(VERSION)
 	touch .dist
@@ -235,7 +237,7 @@ libdbus-java-$(VERSION): .dist
 libdbus-java-$(VERSION).tar.gz: .dist
 	tar zcf $@ libdbus-java-$(VERSION)
 	
-libdbus-java-$(RELEASEVERSION).tar.gz: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING
+libdbus-java-$(RELEASEVERSION).tar.gz: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL
 	mkdir -p libdbus-java-$(RELEASEVERSION)/
 	cp -fa $^ libdbus-java-$(RELEASEVERSION)/
 	tar zcf $@ libdbus-java-$(RELEASEVERSION)
