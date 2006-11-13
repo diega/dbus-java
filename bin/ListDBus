@@ -1,3 +1,6 @@
 #!/bin/sh --
 
-java -Djava.library.path=/usr/lib:/usr/lib/jni -cp /usr/share/java/dbus.jar org.freedesktop.dbus.ListDBus "$@"
+JARPATH=%JARPATH%
+LIBPATH=%LIBPATH%
+
+java -Djava.library.path=/usr/lib:$LIBPATH -cp $JARPATH/dbus.jar org.freedesktop.dbus.ListDBus "$@"

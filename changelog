@@ -36,6 +36,8 @@ Version 1.10:
 	  (Suggested by TFKyle)
 	* Update CreateInterface to new API
 	* More speed fixes with type introspection
+	* Add README and INSTALL files
+	* Change wrappers to point to installed locations
 
 Version 1.9:
 

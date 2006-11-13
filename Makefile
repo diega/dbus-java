@@ -5,6 +5,9 @@
 # JFLAGS="-Xrunhprof:heap=sites,cpu=samples,monitor=y,thread=y,doe=y -classic" check
 #
 
+# Variables controlling compilation. May be overridden on the command line for
+# debug builds etc
+#
 JAVAC?=javac
 JAVA?=java
 JAVAH?=javah
@@ -25,7 +28,10 @@ JFLAGS+=-Djava.library.path=.:/usr/lib
 SRCDIR=org/freedesktop
 CLASSDIR=classes/org/freedesktop/dbus
 
-PREFIX?=$(DESTDIR)/usr
+# Installation variables. Controls the location of make install.  May be
+# overridden in the make command line to install to different locations
+#
+PREFIX?=$(DESTDIR)/usr/local
 JARPREFIX?=$(PREFIX)/share/java
 LIBPREFIX?=$(PREFIX)/lib/jni
 BINPREFIX?=$(PREFIX)/bin
@@ -186,9 +192,12 @@ install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-jav
 	install -d $(LIBPREFIX)
 	install libdbus-java.so $(LIBPREFIX)
 	install -d $(BINPREFIX)
-	install bin/DBusViewer $(BINPREFIX)
-	install bin/CreateInterface $(BINPREFIX)
-	install bin/ListDBus $(BINPREFIX)
+	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%LIBPATH\%,$(LIBPREFIX),' < bin/DBusViewer > $(BINPREFIX)/DBusViewer
+	chmod +x $(BINPREFIX)/DBusViewer
+	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%LIBPATH\%,$(LIBPREFIX),' < bin/CreateInterface > $(BINPREFIX)/CreateInterface
+	chmod +x $(BINPREFIX)/CreateInterface
+	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%LIBPATH\%,$(LIBPREFIX),' < bin/ListDBus > $(BINPREFIX)/ListDBus
+	chmod +x $(BINPREFIX)/ListDBus
 
 install-doc: doc CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COPYING
 	install -d $(DOCPREFIX)
