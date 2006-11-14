@@ -1,6 +1,7 @@
 Version 1.11:
 
 	* fix script replacement directories to be different to install directories
+	* split install-doc and install-man to allow easy split -doc package
 
 Version 1.10:
 

@@ -31,7 +31,7 @@ directories can be achieved using the BINDIR etc variables. For more detail
 read the Makefile.
 
 Documentation for the bindings can be built with `make doc' and installed with
-`make install-doc', with the same provisos for installation paths.
+`make install-doc install-man', with the same provisos for installation paths.
 
 Using the Bindings
 ------------------
