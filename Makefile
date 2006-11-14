@@ -37,6 +37,9 @@ LIBPREFIX?=$(PREFIX)/lib/jni
 BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
+RUNPREFIX?=$(PREFIX)
+RUNJARPREFIX?=$(RUNPREFIX)/share/java
+RUNLIBPREFIX?=$(RUNPREFIX)/lib/jni
 
 VERSION = 1.11
 RELEASEVERSION = 1.10
@@ -192,11 +195,11 @@ install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-jav
 	install -d $(LIBPREFIX)
 	install libdbus-java.so $(LIBPREFIX)
 	install -d $(BINPREFIX)
-	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%LIBPATH\%,$(LIBPREFIX),' < bin/DBusViewer > $(BINPREFIX)/DBusViewer
+	sed 's,\%JARPATH\%,$(RUNJARPREFIX),;s,\%LIBPATH\%,$(RUNLIBPREFIX),' < bin/DBusViewer > $(BINPREFIX)/DBusViewer
 	chmod +x $(BINPREFIX)/DBusViewer
-	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%LIBPATH\%,$(LIBPREFIX),' < bin/CreateInterface > $(BINPREFIX)/CreateInterface
+	sed 's,\%JARPATH\%,$(RUNJARPREFIX),;s,\%LIBPATH\%,$(RUNLIBPREFIX),' < bin/CreateInterface > $(BINPREFIX)/CreateInterface
 	chmod +x $(BINPREFIX)/CreateInterface
-	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%LIBPATH\%,$(LIBPREFIX),' < bin/ListDBus > $(BINPREFIX)/ListDBus
+	sed 's,\%JARPATH\%,$(RUNJARPREFIX),;s,\%LIBPATH\%,$(RUNLIBPREFIX),' < bin/ListDBus > $(BINPREFIX)/ListDBus
 	chmod +x $(BINPREFIX)/ListDBus
 
 install-doc: doc CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COPYING README INSTALL
