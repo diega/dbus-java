@@ -247,8 +247,8 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       done.add("org.freedesktop.DBus.Binding.SingleTests.Sum");
       notdone.remove("org.freedesktop.DBus.Binding.SingleTests.Sum");
       int sum = 0;
-      for (byte b: a) sum += b;
-      sum = sum < 0 ? -sum : sum;
+      for (byte b: a) sum += (b < 0 ? b+256 : b);
+      sum = sum;
       return new UInt32(sum % (UInt32.MAX_VALUE+1));
    }
    @DBus.Description("Given a map of A => B, should return a map of B => a list of all the As which mapped to B")

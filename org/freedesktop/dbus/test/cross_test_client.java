@@ -355,7 +355,8 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       test(DBus.Binding.Tests.class, tests, "Sum", 0L, is); 
       r = new Random();
       int len = (r.nextInt() % 100) + 15;
-      is = new int[(len<0 ? -len: len)+15];
+      len = (len<0 ? -len: len)+15;
+      is = new int[len];
       long result = 0;
       for (i = 0; i < len; i++) {
          is[i] = r.nextInt();
@@ -366,13 +367,14 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       byte[] bs = new byte[0];
       test(DBus.Binding.SingleTests.class, singletests, "Sum", new UInt32(0), bs); 
       len = (r.nextInt() % 100);
-      bs = new byte[(len<0 ? -len: len)+15];
+      len = (len<0 ? -len: len)+15;
+      bs = new byte[len];
       int res = 0;
       for (i = 0; i < len; i++) {
          bs[i] = (byte) r.nextInt();
-         res += bs[i];
+         res += (bs[i] < 0 ? bs[i]+256 : bs[i]);
       }
-      test(DBus.Binding.SingleTests.class, singletests, "Sum", new UInt32(res<0?-res:res), bs); 
+      test(DBus.Binding.SingleTests.class, singletests, "Sum", new UInt32(res % (UInt32.MAX_VALUE+1)), bs); 
 
       test(DBus.Binding.Tests.class, tests, "DeStruct", new DBus.Binding.Triplet<String,UInt32,Short>("hi", new UInt32(12), new Short((short) 99)), new DBus.Binding.TestStruct("hi", new UInt32(12), new Short((short) 99))); 
 
