@@ -20,6 +20,7 @@ import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.List;
+
 import org.freedesktop.DBus;
 
 class RemoteInvocationHandler implements InvocationHandler
@@ -98,7 +99,7 @@ class RemoteInvocationHandler implements InvocationHandler
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) return null;
 
       DBusMessage reply = call.getReply();
-      if (null == reply) throw new NoReply("No reply within specified time");
+      if (null == reply) throw new DBus.Error.NoReply("No reply within specified time");
                
       if (reply instanceof DBusErrorMessage)
          ((DBusErrorMessage) reply).throwException();

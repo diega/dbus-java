@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.freedesktop.DBus.Error.NoReply;
+
 /**
  * A handle to an asynchronous method call.
  */

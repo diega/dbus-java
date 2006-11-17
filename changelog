@@ -1,6 +1,7 @@
 Version 1.12:
 
 	* fix internal-cross-test bugs and increase error verbosity
+	* add org.freedesktop.DBus.Error.NoReply, change to that from my own
 
 Version 1.11:
 
