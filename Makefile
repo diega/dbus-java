@@ -41,8 +41,8 @@ RUNPREFIX?=$(PREFIX)
 RUNJARPREFIX?=$(RUNPREFIX)/share/java
 RUNLIBPREFIX?=$(RUNPREFIX)/lib/jni
 
-VERSION = 1.11
-RELEASEVERSION = 1.10
+VERSION = 1.12
+RELEASEVERSION = 1.11
 
 # Usage: cflags-y += $(call cc-option, -march=winchip-c6, -march=i586)
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
