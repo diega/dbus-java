@@ -37,6 +37,9 @@ LIBPREFIX?=$(PREFIX)/lib/jni
 BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
+RUNPREFIX?=$(PREFIX)
+RUNJARPREFIX?=$(RUNPREFIX)/share/java
+RUNLIBPREFIX?=$(RUNPREFIX)/lib/jni
 
 VERSION = 1.12
 RELEASEVERSION = 1.11
@@ -192,20 +195,27 @@ install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-jav
 	install -d $(LIBPREFIX)
 	install libdbus-java.so $(LIBPREFIX)
 	install -d $(BINPREFIX)
-	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%LIBPATH\%,$(LIBPREFIX),' < bin/DBusViewer > $(BINPREFIX)/DBusViewer
+	sed 's,\%JARPATH\%,$(RUNJARPREFIX),;s,\%LIBPATH\%,$(RUNLIBPREFIX),' < bin/DBusViewer > $(BINPREFIX)/DBusViewer
 	chmod +x $(BINPREFIX)/DBusViewer
-	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%LIBPATH\%,$(LIBPREFIX),' < bin/CreateInterface > $(BINPREFIX)/CreateInterface
+	sed 's,\%JARPATH\%,$(RUNJARPREFIX),;s,\%LIBPATH\%,$(RUNLIBPREFIX),' < bin/CreateInterface > $(BINPREFIX)/CreateInterface
 	chmod +x $(BINPREFIX)/CreateInterface
-	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%LIBPATH\%,$(LIBPREFIX),' < bin/ListDBus > $(BINPREFIX)/ListDBus
+	sed 's,\%JARPATH\%,$(RUNJARPREFIX),;s,\%LIBPATH\%,$(RUNLIBPREFIX),' < bin/ListDBus > $(BINPREFIX)/ListDBus
 	chmod +x $(BINPREFIX)/ListDBus
 
-install-doc: doc CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COPYING README INSTALL
+install-man: CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COPYING README INSTALL
 	install -d $(DOCPREFIX)
 	install -m 644 changelog $(DOCPREFIX)
 	install -m 644 COPYING $(DOCPREFIX)
 	install -m 644 AUTHORS $(DOCPREFIX)
 	install -m 644 README $(DOCPREFIX)
 	install -m 644 INSTALL $(DOCPREFIX)
+	install -d $(MANPREFIX)
+	install -m 644 CreateInterface.1 $(MANPREFIX)/CreateInterface.1
+	install -m 644 ListDBus.1 $(MANPREFIX)/ListDBus.1
+	install -m 644 DBusViewer.1 $(MANPREFIX)/DBusViewer.1
+
+install-doc: doc 
+	install -d $(DOCPREFIX)
 	install -m 644 doc/dbus-java.dvi $(DOCPREFIX)
 	install -m 644 doc/dbus-java.ps $(DOCPREFIX)
 	install -m 644 doc/dbus-java.pdf $(DOCPREFIX)
@@ -215,10 +225,6 @@ install-doc: doc CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COP
 	install -m 644 doc/dbus-java/*.png $(DOCPREFIX)/dbus-java
 	install -d $(DOCPREFIX)/api
 	cp -a doc/api/* $(DOCPREFIX)/api
-	install -d $(MANPREFIX)
-	install -m 644 CreateInterface.1 $(MANPREFIX)/CreateInterface.1
-	install -m 644 ListDBus.1 $(MANPREFIX)/ListDBus.1
-	install -m 644 DBusViewer.1 $(MANPREFIX)/DBusViewer.1
 
 dist: .dist
 .dist: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL
