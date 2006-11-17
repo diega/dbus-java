@@ -38,8 +38,8 @@ BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
 
-VERSION = 1.11
-RELEASEVERSION = 1.10
+VERSION = 1.12
+RELEASEVERSION = 1.11
 
 # Usage: cflags-y += $(call cc-option, -march=winchip-c6, -march=i586)
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \

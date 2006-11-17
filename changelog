@@ -1,6 +1,10 @@
-Version 1.11:
+Version 1.12:
 
 	* fix internal-cross-test bugs and increase error verbosity
+
+Version 1.11:
+
+	* fix bugs for debian packaging, split install targets
 
 Version 1.10:
 
