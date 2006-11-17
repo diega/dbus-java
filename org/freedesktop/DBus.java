@@ -276,7 +276,17 @@ public interface DBus extends DBusInterface
             super(message);
          }
       }
-
+      /**
+       * Thrown if there is no reply to a method call
+       */
+      @SuppressWarnings("serial")
+      public class NoReply extends DBusExecutionException
+      {
+         public NoReply(String message)
+         {
+            super(message);
+         }
+      }
    }
    /**
     * Description of the interface or method, returned in the introspection data
