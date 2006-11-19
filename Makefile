@@ -14,7 +14,7 @@ JAVAH?=javah
 JAVADOC?=javadoc
 JAR?=jar
 INCLUDES?=`pkg-config --cflags dbus-1` -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
-CFLAGS?= -Os -Wall -Werror 
+CFLAGS?= -Os -Wall -Werror -pedantic -std=c99
 CFLAGS+=$(INCLUDES)
 CFLAGS+=$(call cc-option,-fno-stack-protector,)
 LIBS?=`pkg-config --libs dbus-1`

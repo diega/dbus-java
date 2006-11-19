@@ -2,6 +2,7 @@ Version 1.12:
 
 	* fix internal-cross-test bugs and increase error verbosity
 	* add org.freedesktop.DBus.Error.NoReply, change to that from my own
+	* add -pedantic -std=c99 flags to GCC
 
 Version 1.11:
 
