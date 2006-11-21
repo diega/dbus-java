@@ -1736,10 +1736,19 @@ public class DBusConnection
          if (null != t) v.addAll(t);
       }
       if (0 == v.size()) return;
+      final EfficientQueue outqueue = outgoing;
       for (final DBusSigHandler h: v)
          addRunnable(new Runnable() { public void run() {
             {
-               h.handle(s); 
+               try {
+                  DBusSignal rs = s.createReal();
+                  h.handle(rs); 
+               } catch (DBusException DBe) {
+                  if (DBusConnection.EXCEPTION_DEBUG) DBe.printStackTrace();
+                  synchronized (outqueue) {
+                     outqueue.add(new DBusErrorMessage(s, new DBusExecutionException("Error handling signal "+s.getType()+"."+s.getName()+": "+DBe.getMessage()))); 
+                  }
+               }
             }
          } });
    }

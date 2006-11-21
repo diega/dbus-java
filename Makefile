@@ -153,6 +153,7 @@ check:
 	( PASS=false; \
 	  dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
+	  dbus-monitor &> monitor.log & \
 	  if make testrun ; then export PASS=true; fi  ; \
 	  kill $$(cat pid) ; \
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
@@ -169,9 +170,9 @@ internal-cross-test: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-
 two-part-test: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	( dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  make -s two-part-server &\
+	  make -s two-part-server | tee server.log &\
 	  sleep 1;\
-	  make -s two-part-client  ;\
+	  make -s two-part-client | tee client.log ;\
 	  kill $$(cat pid) ; )
 
 profile:

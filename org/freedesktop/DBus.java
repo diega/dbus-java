@@ -287,6 +287,17 @@ public interface DBus extends DBusInterface
             super(message);
          }
       }
+      /**
+       * Thrown if a message is denied due to a security policy
+       */
+      @SuppressWarnings("serial")
+      public class AccessDenied extends DBusExecutionException
+      {
+         public AccessDenied(String message)
+         {
+            super(message);
+         }
+      }
    }
    /**
     * Description of the interface or method, returned in the introspection data

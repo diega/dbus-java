@@ -310,6 +310,22 @@ class arraysignalhandler implements DBusSigHandler
 }
 
 /**
+ * Object path signal handler
+ */
+class objectsignalhandler implements DBusSigHandler<TestSignalInterface.TestObjectSignal>
+{
+   public void handle(TestSignalInterface.TestObjectSignal s)
+   {
+      if (false == test.done3) {
+         test.done3 = true;
+      } else {
+         test.fail("SignalHandler 3 has been run too many times");
+      }
+      System.out.println(s.otherpath);
+   }
+}
+
+/**
  * handler which should never be called
  */
 class badarraysignalhandler implements DBusSigHandler
@@ -328,6 +344,7 @@ public class test
 {
    public static boolean done1 = false;
    public static boolean done2 = false;
+   public static boolean done3 = false;
    public static void fail(String message)
    {
       System.err.println("Test Failed: "+message);
@@ -354,6 +371,7 @@ public class test
          conn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler());
          String source = dbus.GetNameOwner("foo.bar.Test");
          conn.addSigHandler(TestSignalInterface.TestArraySignal.class, source, peer, new arraysignalhandler());
+         conn.addSigHandler(TestSignalInterface.TestObjectSignal.class, new objectsignalhandler());
          badarraysignalhandler bash = new badarraysignalhandler();
          conn.addSigHandler(TestSignalInterface.TestSignal.class, bash);
          conn.removeSigHandler(TestSignalInterface.TestSignal.class, bash);
@@ -469,11 +487,11 @@ public class test
       /** Call the remote object and get a response. */
       TestTuple<String,List<Integer>,Boolean> rv = tri2.show(234);
       System.out.println("Show returned: "+rv);
-      if (!":1.0".equals(rv.a) ||
+      if (!":1.1".equals(rv.a) ||
             1 != rv.b.size() ||
             1953 != rv.b.get(0) ||
             true != rv.c.booleanValue())
-         fail("show return value incorrect ("+rv+")");
+         fail("show return value incorrect ("+rv.a+","+rv.b+","+rv.c+")");
       
       System.out.println("Doing stuff asynchronously");
       DBusAsyncReply<Boolean> stuffreply = (DBusAsyncReply<Boolean>) conn.callMethodAsync(tri2, "dostuff", new TestStruct("bar", new UInt32(52), new Variant<Boolean>(new Boolean(true))));
@@ -562,6 +580,9 @@ public class test
       System.out.print(tni.getName()+" ");
       System.out.println("done");
 
+      /* send an object in a signal */
+      conn.sendSignal(new TestSignalInterface.TestObjectSignal("/foo/bar/Wibble", tclass));
+
       /** Pause while we wait for the DBus messages to go back and forth. */
       Thread.sleep(1000);
 
@@ -576,6 +597,7 @@ public class test
 
       if (!done1) fail("Signal handler 1 failed to be run");
       if (!done2) fail("Signal handler 2 failed to be run");
+      if (!done3) fail("Signal handler 3 failed to be run");
       
    } catch (Exception e) {
       e.printStackTrace();

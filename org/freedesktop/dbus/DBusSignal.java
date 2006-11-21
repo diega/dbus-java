@@ -27,16 +27,30 @@ import java.lang.reflect.TypeVariable;
  */
 public abstract class DBusSignal extends DBusMessage
 {
+   private static class internalsig extends DBusSignal
+   {
+      public internalsig(String source, String objectpath, String type, String name, String sig, Object[] parameters, long serial)
+      {
+         super(source, objectpath, type, name, sig, parameters, serial);
+      }
+   }
    private static Map<Class, Type[]> typeCache = new HashMap<Class, Type[]>();
    private static Map<Class, Constructor> conCache = new HashMap<Class, Constructor>();
    /** The path to the object this is emitted from */
    protected String objectpath;
+   private Class<? extends DBusSignal> c;
    DBusSignal(String source, String objectpath, String type, String name, String sig, Object[] parameters, long serial)
    {
       super(source, type, name, sig, parameters, serial);
       this.objectpath = objectpath;
    }
    static DBusSignal createSignal(Class<? extends DBusSignal> c, String source, String objectpath, String sig, long serial, Object... parameters) throws DBusException
+   {
+      DBusSignal s = new internalsig(source, objectpath, c.getEnclosingClass().getName(), c.getSimpleName(), sig, parameters, serial);
+      s.c = c;
+      return s;
+   }
+   DBusSignal createReal() throws DBusException
    {
       Type[] types = typeCache.get(c);
       Constructor con = conCache.get(c);

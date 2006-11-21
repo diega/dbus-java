@@ -14,6 +14,15 @@ import org.freedesktop.dbus.DBusConnection;
 
 public class two_part_test_client
 {
+   public static class two_part_test_object implements TwoPartObject
+   {
+      public boolean isRemote() { return false; }
+      public String getName() 
+      { 
+         System.out.println("client name");
+         return toString(); 
+      }
+   }
    public static void main(String[] args) throws Exception
    {
       System.out.println("get conn");
@@ -24,6 +33,10 @@ public class two_part_test_client
       TwoPartObject o = remote.getNew();
       System.out.println("get name");
       System.out.println(o.getName());
+      two_part_test_object tpto = new two_part_test_object();
+      conn.exportObject("/TestObject", tpto);
+      conn.sendSignal(new TwoPartInterface.TwoPartSignal("/FromObject", tpto));
+      try { Thread.sleep(1000); } catch (InterruptedException Ie) {}
       conn.disconnect();
    }
 }

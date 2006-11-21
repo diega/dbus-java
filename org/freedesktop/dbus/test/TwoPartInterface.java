@@ -10,9 +10,20 @@
 */
 package org.freedesktop.dbus.test;
 
+import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.DBusSignal;
 
 public interface TwoPartInterface extends DBusInterface
 {
    public TwoPartObject getNew();
+   public class TwoPartSignal extends DBusSignal
+   {
+      public final TwoPartObject o;
+      public TwoPartSignal(String path, TwoPartObject o) throws DBusException
+      {
+         super (path, o);
+         this.o = o;
+      }
+   }
 }

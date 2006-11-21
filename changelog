@@ -1,5 +1,8 @@
 Version 1.13:
-	
+
+	* add AccessDenied signal
+	* fix deadlock issue when sending objectpaths in signals
+
 Version 1.12:
 
 	* fix internal-cross-test bugs and increase error verbosity

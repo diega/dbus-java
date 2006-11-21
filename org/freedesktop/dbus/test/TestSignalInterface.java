@@ -50,4 +50,14 @@ public interface TestSignalInterface extends DBusInterface
          this.v = v;
       }
    }
+   @Description("Test signal sending an object path")
+   public static class TestObjectSignal extends DBusSignal
+   {
+      public final DBusInterface otherpath;
+      public TestObjectSignal(String path, DBusInterface otherpath) throws DBusException
+      {
+         super(path, otherpath);
+         this.otherpath = otherpath;
+      }
+   }
 }
