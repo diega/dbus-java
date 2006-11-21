@@ -14,7 +14,7 @@ To compile and install these bindings you will need:
 To build and install the documentation you will also need:
 
    A LaTeX environment
-   latex2html
+   tex4ht
    docbook
 
 Compiling the Bindings
