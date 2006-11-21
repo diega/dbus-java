@@ -3,6 +3,8 @@ Version 1.12:
 	* fix internal-cross-test bugs and increase error verbosity
 	* add org.freedesktop.DBus.Error.NoReply, change to that from my own
 	* add -pedantic -std=c99 flags to GCC
+	* remove supplied Hal classes as they are out of date
+	* change to using tex4ht rather than latex2html
 
 Version 1.11:
 
