@@ -120,7 +120,7 @@ doc/dbus-java.pdf: doc/dbus-java.dvi .doc
 doc/dbus-java/index.html: dbus-java.tex .doc
 	mkdir -p doc/dbus-java/
 	(cd doc/dbus-java; TEX4HTENV=/etc/tex4ht/tex4ht.env htlatex ../../dbus-java.tex "xhtml,2" "" "-cvalidate")
-	rm -f doc/dbus-java/*{4ct,4tc,aux,dvi,idv,lg,lag,tmp,xref}
+	rm -f doc/dbus-java/*{4ct,4tc,aux,dvi,idv,lg,log,tmp,xref}
 	cp doc/dbus-java/dbus-java.html doc/dbus-java/index.html
 doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
 	$(JAVADOC) -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java 
@@ -225,7 +225,6 @@ install-doc: doc
 	install -d $(DOCPREFIX)/dbus-java
 	install -m 644 doc/dbus-java/*.html $(DOCPREFIX)/dbus-java
 	install -m 644 doc/dbus-java/*.css $(DOCPREFIX)/dbus-java
-	install -m 644 doc/dbus-java/*.png $(DOCPREFIX)/dbus-java
 	install -d $(DOCPREFIX)/api
 	cp -a doc/api/* $(DOCPREFIX)/api
 
