@@ -540,6 +540,14 @@ receive an object path they will automatically convert it into the object you
 are exporting with that object path. You can pass remote objects back to their
 processes in a similar fashion.
 
+Using a parameter of type {\tt DBusInterface} can cause the automatic creation
+of a proxy object using introspection. If the remote app does not support
+introspection, or the object does not exist at the time you receive the message
+then this will fail. In that case the parameter can be declared to be of type
+{\tt Path}. In this case no automatic creation will be performed and you can
+get the path as a string with either the {\tt getPath} or {\tt toString} methods
+on the {\tt Path} object.
+
 
 \subsection{Multiple Return Values}
 
@@ -609,6 +617,7 @@ UInt64	&	DBUS\_TYPE\_UINT64	\\
 double	&	DBUS\_TYPE\_DOUBLE	\\
 Double	&	DBUS\_TYPE\_DOUBLE	\\
 String	&	DBUS\_TYPE\_STRING	\\
+Path	&	DBUS\_TYPE\_OBJECT\_PATH	\\
 $<$T$>$	&	DBUS\_TYPE\_VARIANT	\\
 Variant	&	DBUS\_TYPE\_VARIANT	\\
 ? extends Struct	&	DBUS\_TYPE\_STRUCT	\\

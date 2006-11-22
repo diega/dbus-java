@@ -1,4 +1,3 @@
- * add Path to documentation
  * support Enums as UInt32s
  * use native java backend
  * allow 'virtual' object handlers, so that all object paths under a certain hierarchy are handled by the same object
