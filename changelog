@@ -1,8 +1,8 @@
 Version 1.13:
 
 	* add AccessDenied signal
-	* fix deadlock issue when sending objectpaths in signals
-	* add Path type which can be used for non-auto OBJECT_PATH handling
+	* fix deadlock issue when sending objectpaths in signals, spotted by Mathis
+	* add Path type which can be used for non-auto OBJECT_PATH handling, spotted by Mathis
 
 Version 1.12:
 
