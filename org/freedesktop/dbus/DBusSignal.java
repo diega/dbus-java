@@ -46,7 +46,10 @@ public abstract class DBusSignal extends DBusMessage
    }
    static DBusSignal createSignal(Class<? extends DBusSignal> c, String source, String objectpath, String sig, long serial, Object... parameters) throws DBusException
    {
-      DBusSignal s = new internalsig(source, objectpath, c.getEnclosingClass().getName(), c.getSimpleName(), sig, parameters, serial);
+      String type = "";
+      if (null != c.getEnclosingClass())
+         type = DBusConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
+      DBusSignal s = new internalsig(source, objectpath, type, c.getSimpleName(), sig, parameters, serial);
       s.c = c;
       return s;
    }

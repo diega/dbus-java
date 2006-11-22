@@ -71,6 +71,10 @@ class SignalTuple
          +   (null == source ? 0 : source.hashCode())
          +   (null == object ? 0 : object.hashCode());
    }
+   public String toString()
+   {
+      return "SignalTuple("+type+","+name+","+object+","+source+")";
+   }
 }
 
 class MethodTuple
