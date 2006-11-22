@@ -551,6 +551,8 @@ public class DBusConnection
       else if (c.equals(Variant.class)) out[level].append('v');
       else if (c instanceof Class && 
             DBusInterface.class.isAssignableFrom((Class) c)) out[level].append('o');
+      else if (c instanceof Class && 
+            Path.class.equals((Class) c)) out[level].append('o');
       else if (c instanceof Class && ((Class) c).isArray()) {
          if (Type.class.equals(((Class) c).getComponentType()))
             out[level].append('g');
@@ -831,9 +833,12 @@ public class DBusConnection
 
       // its an object path, get/create the proxy
       if (parameter instanceof ObjectPath) {
-         parameter = ((ObjectPath) parameter).conn.getExportedObject(
-               ((ObjectPath) parameter).source,
-               ((ObjectPath) parameter).path);
+         if (type instanceof Class && Path.class.equals((Class) type))
+            parameter = new Path(((ObjectPath) parameter).path);
+         else
+            parameter = ((ObjectPath) parameter).conn.getExportedObject(
+                  ((ObjectPath) parameter).source,
+                  ((ObjectPath) parameter).path);
       }
       
       // it should be a struct. create it

@@ -1154,6 +1154,16 @@ int append_args(JNIEnv * env, DBusMessageIter* args, jobjectArray params, jobjec
          (*env)->ReleaseStringUTFChars(env, vitem, cstringval);
          (*env)->DeleteLocalRef(env, vitem);
       }
+      else if (0 == strncmp(ctype, "org.freedesktop.dbus.Path", slen)) {
+         mid = (*env)->GetMethodID(env, clazz, "getPath", "()Ljava/lang/String;");
+         vitem = (*env)->CallObjectMethod(env, item, mid);
+         if ((*env)->ExceptionOccurred(env)) return -1;
+         cstringval = (*env)->GetStringUTFChars(env, vitem, 0);
+         if (!dbus_message_iter_append_basic(args, DBUS_TYPE_OBJECT_PATH, &cstringval)) 
+            return -1;
+         (*env)->ReleaseStringUTFChars(env, vitem, cstringval);
+         (*env)->DeleteLocalRef(env, vitem);
+      }
       else if ((*env)->IsInstanceOf(env, item, serialclass)) {
          
          // get members

@@ -11,6 +11,7 @@
 package org.freedesktop.dbus.test;
 
 import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.Path;
 import org.freedesktop.dbus.UInt16;
 import org.freedesktop.DBus.Description;
 import org.freedesktop.DBus.Method;
@@ -40,4 +41,6 @@ public interface TestRemoteInterface extends DBusInterface
    public int overload();
    @Description("Testing Type Signatures")
    public void sig(Type[] s);
+   @Description("Testing object paths as Path objects")
+   public void newpathtest(Path p);
 }

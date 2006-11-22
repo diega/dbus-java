@@ -27,6 +27,7 @@ import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusListType;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.DBusSignal;
+import org.freedesktop.dbus.Path;
 import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
@@ -54,6 +55,11 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    public testclass(DBusConnection conn)
    {
       this.conn = conn;
+   }
+   public void newpathtest(Path p)
+   {
+      if (!p.toString().equals("/new/path/test"))
+         test.fail("new path test got wrong path");
    }
    public void waitawhile()
    {
@@ -456,6 +462,8 @@ public class test
       Vector<Type> ts = new Vector<Type>();
       DBusConnection.getJavaType("ya{si}", ts, -1);
       tri.sig(ts.toArray(new Type[0]));
+
+      tri.newpathtest(new Path("/new/path/test"));
      
       /** Try and call an invalid remote object */
       try {
