@@ -3,6 +3,12 @@ Version 1.13:
 	* add AccessDenied signal
 	* fix deadlock issue when sending objectpaths in signals, spotted by Mathis
 	* add Path type which can be used for non-auto OBJECT_PATH handling, spotted by Mathis
+	* fix some freebsd build issues:
+		* remove explicit recursive make calls
+		* parameterize /usr/lib as DBUSLIBDIR
+	  Spotted by Roberto Francisco Arroyo Moreno <robfram -at- ugr -dot- es>
+	* rejig build system to replace variables in wrapper in make stage and
+	  use DESTDIR properly, hence removing the RUPREFIX stuff.
 
 Version 1.12:
 

@@ -1,6 +1,0 @@
-#!/bin/sh --
-
-JARPATH=%JARPATH%
-LIBPATH=%LIBPATH%
-
-java -Djava.library.path=/usr/lib:$LIBPATH -cp $JARPATH/dbus.jar org.freedesktop.dbus.CreateInterface "$@"
