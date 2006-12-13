@@ -8,7 +8,9 @@ Version 1.13:
 		* parameterize /usr/lib as DBUSLIBDIR
 	  Spotted by Roberto Francisco Arroyo Moreno <robfram -at- ugr -dot- es>
 	* rejig build system to replace variables in wrapper in make stage and
-	  use DESTDIR properly, hence removing the RUPREFIX stuff.
+	  use DESTDIR properly, hence removing the RUNPREFIX stuff.
+	* add checks and documentation for DBusInterfaces not being in a package.
+	  Spotted by Henrik Petander <henrik -dot- petander -at- iki -dot- fi>
 
 Version 1.12:
 

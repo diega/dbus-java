@@ -122,6 +122,10 @@ class ExportedObject
       Map<MethodTuple,Method> m = new HashMap<MethodTuple,Method>();
       for (Class i: c.getInterfaces())
          if (DBusInterface.class.equals(i)) {
+            // don't let people export things which don't have a
+            // valid D-Bus interface name
+            if (i.getName().equals(i.getSimpleName()))
+               throw new DBusException("DBusInterfaces cannot be declared outside a package");
             // add this class's public methods
             if (c.getName().length() > DBusConnection.MAX_NAME_LENGTH) 
                throw new DBusException("Introspected interface name exceeds 255 characters. Cannot export objects of type "+c.getName()+".");
@@ -1207,7 +1211,7 @@ public class DBusConnection
        * as the interface the remote object is exporting.
        * @return A reference to a remote object.
        * @throws ClassCastException If type is not a sub-type of DBusInterface
-       * @throws DBusException If busname or objectpath are incorrectly formatted.
+       * @throws DBusException If busname or objectpath are incorrectly formatted or type is not in a package.
    */
    public DBusInterface getPeerRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type) throws DBusException
    {
@@ -1297,7 +1301,7 @@ public class DBusConnection
        * returned immediately.
        * @return A reference to a remote object.
        * @throws ClassCastException If type is not a sub-type of DBusInterface
-       * @throws DBusException If busname or objectpath are incorrectly formatted.
+       * @throws DBusException If busname or objectpath are incorrectly formatted or type is not in a package.
     */
    public DBusInterface getPeerRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type, boolean autostart) throws DBusException
    {
@@ -1323,7 +1327,7 @@ public class DBusConnection
        * as the interface the remote object is exporting.
        * @return A reference to a remote object.
        * @throws ClassCastException If type is not a sub-type of DBusInterface
-       * @throws DBusException If busname or objectpath are incorrectly formatted.
+       * @throws DBusException If busname or objectpath are incorrectly formatted or type is not in a package.
     */
    public DBusInterface getRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type) throws DBusException
    {
@@ -1345,7 +1349,7 @@ public class DBusConnection
        * returned immediately.
        * @return A reference to a remote object.
        * @throws ClassCastException If type is not a sub-type of DBusInterface
-       * @throws DBusException If busname or objectpath are incorrectly formatted.
+       * @throws DBusException If busname or objectpath are incorrectly formatted or type is not in a package.
     */
    public DBusInterface getRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type, boolean autostart) throws DBusException
    {
@@ -1361,6 +1365,11 @@ public class DBusConnection
          throw new DBusException("Invalid object path ("+objectpath+")");
       
       if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Interface");
+
+      // don't let people import things which don't have a
+      // valid D-Bus interface name
+      if (type.getName().equals(type.getSimpleName()))
+         throw new DBusException("DBusInterfaces cannot be declared outside a package");
       
       RemoteObject ro = new RemoteObject(busname, objectpath, type, autostart);
       DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
@@ -1471,7 +1480,7 @@ public class DBusConnection
     */
    public <T extends DBusSignal> void addSigHandler(Class<T> type, DBusSigHandler<T> handler) throws DBusException
    {
-      if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal");
+      if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Signal"); 
       addSigHandler(new DBusMatchRule(type), handler);
    }
    /** 

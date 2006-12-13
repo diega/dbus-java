@@ -205,7 +205,9 @@ if (stuffreply.hasReply()) {
 
 To call methods or expose methods on D-Bus you need to define them with their
 exact signature in a Java interface. The full name of this interface must be
-the same as the D-Bus interface they represent.
+the same as the D-Bus interface they represent. In addition, D-Bus interface
+names must contain at least one period. This means that DBusInterfaces cannot
+be declared without being in a package. 
 
 For example, if I want to expose methods on the interface {\em
 ``org.freedesktop.DBus''} I would define a Java interface in the package {\tt

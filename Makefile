@@ -231,7 +231,7 @@ install-doc: doc
 	cp -a doc/api/* $(DESTDIR)$(DOCPREFIX)/api
 
 dist: .dist
-.dist: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL
+.dist: dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh ListDBus.sh DBusViewer.sh
 	mkdir -p libdbus-java-$(VERSION)
 	cp -fa $^ libdbus-java-$(VERSION)
 	touch .dist
@@ -247,7 +247,7 @@ libdbus-java-$(VERSION): .dist
 libdbus-java-$(VERSION).tar.gz: .dist
 	tar zcf $@ libdbus-java-$(VERSION)
 	
-libdbus-java-$(RELEASEVERSION).tar.gz: bin dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL
+libdbus-java-$(RELEASEVERSION).tar.gz: dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh ListDBus.sh DBusViewer.sh
 	mkdir -p libdbus-java-$(RELEASEVERSION)/
 	cp -fa $^ libdbus-java-$(RELEASEVERSION)/
 	tar zcf $@ libdbus-java-$(RELEASEVERSION)
