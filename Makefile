@@ -167,8 +167,9 @@ cross-test-compile: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$
 internal-cross-test: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	( dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  $(MAKE) -s cross-test-server > server.log &\
-	  $(MAKE) -s cross-test-client > client.log ;\
+	  $(MAKE) -s cross-test-server | tee server.log &\
+	  sleep 1;\
+	  $(MAKE) -s cross-test-client | tee client.log ;\
 	  kill $$(cat pid) ; )
 
 two-part-test: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
