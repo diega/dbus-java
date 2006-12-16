@@ -207,6 +207,12 @@ public class Message
          case ArgumentType.BOOLEAN:
             appendint(((Boolean) data).booleanValue() ? 1 : 0, 4);
             break;
+         case ArgumentType.DOUBLE:
+            //TODO
+            break;
+         case ArgumentType.FLOAT:
+            //TODO
+            break;
          case ArgumentType.UINT32:
             appendint(((Number) data).longValue(), 4);
             break;
@@ -214,7 +220,7 @@ public class Message
             appendint(((Number) data).longValue(), 8);
             break;
          case ArgumentType.UINT64:
-            //appendint(((Number) data).longValue(), 8);
+            //TODO appendint(((Number) data).longValue(), 8);
             break;
          case ArgumentType.INT32:
             appendint(((Number) data).intValue(), 4);
@@ -240,6 +246,7 @@ public class Message
             appendBytes(new byte[1]);
             break;
          case ArgumentType.ARRAY:
+            // TODO: optimise primatives
             byte[] len = new byte[4];
             appendBytes(len);
             Object[] contents = (Object[]) data;
@@ -256,6 +263,12 @@ public class Message
             contents = (Object[]) data;
             int j = 0;
             for (i++; sigb[i] != ArgumentType.STRUCT2; i++)
+               i = appendone(sigb, i, contents[j++]);
+            break;
+         case ArgumentType.DICT_ENTRY1:
+            contents = (Object[]) data;
+            int j = 0;
+            for (i++; sigb[i] != ArgumentType.DICT_ENTRY2; i++)
                i = appendone(sigb, i, contents[j++]);
             break;
          case ArgumentType.VARIANT:
@@ -334,7 +347,18 @@ public class Message
             rv = demarshallint(buf, ofs[1], 4);
             ofs[1] += 4;
             break;
+         case ArgumentType.INT32:
+         case ArgumentType.INT16:
+         case ArgumentType.UINT16:
+         case ArgumentType.INT64:
+         case ArgumentType.UINT64:
+         case ArgumentType.DOUBLE:
+         case ArgumentType.FLOAT:
+         case ArgumentType.BOOLEAN:
+            // TODO
+            break;
          case ArgumentType.ARRAY:
+            // TODO: optimise primatives
             long length = demarshallint(buf, ofs[1], 4);
             ofs[1] += 4;
             ofs[1] = align(ofs[1], sigb[++ofs[0]]);
@@ -355,6 +379,14 @@ public class Message
             ofs[0]++;
             rv = contents.toArray();
             break;
+         case ArgumentType.DICT_ENTRY1:
+            contents = new Vector<Object>();
+            while (sigb[++ofs[0]] != ArgumentType.DICT_ENTRY2) {
+               contents.add(extractone(sigb, buf, ofs));
+            }
+            ofs[0]++;
+            rv = contents.toArray();
+            break;
          case ArgumentType.VARIANT:
             int[] newofs = new int[] { 0, ofs[1] };
             String sig = (String) extract(ArgumentType.SIGNATURE_STRING, buf, newofs)[0];
@@ -366,8 +398,6 @@ public class Message
          case ArgumentType.OBJECT_PATH:
             length = demarshallint(buf, ofs[1], 4);
             ofs[1] += 4;
-            Debug.print("stringlen: "+length);
-            Debug.print("string[0]: "+buf[ofs[1]]);
             rv = new String(buf, ofs[1], (int)length);
             ofs[1] += length + 1;
             break;
