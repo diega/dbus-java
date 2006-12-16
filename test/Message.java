@@ -234,7 +234,7 @@ public class Message
             appendint(payload.length(), 4);
             appendBytes(payload.getBytes());
             int m = payload.length()+4;
-            appendBytes(new byte[(m/4+1)*4-m]);
+            pad(ArgumentType.STRING);
             break;
          case ArgumentType.SIGNATURE:
             payload = (String) data;
