@@ -1,5 +1,6 @@
 package test;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,13 +77,17 @@ public class Message
       public static final byte DICT_ENTRY1='{';
       public static final byte DICT_ENTRY2='}';
    }
-   public static final String HEADER_TYPE="yyyyuua(yv)";
    private boolean big;
    private List<byte[]> wiredata;
-   private long bytecounter;
-   private Map<Byte, String> headers;
-   protected static long serial = 0;
+   protected long bytecounter;
+   protected Map<Byte, Object> headers;
+   protected static long globalserial = 0;
    private static byte[][] padding;
+   protected long serial;
+   protected byte type;
+   protected byte flags;
+   protected byte protover;
+   protected Object[] args;
    static {
       padding = new byte[][] {
          null,
@@ -94,53 +99,45 @@ public class Message
             new byte[6],
             new byte[7] };
    }
-   public Message(byte endian)
+   protected Message(byte endian, byte type, byte flags)
    {
       wiredata = new Vector<byte[]>();
-      headers = new HashMap<Byte, String>();
+      headers = new HashMap<Byte, Object>();
       big = (Endian.BIG == endian);
       bytecounter = 0;
+      serial = ++globalserial;
+      this.type = type;
+      this.flags = flags;
+      append("yyyy", endian, type, flags, Message.PROTOCOL);
    }
-   public Message(byte[] msg, byte[] headers, byte[] body) 
+   protected Message()
+   {
+      wiredata = new Vector<byte[]>();
+      headers = new HashMap<Byte, Object>();
+      bytecounter = 0;
+   }
+   void populate(byte[] msg, byte[] headers, byte[] body) 
    {
       big = (msg[0] == Endian.BIG);
-      wiredata = new Vector<byte[]>();
+      type = msg[1];
+      flags = msg[2];
+      protover = msg[3];
       wiredata.add(msg);
       wiredata.add(headers);
       wiredata.add(body);
+      serial = (Long) extract(Message.ArgumentType.UINT32_STRING, msg, 8)[0];
       bytecounter = msg.length+headers.length+body.length;
-      this.headers = new HashMap<Byte, String>();
-      Hexdump.print(headers);
-      for (int i = 0; i < headers.length; i++) {
-         Debug.print(i);
-         byte type = headers[i++]; // get type
-         Debug.print("header: "+type+" sig: "+((char) headers[i+1]));
-         if (headers[i+1] == 's') {
-            i+=headers[i]+2; // skip sig
-            Debug.print(i);
-            long l = demarshallint(headers, i, 4); // get string length
-            i+=4;
-            String value = new String(headers, i++, (int) l);
-            i+=l;
-            Debug.print("header: "+type+" = "+value);
-            this.headers.put(type, value);
-         } else if (headers[i+1] == 'u')
-            i+=headers[i]+2;
-         else if (headers[i+1] == 'g') {
-            i+=headers[i]+2;
-            byte l = headers[i++];
-            String value = new String(headers, i++, (int) l);
-            i += l;
-            Debug.print("header: "+type+" = "+value);
-            this.headers.put(type, value);
-         }
-         while (i%8 != 7) i++; // skip to alignment boundry
+      Debug.print(headers);
+      Object[] hs = extract("a(yv)", headers, 0);
+      Debug.print(Arrays.deepToString(hs));
+      for (Object o: (Object[]) hs[0]) {
+         this.headers.put((Byte) ((Object[])o)[0], ((Object[])((Object[])o)[1])[1]);
       }
    }
-   private void appendBytes(byte[] buf) 
+   protected void appendBytes(byte[] buf) 
    {
       if (null == buf) return;
-      wiredata.add(buf); bytecounter+=buf.length; 
+      wiredata.add(buf); bytecounter += buf.length; 
    }
    public long demarshallint(byte[] buf, int ofs, int width)
    { return big ? demarshallintBig(buf,ofs,width) : demarshallintLittle(buf,ofs,width); }
@@ -196,7 +193,7 @@ public class Message
    {
       return headers.toString();
    }
-   public String getHeader(byte type) { return headers.get(type); }
+   public Object getHeader(byte type) { return headers.get(type); }
    private int appendone(byte[] sigb, int sigofs, Object data)
    {
       int i = sigofs;
@@ -279,18 +276,19 @@ public class Message
    private int getAlignment(byte type)
    {
       switch (type) {
+         case 2:
          case ArgumentType.INT16:
          case ArgumentType.UINT16:
-         case 2:
             return 2;
+         case 4:
          case ArgumentType.BOOLEAN:
          case ArgumentType.INT32:
          case ArgumentType.UINT32:
          case ArgumentType.STRING:
          case ArgumentType.OBJECT_PATH:
          case ArgumentType.ARRAY:
-         case 4:
             return 4;
+         case 8:
          case ArgumentType.INT64:
          case ArgumentType.UINT64:
          case ArgumentType.DOUBLE:
@@ -300,12 +298,11 @@ public class Message
          case ArgumentType.DICT_ENTRY1:
          case ArgumentType.STRUCT2:
          case ArgumentType.DICT_ENTRY2:
-         case 8:
             return 8;
+         case 1:
          case ArgumentType.BYTE:
          case ArgumentType.SIGNATURE:
          case ArgumentType.VARIANT:
-         case 1:
          default:
             return 1;
       }
@@ -316,5 +313,85 @@ public class Message
       int j = 0;
       for (int i = 0; i < sigb.length; i++)
          i = appendone(sigb, i, data[j++]);
+   }
+   public int align(int current, byte type)
+   {
+      Debug.print("aligning to "+(char)type);
+      int a = getAlignment(type);
+      if (0 == (current%a)) return current;
+      return current+(a-(current%a));
+   }
+   private Object extractone(byte[] sigb, byte[] buf, int[] ofs)
+   {
+      Debug.print("Extracting type: "+((char)sigb[ofs[0]])+" from offset "+ofs[1]);
+      Object rv = null;
+      ofs[1] = align(ofs[1], sigb[ofs[0]]);
+      switch (sigb[ofs[0]]) {
+         case ArgumentType.BYTE:
+            rv = buf[ofs[1]++];
+            break;
+         case ArgumentType.UINT32:
+            rv = demarshallint(buf, ofs[1], 4);
+            ofs[1] += 4;
+            break;
+         case ArgumentType.ARRAY:
+            long length = demarshallint(buf, ofs[1], 4);
+            ofs[1] += 4;
+            ofs[1] = align(ofs[1], sigb[++ofs[0]]);
+            int ofssave = ofs[0];
+            long end = ofs[1]+length;
+            Vector<Object> contents = new Vector<Object>();
+            while (ofs[1] < end) {
+               ofs[0] = ofssave;
+               contents.add(extractone(sigb, buf, ofs));
+            }
+            rv = contents.toArray();
+            break;
+         case ArgumentType.STRUCT1:
+            contents = new Vector<Object>();
+            while (sigb[++ofs[0]] != ArgumentType.STRUCT2) {
+               contents.add(extractone(sigb, buf, ofs));
+            }
+            ofs[0]++;
+            rv = contents.toArray();
+            break;
+         case ArgumentType.VARIANT:
+            int[] newofs = new int[] { 0, ofs[1] };
+            String sig = (String) extract(ArgumentType.SIGNATURE_STRING, buf, newofs)[0];
+            newofs[0] = 0;
+            rv = new Object[] { sig, extract(sig, buf, newofs)[0] };
+            ofs[1] = newofs[1];
+            break;
+         case ArgumentType.STRING:
+         case ArgumentType.OBJECT_PATH:
+            length = demarshallint(buf, ofs[1], 4);
+            ofs[1] += 4;
+            Debug.print("stringlen: "+length);
+            Debug.print("string[0]: "+buf[ofs[1]]);
+            rv = new String(buf, ofs[1], (int)length);
+            ofs[1] += length + 1;
+            break;
+         case ArgumentType.SIGNATURE:
+            length = (buf[ofs[1]++] & 0xFF);
+            rv = new String(buf, ofs[1], (int)length);
+            ofs[1] += length + 1;
+            break;
+      }
+      Debug.print("Extracted: "+rv);
+      return rv;
+   }
+   public Object[] extract(String sig, byte[] buf, int ofs)
+   {
+      return extract(sig, buf, new int[] { 0, ofs });
+   }
+   public Object[] extract(String sig, byte[] buf, int[] ofs)
+   {
+      Debug.print("extract("+sig+",#"+buf.length+", {"+ofs[0]+","+ofs[1]+"}");
+      Vector<Object> rv = new Vector<Object>();
+      byte[] sigb = sig.getBytes();
+      for (int[] i = ofs; i[0] < sigb.length; i[0]++) {
+         rv.add(extractone(sigb, buf, i));
+      }
+      return rv.toArray();
    }
 }

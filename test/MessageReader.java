@@ -15,19 +15,42 @@ public class MessageReader
    }
    public Message readMessage() throws IOException
    {
-      byte[] buf = new byte[16];
+      byte[] buf = new byte[12];
       in.read(buf);
-      Hexdump.print(buf);
-      int bodylen = (int) Message.demarshallint(buf, 4, buf[0], 4);
-      int headerlen = (int) Message.demarshallint(buf, 12, buf[0], 4);
-      Debug.print("bodylen: "+bodylen+" headerlen: "+headerlen);
-      headerlen=((headerlen/8)+1)*8;
-      byte[] header=new byte[headerlen];
-      in.read(header);
-      Hexdump.print(header);
+      byte endian = buf[0];
+      byte type = buf[1];
+      byte protover = buf[3];
+      if (protover > Message.PROTOCOL)
+         throw new MessageProtocolVersionException("Protocol version "+protover+" is unsupported");
+      int bodylen = (int) Message.demarshallint(buf, 4, endian, 4);
+      byte[] tbuf = new byte[4];
+      in.read(tbuf);
+      int headerlen = (int) Message.demarshallint(tbuf, 0, endian, 4);
+      if (0 != headerlen % 8)
+         headerlen += 8-(headerlen%8);
+      byte[] header=new byte[headerlen+8];
       byte[] body=new byte[bodylen];
+      System.arraycopy(tbuf, 0, header, 0, 4);
+      in.read(header, 8, headerlen);
       in.read(body);
-      Hexdump.print(body);
-      return new Message(buf, header, body);
+      Message m;
+      switch (type) {
+         case Message.MessageType.METHOD_CALL:
+            m = new MethodCall();
+            break;
+         case Message.MessageType.METHOD_RETURN:
+            m = new MethodReturn();
+            break;
+         case Message.MessageType.SIGNAL:
+            m = new Signal();
+            break;
+         case Message.MessageType.ERROR:
+            m = new Error();
+            break;
+         default:
+            throw new MessageTypeException("Message type "+type+" unsupported");
+      }
+      m.populate(buf, header, body);
+      return m;
    }
 }

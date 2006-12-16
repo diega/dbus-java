@@ -19,10 +19,12 @@ public class test
       Message m = new MethodCall("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "Hello", null);
       conn.mout.writeMessage(m);
       m = conn.min.readMessage();
+      Debug.print(m.getClass());
       Debug.print(m);
       m = conn.min.readMessage();
+      Debug.print(m.getClass());
       Debug.print(m);
-      m = new MethodCall("org.freedesktop.DBus", "/", null, "Hello", null);
+      m = new MethodCall("org.freedesktop.DBus", "/", null, "Hell", null);
       conn.mout.writeMessage(m);
       m = conn.min.readMessage();
       Debug.print(m);
