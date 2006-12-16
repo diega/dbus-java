@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import cx.ath.matthew.unix.UnixSocket;
@@ -20,6 +21,47 @@ import java.util.Vector;
 
 public class test
 {
+   public static class MessageReader
+   {
+      private InputStream in;
+      public MessageReader(InputStream in)
+      {
+         this.in = in;
+      }
+      public Message readMessage() throws IOException
+      {
+         byte[] buf = new byte[16];
+         in.read(buf);
+         Hexdump.print(buf);
+         int bodylen = (int) Message.demarshallint(buf, 4, buf[0], 4);
+         int headerlen = (int) Message.demarshallint(buf, 12, buf[0], 4);
+         Debug.print("bodylen: "+bodylen+" headerlen: "+headerlen);
+         headerlen=((headerlen/8)+1)*8;
+         byte[] header=new byte[headerlen];
+         in.read(header);
+         Hexdump.print(header);
+         byte[] body=new byte[bodylen];
+         in.read(body);
+         Hexdump.print(body);
+         return new Message(buf, header, body);
+      }
+   }
+   public static class MessageWriter
+   {
+      private OutputStream out;
+      public MessageWriter(OutputStream out)
+      {
+         this.out = out;
+      }
+      public void writeMessage(Message m) throws IOException
+      {
+         for (byte[] buf: m.getWireData()) {
+            Hexdump.print(buf);
+            out.write(buf);
+         }
+         out.flush();
+      }
+   }
    public static class BusAddress
    {
       private String type;
@@ -39,6 +81,41 @@ public class test
       public String getParameter(String key) { return parameters.get(key); }
       public String toString() { return type+": "+parameters; }
    }
+   public static class MethodCall extends Message
+   {
+      public MethodCall(String dest, String path, String iface, String member, String sig, Object... args) 
+      {
+         super(Message.Endian.BIG);
+         Vector<Object> hargs = new Vector<Object>();
+         hargs.add(new Object[] { Message.HeaderField.DESTINATION, new Object[] { ArgumentType.STRING_STRING, dest } });
+         hargs.add(new Object[] { Message.HeaderField.PATH, new Object[] { ArgumentType.OBJECT_PATH_STRING, path } });
+         if (null != iface)
+            hargs.add(new Object[] { Message.HeaderField.INTERFACE, new Object[] { ArgumentType.STRING_STRING, iface } });
+         hargs.add(new Object[] { Message.HeaderField.MEMBER, new Object[] { ArgumentType. STRING_STRING, member } });
+         if (null != sig)
+            hargs.add(new Object[] { Message.HeaderField.SIGNATURE, new Object[] { ArgumentType.SIGNATURE_STRING, member } });
+         append(HEADER_TYPE, Message.Endian.BIG, Message.MessageType.METHOD_CALL, 0, 
+               Message.PROTOCOL, 0, ++serial, hargs.toArray());
+         if (null != sig) append(sig, args);
+      }
+   }
+   public static class Signal extends Message
+   {
+      public Signal(String path, String iface, String member, String sig, Object... args) 
+      {
+         super(Message.Endian.BIG);
+         Vector<Object> hargs = new Vector<Object>();
+         hargs.add(new Object[] { Message.HeaderField.PATH, new Object[] { ArgumentType.OBJECT_PATH_STRING, path } });
+         hargs.add(new Object[] { Message.HeaderField.INTERFACE, new Object[] { ArgumentType.STRING_STRING, iface } });
+         hargs.add(new Object[] { Message.HeaderField.MEMBER, new Object[] { ArgumentType.STRING_STRING, member } });
+         if (null != sig)
+            hargs.add(new Object[] { Message.HeaderField.SIGNATURE, new Object[] { ArgumentType.SIGNATURE_STRING, member } });
+         append(HEADER_TYPE, Message.Endian.BIG, Message.MessageType.METHOD_CALL, 0, 
+               Message.PROTOCOL, 0, ++serial, hargs.toArray());
+         if (null != sig) append(sig, args);
+      }
+   }
+
    public static class Message
    {
       public static interface Endian {
@@ -63,6 +140,28 @@ public class test
          public static final byte SIGNATURE = 8;
       }
       public static interface ArgumentType {
+         public static final String BYTE_STRING="y";
+         public static final String BOOLEAN_STRING="b";
+         public static final String INT16_STRING="n";
+         public static final String UINT16_STRING="q";
+         public static final String INT32_STRING="i";
+         public static final String UINT32_STRING="u";
+         public static final String INT64_STRING="x";
+         public static final String UINT64_STRING="t";
+         public static final String DOUBLE_STRING="d";
+         public static final String FLOAT_STRING="f";
+         public static final String STRING_STRING="s";
+         public static final String OBJECT_PATH_STRING="o";
+         public static final String SIGNATURE_STRING="g";
+         public static final String ARRAY_STRING="a";
+         public static final String VARIANT_STRING="v";
+         public static final String STRUCT_STRING="r";
+         public static final String STRUCT1_STRING="(";
+         public static final String STRUCT2_STRING=")";
+         public static final String DICT_ENTRY_STRING="e";
+         public static final String DICT_ENTRY1_STRING="{";
+         public static final String DICT_ENTRY2_STRING="}";
+
          public static final byte BYTE='y';
          public static final byte BOOLEAN='b';
          public static final byte INT16='n';
@@ -85,10 +184,24 @@ public class test
          public static final byte DICT_ENTRY1='{';
          public static final byte DICT_ENTRY2='}';
       }
+      public static final String HEADER_TYPE="yyyyuua(yv)";
       private boolean big;
       private List<byte[]> wiredata;
       private long bytecounter;
       private Map<Byte, String> headers;
+      protected static long serial = 0;
+      private static byte[][] padding;
+      static {
+         padding = new byte[][] {
+            null,
+            new byte[1],
+            new byte[2],
+            new byte[3],
+            new byte[4],
+            new byte[5],
+            new byte[6],
+            new byte[7] };
+      }
       public Message(byte endian)
       {
          wiredata = new Vector<byte[]>();
@@ -113,7 +226,7 @@ public class test
             if (headers[i+1] == 's') {
                i+=headers[i]+2; // skip sig
                Debug.print(i);
-               long l = demarshallUint(headers, i); // get string length
+               long l = demarshallint(headers, i, 4); // get string length
                i+=4;
                String value = new String(headers, i++, (int) l);
                i+=l;
@@ -133,64 +246,58 @@ public class test
          }
 
       }
-      public void appendBytes(byte[] buf) { wiredata.add(buf); bytecounter+=buf.length; }
-      public long demarshallUint(byte[] buf, int ofs)
-      { return big ? demarshallUintBig(buf,ofs) : demarshallUintLittle(buf,ofs); }
-      public long demarshallUintBig(byte[] buf, int ofs)
+      private void appendBytes(byte[] buf) 
+      {
+         if (null == buf) return;
+         wiredata.add(buf); bytecounter+=buf.length; 
+      }
+      public long demarshallint(byte[] buf, int ofs, int width)
+      { return big ? demarshallintBig(buf,ofs,width) : demarshallintLittle(buf,ofs,width); }
+      public static long demarshallint(byte[] buf, int ofs, byte endian, int width)
+      { return endian==Endian.BIG ? demarshallintBig(buf,ofs,width) : demarshallintLittle(buf,ofs,width); }
+      public static long demarshallintBig(byte[] buf, int ofs, int width)
       {
          long l = 0;
-         for (int i = 0; i < 4; i++) {
+         for (int i = 0; i < width; i++) {
             l <<=8;
-            l |= buf[ofs+i];
+            l |= (buf[ofs+i] & 0xFF);
          }
-         Debug.print("demarshalling(big): "+Hexdump.toHex(buf, ofs, 4)+" to "+l);
+         Debug.print("demarshalling(big): "+Hexdump.toHex(buf, ofs, width)+" to "+l);
          return l;
       }
-      public long demarshallUintLittle(byte[] buf, int ofs)
+      public static long demarshallintLittle(byte[] buf, int ofs, int width)
       {
          long l = 0;
-         for (int i = 3; i >= 0; i--) {
+         for (int i = (width-1); i >= 0; i--) {
             l <<=8;
-            l |= buf[ofs+i];
+            l |= (buf[ofs+i] & 0xFF);
          }
-         Debug.print("demarshalling(little): "+Hexdump.toHex(buf, ofs, 4)+" to "+l);
+         Debug.print("demarshalling(little): "+Hexdump.toHex(buf, ofs, width)+" to "+l);
          return l;
       }
 
-      public void appendUInt(long l)
+      public void appendint(long l, int width)
       { 
-         byte[] buf = new byte[4];
-         marshallUInt(l, buf, 0);
+         byte[] buf = new byte[width];
+         marshallint(l, buf, 0, width);
          wiredata.add(buf);
-         bytecounter += 4;
+         bytecounter += width;
       }
-      public void marshallUInt(long l, byte[] buf, int ofs)
-      { if (big) marshallUIntBig(l, buf, 0); else marshallUIntLittle(l, buf, 0); }
-      private void marshallUIntBig(long l, byte[] buf, int ofs) 
+      public void marshallint(long l, byte[] buf, int ofs, int width)
+      { if (big) marshallintBig(l, buf, 0,width); else marshallintLittle(l, buf, 0,width); }
+      private void marshallintBig(long l, byte[] buf, int ofs, int width) 
       {
-         for (int i = 3; i >= 0; i--) {
+         for (int i = (width-1); i >= 0; i--) {
             buf[i+ofs] = (byte) (l & 0xFF);
             l <<= 8;
          }
       }
-      private void marshallUIntLittle(long l, byte[] buf, int ofs) 
+      private void marshallintLittle(long l, byte[] buf, int ofs, int width) 
       {
-         for (int i = 0; i < 4; i++) {
+         for (int i = 0; i < width; i++) {
             buf[i+ofs] = (byte) (l & 0xFF);
             l <<= 8;
          }
-      }
-      public void appendHeader(byte type, String sig, String payload)
-      {
-         appendBytes(new byte[] {type, (byte) sig.length()});
-         appendBytes(sig.getBytes());
-         appendBytes(new byte[1]);
-         appendUInt(payload.length());
-         appendBytes(payload.getBytes());
-         int m = sig.length()+payload.length()+7;
-         Debug.print((m/8+1)*8-m);
-         appendBytes(new byte[(m/8+1)*8-m]);
-         headers.put(type, payload);
       }
       public byte[][] getWireData()
       {
@@ -206,32 +313,36 @@ public class test
          int i = sigofs;
          Debug.print(bytecounter);
          Debug.print("Appending type: "+((char)sigb[i])+" value: "+data);
+         pad(sigb[i]);
          switch (sigb[i]) {
             case ArgumentType.BYTE:
                appendBytes(new byte[] { ((Number) data).byteValue() });
                break;
             case ArgumentType.BOOLEAN:
-               appendUInt(((Boolean) data).booleanValue() ? 1 : 0);
+               appendint(((Boolean) data).booleanValue() ? 1 : 0, 4);
                break;
             case ArgumentType.UINT32:
-               appendUInt(((Number) data).longValue());
+               appendint(((Number) data).longValue(), 4);
                break;
             case ArgumentType.INT64:
-               //appendUInt64(((Number) data).longValue());
+               appendint(((Number) data).longValue(), 8);
+               break;
+            case ArgumentType.UINT64:
+               //appendint(((Number) data).longValue(), 8);
                break;
             case ArgumentType.INT32:
-               appendUInt(((Number) data).intValue());
+               appendint(((Number) data).intValue(), 4);
                break;
             case ArgumentType.UINT16:
-               //appendUInt16(((Number) data).intValue());
+               appendint(((Number) data).intValue(), 2);
                break;
             case ArgumentType.INT16:
-               //appendUInt16(((Number) data).shortValue());
+               appendint(((Number) data).shortValue(), 2);
                break;
             case ArgumentType.STRING:
             case ArgumentType.OBJECT_PATH:
                String payload = (String) data;
-               appendUInt(payload.length());
+               appendint(payload.length(), 4);
                appendBytes(payload.getBytes());
                int m = payload.length()+4;
                appendBytes(new byte[(m/4+1)*4-m]);
@@ -246,15 +357,15 @@ public class test
                byte[] len = new byte[4];
                appendBytes(len);
                Object[] contents = (Object[]) data;
-               int extra = getAlignment(sigb[i++])-4;
-               if (extra > 0)
-                  appendBytes(new byte[extra]);
+               pad(sigb[++i]);
                long c = bytecounter;
                int diff = i;
                for (Object o: contents) 
                   diff = appendone(sigb, i, o);
                i = diff;
-               marshallUInt(bytecounter-c-2, len, 0);
+               Debug.print("start: "+c+" end: "+bytecounter+" length: "+(bytecounter-c));
+               marshallint(bytecounter-c-2, len, 0, 4);
+               pad(sigb[i]);
                break;
             case ArgumentType.STRUCT1:
                contents = (Object[]) data;
@@ -264,19 +375,22 @@ public class test
                break;
             case ArgumentType.VARIANT:
                contents = (Object[]) data;
-               appendone(new byte[] {'g'}, 0, contents[0]);
+               appendone(new byte[] {ArgumentType.SIGNATURE}, 0, contents[0]);
                appendone(((String) contents[0]).getBytes(), 0, contents[1]);
                break;
          }
          return i;
       }
-      public int getAlignment(byte type)
+      private void pad(byte type)
+      {
+         Debug.print("padding for "+(char)type);
+         int a = getAlignment(type);
+         if (0 == (bytecounter%a)) return;
+         appendBytes(padding[(int) (a-(bytecounter%a))]);
+      }
+      private int getAlignment(byte type)
       {
          switch (type) {
-            case ArgumentType.BYTE:
-            case ArgumentType.SIGNATURE:
-            case ArgumentType.VARIANT:
-               return 1;
             case ArgumentType.INT16:
             case ArgumentType.UINT16:
                return 2;
@@ -292,9 +406,16 @@ public class test
             case ArgumentType.DOUBLE:
             case ArgumentType.STRUCT:
             case ArgumentType.DICT_ENTRY:
+            case ArgumentType.STRUCT1:
+            case ArgumentType.DICT_ENTRY1:
+            case ArgumentType.STRUCT2:
+            case ArgumentType.DICT_ENTRY2:
                return 8;
+            case ArgumentType.BYTE:
+            case ArgumentType.SIGNATURE:
+            case ArgumentType.VARIANT:
             default:
-               return 0;
+               return 1;
          }
       }
       public void append(String sig, Object... data)
@@ -305,14 +426,31 @@ public class test
             i = appendone(sigb, i, data[j++]);
       }
    }
-   public static void main(String[] args) throws Exception
+   public static boolean auth(BusAddress address, OutputStream out, InputStream in) throws IOException
    {
-      Debug.setHexDump(true);
-      BusAddress address = new BusAddress(System.getenv("DBUS_SESSION_BUS_ADDRESS"));
-      Debug.print(address);
+      out.write(new byte[] { 0 });
+      BufferedReader r = new BufferedReader(new InputStreamReader(in));
+      if ("unix".equals(address.getType())) {
+         UnixSystem uns = new UnixSystem();
+         long uid = uns.getUid();
+         String Uid = Hexdump.toHex((""+uid).getBytes()).replaceAll(" ","");
+         out.write(("AUTH EXTERNAL "+Uid+"\r\n").getBytes());
+      } else {
+         out.write(("AUTH DBUS_COOKIE_SHA1\r\n").getBytes());
+      }
+      String s = r.readLine();
+      String[] reply=s.split(" ");
+      if (!"OK".equals(reply[0])) return false;
+      if (null == address.getParameter("guid") || reply[1].equals(address.getParameter("guid"))) {
+         out.write("BEGIN\r\n".getBytes());
+         return true;
+      } 
+      return false;
+   }
+   public static void connect(BusAddress address) throws IOException
+   {
       OutputStream out = null;
       InputStream in = null;
-      String guid = null;
       if ("unix".equals(address.getType())) {
          UnixSocket us = new UnixSocket();
          if (null != address.getParameter("abstract"))
@@ -331,81 +469,48 @@ public class test
          System.err.println("unknown address type");
          System.exit(1);
       }
-      out.write(new byte[] { 0 });
-      if ("unix".equals(address.getType())) {
-         UnixSystem uns = new UnixSystem();
-         long uid = uns.getUid();
-         String Uid = Hexdump.toHex((""+uid).getBytes()).replaceAll(" ","");
-         out.write(("AUTH EXTERNAL "+Uid+"\r\n").getBytes());
-      } else {
-         out.write(("AUTH DBUS_COOKIE_SHA1\r\n").getBytes());
+      
+      if (!auth(address, out, in)) {
+         out.close();
+         System.exit(1);
       }
-      BufferedReader r = new BufferedReader(new InputStreamReader(in));
-      String s = r.readLine();
-      System.out.println(s);
-      String[] reply=s.split(" ");
-      System.out.println(reply[0]);
-      System.out.println(reply[1]);
-      System.out.println(reply[1].equals(address.getParameter("guid")));
-      out.write("BEGIN\r\n".getBytes());
-      // org.freedesktop.DBus
+      mout = new MessageWriter(out);
+      min = new MessageReader(in);
 
-      Message m = new Message(Message.Endian.BIG);
-      m.append("yyyyuua(yv)", Message.Endian.BIG, Message.MessageType.METHOD_CALL, 0, 
-            Message.PROTOCOL, 0, 1, new Object[] {
-                  new Object[] { Message.HeaderField.PATH, new Object[] { "o", "/org/freedesktop/DBus" } },
-                  new Object[] { Message.HeaderField.DESTINATION, new Object[] { "s", "org.freedesktop.DBus" } },
-                  new Object[] { Message.HeaderField.INTERFACE, new Object[] { "s", "org.freedesktop.DBus" } },
-                  new Object[] { Message.HeaderField.MEMBER, new Object[] { "s", "Hello" } }
-               });
-      for (byte[] buf: m.getWireData()) {
-         Hexdump.print(buf);
-         out.write(buf);
-      }
-      out.flush();
-      byte[] buf = new byte[16];
-      in.read(buf);
-      Hexdump.print(buf);
-      int bodylen = buf[4];
-      int headerlen = buf[12];
-      headerlen=((headerlen/8)+1)*8;
-      byte[] header=new byte[headerlen];
-      in.read(header);
-      Hexdump.print(header);
-      byte[] body=new byte[bodylen];
-      in.read(body);
-      Hexdump.print(body);
-      m = new Message(buf, header, body);
+   }
+   private static MessageReader min;
+   private static MessageWriter mout;
+   public static void main(String[] args) throws Exception
+   {
+      
+      Message test = new MethodCall(":1.0", "/", "org.foo", "Hiii", null);
+
+      //System.exit(0);
+
+      Debug.setHexDump(true);
+      BusAddress address = new BusAddress(System.getenv("DBUS_SESSION_BUS_ADDRESS"));
+      Debug.print(address);
+
+      connect(address);
+
+      Message m = new MethodCall("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "Hello", null);
+      mout.writeMessage(m);
+      m = min.readMessage();
       Debug.print(m);
-      // TODO nood to read off the signal here
-
-      m = new Message(Message.Endian.BIG);
-      m.append("yyyyuua(yv)", Message.Endian.BIG, Message.MessageType.METHOD_CALL, 0, 
-            Message.PROTOCOL, 0, 2, new Object[] {
-                  new Object[] { Message.HeaderField.PATH, new Object[] { "o", "/org/freedesktop/DBus" } },
-                  new Object[] { Message.HeaderField.DESTINATION, new Object[] { "s", "org.freedesktop.DBus" } },
-                  new Object[] { Message.HeaderField.INTERFACE, new Object[] { "s", "org.freedesktop.DBus" } },
-                  new Object[] { Message.HeaderField.MEMBER, new Object[] { "s", "ListNames" } }
-               }); // TODO: something here isn't being aligned right? the daemon is expecting 4 more bytes. Or the lengths in the header are wrong.
-      for (byte[] buf2: m.getWireData()) {
-         Hexdump.print(buf2);
-         out.write(buf2);
-      }
-      out.flush();
-      buf = new byte[16];
-      in.read(buf);
-      Hexdump.print(buf);
-      bodylen = buf[4];
-      headerlen = buf[12];
-      headerlen=((headerlen/8)+1)*8;
-      header=new byte[headerlen];
-      in.read(header);
-      Hexdump.print(header);
-      body=new byte[bodylen];
-      in.read(body);
-      Hexdump.print(body);
-      m = new Message(buf, header, body);
+      m = min.readMessage();
+      Debug.print(m);
+      m = new MethodCall("org.freedesktop.DBus", "/", null, "Hello", null);
+      mout.writeMessage(m);
+      m = min.readMessage();
       Debug.print(m);
 
+      m = new MethodCall("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "RequestName", "s", "org.testname");
+      mout.writeMessage(m);
+      m = min.readMessage();
+      Debug.print(m);
+      m = new Signal("/foo", "org.foo", "Foo", null);
+      mout.writeMessage(m);
+      m = min.readMessage();
+      Debug.print(m);
    }
 }
