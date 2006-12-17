@@ -1,4 +1,4 @@
-package test;
+package org.freedesktop.dbus;
 import cx.ath.matthew.debug.Debug;
 import cx.ath.matthew.utils.Hexdump;
 

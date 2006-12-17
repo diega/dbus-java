@@ -1,11 +1,11 @@
-package test;
+package org.freedesktop.dbus;
 
 import java.util.Vector;
 
-public class MethodCall extends Message
+public class Call extends Message
 {
-   MethodCall() { }
-   public MethodCall(String dest, String path, String iface, String member, String sig, Object... args) 
+   Call() { }
+   public Call(String dest, String path, String iface, String member, String sig, Object... args) 
    {
       super(Message.Endian.BIG, Message.MessageType.METHOD_CALL, (byte) 0);
 
@@ -40,4 +40,24 @@ public class MethodCall extends Message
       if (null != sig) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
    }
+   static long REPLY_WAIT_TIMEOUT = 20000;
+   DBusMessage reply = null;
+   public synchronized boolean hasReply()
+   {
+      return null != reply;
+   }
+   public synchronized DBusMessage getReply()
+   {
+      if (null != reply) return reply;
+      try {
+         wait(REPLY_WAIT_TIMEOUT);
+         return reply;
+      } catch (InterruptedException Ie) { return reply; }
+   }
+   protected synchronized void setReply(DBusMessage reply)
+   {
+      this.reply = reply;
+      notifyAll();
+   }
+
 }

@@ -15,10 +15,8 @@ class MethodCall extends DBusMessage
    public static final int NO_REPLY = 1;
    public static final int ASYNC = 2;
    public static final int AUTO_START = 4;
-   static long REPLY_WAIT_TIMEOUT = 20000;
    String destination;
    String objectpath;
-   DBusMessage reply = null;
    int flags = 0;
    public MethodCall(String busname, String objectpath, String iface, String name, Object[] args)
    {
@@ -34,6 +32,8 @@ class MethodCall extends DBusMessage
    }
    public String getDestination() { return destination; }
    public String getObjectPath() { return objectpath; }
+   static long REPLY_WAIT_TIMEOUT = 20000;
+   DBusMessage reply = null;
    public synchronized boolean hasReply()
    {
       return null != reply;

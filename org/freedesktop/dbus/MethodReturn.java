@@ -1,4 +1,4 @@
-package test;
+package org.freedesktop.dbus;
 
 import java.util.Vector;
 
@@ -31,4 +31,7 @@ public class MethodReturn extends Message
       if (null != sig) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
    }
+   Call call;
+   public Call getCall() { return call; }
+   protected void setCall(Call call) { this.call = call; this.replyserial = call.getSerial(); this.destination = call.getSource();}
 }

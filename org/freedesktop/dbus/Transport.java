@@ -1,4 +1,4 @@
-package test;
+package org.freedesktop.dbus;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;

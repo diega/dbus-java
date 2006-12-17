@@ -1,4 +1,4 @@
-package test;
+package org.freedesktop.dbus;
 
 import java.io.InputStream;
 import java.io.IOException;

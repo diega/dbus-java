@@ -1,4 +1,4 @@
-package test;
+package org.freedesktop.dbus;
 import java.util.Map;
 import java.util.HashMap;
 

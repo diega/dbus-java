@@ -1,4 +1,4 @@
-package test;
+package org.freedesktop.dbus;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,19 +9,32 @@ import java.util.Vector;
 import cx.ath.matthew.debug.Debug;
 import cx.ath.matthew.utils.Hexdump;
 
+/**
+ * Superclass of all messages which are sent over the Bus.
+ * This class deals with all the marshalling to/from the wire format.
+ */
 public class Message
 {
-   public static interface Endian {
+   /** Defines constants representing the endianness of the message. */
+   public static final interface Endian {
       public static final byte BIG = 'B';
       public static final byte LITTLE = 'l';
    }
+   /** Defines constants representing the flags which can be set on a message. */
+   public static final interface Flags {
+      public static final byte NO_REPLY_EXPECTED = 0x01;
+      public static final byte NO_AUTO_START = 0x02;
+   }
+   /** Defines constants for each message type. */
    public static interface MessageType {
       public static final byte METHOD_CALL = 1;
       public static final byte METHOD_RETURN = 2;
       public static final byte ERROR = 3;
       public static final byte SIGNAL = 4;
    }
+   /** The current protocol major version. */
    public static final byte PROTOCOL = 1;
+   /** Defines constants for each valid header field type. */
    public static interface HeaderField {
       public static final byte PATH = 1;
       public static final byte INTERFACE = 2;
@@ -32,6 +45,9 @@ public class Message
       public static final byte SENDER = 7;
       public static final byte SIGNATURE = 8;
    }
+   /** Defines constants for each argument type.
+    * There are two constants for each argument type, 
+    * as a byte or as a String (the _STRING version) */
    public static interface ArgumentType {
       public static final String BYTE_STRING="y";
       public static final String BOOLEAN_STRING="b";
@@ -77,22 +93,8 @@ public class Message
       public static final byte DICT_ENTRY1='{';
       public static final byte DICT_ENTRY2='}';
    }
-   private boolean big;
-   private List<byte[]> wiredata;
-   protected long bytecounter;
-   protected Map<Byte, Object> headers;
-   protected static long globalserial = 0;
+   /** Keep a static reference to each size of padding array to prevent allocation. */
    private static byte[][] padding;
-   protected long serial;
-   protected byte type;
-   protected byte flags;
-   protected byte protover;
-   protected Object[] args;
-   private int preallocated = 0;
-   private int paofs = 0;
-   private byte[] pabuf;
-   private static final int BUFFERINCREMENT = 3;
-   private int
    static {
       padding = new byte[][] {
          null,
@@ -104,6 +106,30 @@ public class Message
             new byte[6],
             new byte[7] };
    }
+   /** Steps to increment the buffer array. */
+   private static final int BUFFERINCREMENT = 3;
+
+   private boolean big;
+   private byte[][] wiredata;
+   protected long bytecounter;
+   protected Map<Byte, Object> headers;
+   protected static long globalserial = 0;
+   protected long serial;
+   protected byte type;
+   protected byte flags;
+   protected byte protover;
+   protected Object[] args;
+   private int preallocated = 0;
+   private int paofs = 0;
+   private byte[] pabuf;
+   private int bufferuse = 0;
+
+   /**
+    * Create a message; only to be called by sub-classes.
+    * @param endian The endianness to create the message.
+    * @param type The message type.
+    * @param flags Any message flags.
+    */
    protected Message(byte endian, byte type, byte flags)
    {
       wiredata = new byte[BUFFERINCREMENT][];
@@ -116,21 +142,31 @@ public class Message
       preallocate(12);
       append("yyyy", endian, type, flags, Message.PROTOCOL);
    }
+   /**
+    * Create a blank message. Only to be used when calling populate.
+    */
    protected Message()
    {
       wiredata = new byte[BUFFERINCREMENT][];
       headers = new HashMap<Byte, Object>();
       bytecounter = 0;
    }
+   /**
+    * Create a message from wire-format data.
+    * @param msg D-Bus serialized data of type yyyuu
+    * @param headers D-Bus serialized data of type a(yv)
+    * @param body D-Bus serialized data of the signature defined in headers.
+    */
    void populate(byte[] msg, byte[] headers, byte[] body) 
    {
       big = (msg[0] == Endian.BIG);
       type = msg[1];
       flags = msg[2];
       protover = msg[3];
-      wiredata.add(msg);
-      wiredata.add(headers);
-      wiredata.add(body);
+      wiredata[0] = msg;
+      wiredata[1] = headers;
+      wiredata[2] = body;
+      bufferuse = 3;
       serial = (Long) extract(Message.ArgumentType.UINT32_STRING, msg, 8)[0];
       bytecounter = msg.length+headers.length+body.length;
       Debug.print(headers);
@@ -140,6 +176,10 @@ public class Message
          this.headers.put((Byte) ((Object[])o)[0], ((Object[])((Object[])o)[1])[1]);
       }
    }
+   /**
+    * Create a buffer of num bytes.
+    * Data is copied to this rather than added to the buffer list.
+    */
    private void preallocate(int num)
    {
       preallocated = 0;
@@ -148,6 +188,9 @@ public class Message
       preallocated = num;
       paofs = 0;
    }
+   /**
+    * Appends a buffer to the buffer list.
+    */
    protected void appendBytes(byte[] buf) 
    {
       if (null == buf) return;
@@ -156,24 +199,59 @@ public class Message
          paofs += buf.length;
          preallocated -= buf.length;
       } else {
-         wiredata.add(buf);
+         if (bufferuse == wiredata.length) {
+            Debug.print("Resizing "+bufferuse);
+            byte[][] temp = new byte[wiredata.length+BUFFERINCREMENT][];
+            System.arrayCopy(wiredata, 0, temp, 0, wiredata.length);
+            wiredata = temp;
+         }
+         wiredata[bufferuse++] = buf;
          bytecounter += buf.length; 
       }
    }
+   /**
+    * Appends a byte to the buffer list.
+    */
    protected void appendByte(byte b) 
    {
       if (preallocated > 0) {
          pabuf[paofs++] = b;
          preallocated--;
       } else {
-         wiredata.add(new byte[] { b });
+         if (bufferuse == wiredata.length) {
+            Debug.print("Resizing "+bufferuse);
+            byte[][] temp = new byte[wiredata.length+BUFFERINCREMENT][];
+            System.arrayCopy(wiredata, 0, temp, 0, wiredata.length);
+            wiredata = temp;
+         }
+         wiredata[bufferuse++] = new byte[] { b };
          bytecounter++; 
       }
    }
+   /**
+    * Demarshalls an integer of a given width from a buffer.
+    * Endianness is determined from the format of the message.
+    * @param buf The buffer to demarshall from.
+    * @param ofs The offset to demarshall from.
+    * @param width The byte-width of the int.
+    */
    public long demarshallint(byte[] buf, int ofs, int width)
    { return big ? demarshallintBig(buf,ofs,width) : demarshallintLittle(buf,ofs,width); }
+   /**
+    * Demarshalls an integer of a given width from a buffer.
+    * @param buf The buffer to demarshall from.
+    * @param ofs The offset to demarshall from.
+    * @param endian The endianness to use in demarshalling.
+    * @param width The byte-width of the int.
+    */
    public static long demarshallint(byte[] buf, int ofs, byte endian, int width)
    { return endian==Endian.BIG ? demarshallintBig(buf,ofs,width) : demarshallintLittle(buf,ofs,width); }
+   /**
+    * Demarshalls an integer of a given width from a buffer using big-endian format.
+    * @param buf The buffer to demarshall from.
+    * @param ofs The offset to demarshall from.
+    * @param width The byte-width of the int.
+    */
    public static long demarshallintBig(byte[] buf, int ofs, int width)
    {
       long l = 0;
@@ -183,6 +261,12 @@ public class Message
       }
       return l;
    }
+   /**
+    * Demarshalls an integer of a given width from a buffer using little-endian format.
+    * @param buf The buffer to demarshall from.
+    * @param ofs The offset to demarshall from.
+    * @param width The byte-width of the int.
+    */
    public static long demarshallintLittle(byte[] buf, int ofs, int width)
    {
       long l = 0;
@@ -192,15 +276,35 @@ public class Message
       }
       return l;
    }
-
+   /**
+    * Marshalls an integer of a given width and appends it to the message.
+    * Endianness is determined from the message.
+    * @param l The integer to marshall.
+    * @param width The byte-width of the int.
+    */
    public void appendint(long l, int width)
    { 
       byte[] buf = new byte[width];
       marshallint(l, buf, 0, width);
       appendBytes(buf);
    }
+   /**
+    * Marshalls an integer of a given width into a buffer.
+    * Endianness is determined from the message.
+    * @param l The integer to marshall.
+    * @param buf The buffer to marshall to.
+    * @param ofs The offset to marshall to.
+    * @param width The byte-width of the int.
+    */
    public void marshallint(long l, byte[] buf, int ofs, int width)
    { if (big) marshallintBig(l, buf, 0,width); else marshallintLittle(l, buf, 0,width); }
+   /**
+    * Marshalls an integer of a given width into a buffer using big-endian format.
+    * @param l The integer to marshall.
+    * @param buf The buffer to marshall to.
+    * @param ofs The offset to marshall to.
+    * @param width The byte-width of the int.
+    */
    private void marshallintBig(long l, byte[] buf, int ofs, int width) 
    {
       for (int i = (width-1); i >= 0; i--) {
@@ -208,6 +312,13 @@ public class Message
          l <<= 8;
       }
    }
+   /**
+    * Marshalls an integer of a given width into a buffer using little-endian format.
+    * @param l The integer to marshall.
+    * @param buf The buffer to demarshall to.
+    * @param ofs The offset to demarshall to.
+    * @param width The byte-width of the int.
+    */
    private void marshallintLittle(long l, byte[] buf, int ofs, int width) 
    {
       for (int i = 0; i < width; i++) {
@@ -217,18 +328,37 @@ public class Message
    }
    public byte[][] getWireData()
    {
-      return wiredata.toArray(new byte[0][]);
+      return wiredata;
    }
+   /**
+    * Formats the message in a human-readable format.
+    */
    public String toString()
    {
       return headers.toString();
    }
+   /**
+    * Returns the value of the header field of a given field.
+    * @param type The field to return.
+    * @return The value of the field or null if unset.
+    */
    public Object getHeader(byte type) { return headers.get(type); }
+   /**
+    * Appends a value to the message.
+    * The type of the value is read from a D-Bus signature and used to marshall 
+    * the value.
+    * @param sigb A buffer of the D-Bus signature.
+    * @param sigofs The offset into the signature corresponding to this value.
+    * @param data The value to marshall.
+    * @return The offset into the signature of the end of this value's type.
+    */
    private int appendone(byte[] sigb, int sigofs, Object data)
    {
       int i = sigofs;
       Debug.print(bytecounter);
       Debug.print("Appending type: "+((char)sigb[i])+" value: "+data);
+
+      // pad to the alignment of this type.
       pad(sigb[i]);
       switch (sigb[i]) {
          case ArgumentType.BYTE:
@@ -265,13 +395,19 @@ public class Message
             break;
          case ArgumentType.STRING:
          case ArgumentType.OBJECT_PATH:
+            // Strings are marshalled as a UInt32 with the length,
+            // followed by the String, followed by a null byte.
             String payload = (String) data;
             appendint(payload.length(), 4);
             appendBytes(payload.getBytes());
             int m = payload.length()+4;
-            pad(ArgumentType.STRING);
+            //pad(ArgumentType.STRING);? do we need this?
             break;
          case ArgumentType.SIGNATURE:
+            // Signatures are marshalled as a byte with the length,
+            // followed by the String, followed by a null byte.
+            // Signatures are generally short, so preallocate the array
+            // for the string, length and null byte.
             payload = (String) data;
             byte[] pbytes = payload.getBytes();
             preallocate(2+pbytes.length);
@@ -280,6 +416,11 @@ public class Message
             appendByte((byte) 0);
             break;
          case ArgumentType.ARRAY:
+            // Arrays are given as a UInt32 for the length in bytes,
+            // padding to the element alignment, then elements in
+            // order. The length is the length from the end of the
+            // initial padding to the end of the last element.
+            
             // TODO: optimise primatives
             byte[] len = new byte[4];
             appendBytes(len);
@@ -294,18 +435,23 @@ public class Message
             marshallint(bytecounter-c-2, len, 0, 4);
             break;
          case ArgumentType.STRUCT1:
+            // Structs are aligned to 8 bytes
+            // and simply contain each element marshalled in order
             contents = (Object[]) data;
             int j = 0;
             for (i++; sigb[i] != ArgumentType.STRUCT2; i++)
                i = appendone(sigb, i, contents[j++]);
             break;
          case ArgumentType.DICT_ENTRY1:
+            // Dict entries are the same as structs.
             contents = (Object[]) data;
             j = 0;
             for (i++; sigb[i] != ArgumentType.DICT_ENTRY2; i++)
                i = appendone(sigb, i, contents[j++]);
             break;
          case ArgumentType.VARIANT:
+            // Variants are marshalled as a signature
+            // followed by the value.
             contents = (Object[]) data;
             appendone(new byte[] {ArgumentType.SIGNATURE}, 0, contents[0]);
             appendone(((String) contents[0]).getBytes(), 0, contents[1]);
@@ -313,6 +459,9 @@ public class Message
       }
       return i;
    }
+   /**
+    * Pad the message to the proper alignment for the given type.
+    */
    public void pad(byte type)
    {
       Debug.print("padding for "+(char)type);
@@ -328,7 +477,10 @@ public class Message
          appendBytes(padding[a]);
       Debug.print(preallocated+" "+paofs+" "+bytecounter+" "+a);
    }
-   private int getAlignment(byte type)
+   /**
+    * Return the alignment for a given type.
+    */
+   public static int getAlignment(byte type)
    {
       switch (type) {
          case 2:
@@ -362,6 +514,11 @@ public class Message
             return 1;
       }
    }
+   /**
+    * Append a series of values to the message.
+    * @param sig The signature(s) of the value(s).
+    * @param data The value(s).
+    */
    public void append(String sig, Object... data)
    {
       byte[] sigb = sig.getBytes();
@@ -369,6 +526,12 @@ public class Message
       for (int i = 0; i < sigb.length; i++)
          i = appendone(sigb, i, data[j++]);
    }
+   /**
+    * Align a counter to the given type.
+    * @param current The current counter.
+    * @param type The type to align to.
+    * @return The new, aligned, counter.
+    */
    public int align(int current, byte type)
    {
       Debug.print("aligning to "+(char)type);
@@ -376,6 +539,15 @@ public class Message
       if (0 == (current%a)) return current;
       return current+(a-(current%a));
    }
+   /**
+    * Demarshall one value from a buffer.
+    * @param sigb A buffer of the D-Bus signature.
+    * @param buf The buffer to demarshall from.
+    * @param ofs An array of two ints, the offset into the signature buffer 
+    *            and the offset into the data buffer. These values will be
+    *            updated to the start of the next value ofter demarshalling.
+    * @return The demarshalled value.
+    */
    private Object extractone(byte[] sigb, byte[] buf, int[] ofs)
    {
       Debug.print("Extracting type: "+((char)sigb[ofs[0]])+" from offset "+ofs[1]);
@@ -477,10 +649,26 @@ public class Message
       Debug.print("Extracted: "+rv);
       return rv;
    }
+   /** 
+    * Demarshall values from a buffer.
+    * @param sig The D-Bus signature(s) of the value(s).
+    * @param buf The buffer to demarshall from.
+    * @param ofs The offset into the data buffer to start.
+    * @return The demarshalled value(s).
+    */
    public Object[] extract(String sig, byte[] buf, int ofs)
    {
       return extract(sig, buf, new int[] { 0, ofs });
    }
+   /**
+    * Demarshall values from a buffer.
+    * @param sig The D-Bus signature(s) of the value(s).
+    * @param buf The buffer to demarshall from.
+    * @param ofs An array of two ints, the offset into the signature 
+    *            and the offset into the data buffer. These values will be
+    *            updated to the start of the next value ofter demarshalling.
+    * @return The demarshalled value(s).
+    */
    public Object[] extract(String sig, byte[] buf, int[] ofs)
    {
       Debug.print("extract("+sig+",#"+buf.length+", {"+ofs[0]+","+ofs[1]+"}");
@@ -491,4 +679,49 @@ public class Message
       }
       return rv.toArray();
    }
+   /**
+    * Returns the Bus ID that sent the message.
+    */
+   public String getSource() { return (String) headers.get(HeaderField.SENDER); }
+   /**
+    * Returns the destination of the message.
+    */
+   public String getDestination() { return (String) headers.get(HeaderField.DESTINATION); }
+   /**
+    * Returns the interface of the message.
+    */
+   public String getInterface() { return  (String) headers.get(HeaderField.INTERFACE); }
+   /**
+    * Returns the member name or error name this message represents.
+    */
+   public String getName() 
+   { 
+      if (this instanceof Error)
+         return (String) headers.get(HeaderField.ERROR_NAME); 
+      else
+         return (String) headers.get(HeaderField.MEMBER); 
+   }
+   /**
+    * Returns the dbus signature of the parameters.
+    */
+   public String getSig() { return (String) headers.get(HeaderField.SIGNATURE); }
+   /**
+    * Returns the message serial ID (unique for this connection)
+    * @return the message serial.
+    */
+   public long getSerial() { return serial; }
+   /**
+    * If this is a reply to a message, this returns its serial.
+    * @return The reply serial, or 0 if it is not a reply.
+    */
+   public long getReplySerial() 
+   { 
+      Long l = (Long) headers.get(HeaderField.REPLY_SERIAL); 
+      if (null == l) return 0;
+      return l;
+   }
+   /**
+    * Returns the parameters to this message as an Object array.
+    */
+   public Object[] getParameters() { return args; }
 }

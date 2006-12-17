@@ -12,7 +12,6 @@ package org.freedesktop.dbus;
 
 class MethodReply extends DBusMessage
 {
-   MethodCall call;
    String objectpath;
    String destination;
    protected MethodReply(String source, String objectpath, String type, String name, String sig, Object[] parameters, long serial, long replyserial)
@@ -31,8 +30,6 @@ class MethodReply extends DBusMessage
       this.destination = m.getSource();
       this.replyserial = m.getSerial();
    }
-   public MethodCall getCall() { return call; }
-   protected void setCall(MethodCall call) { this.call = call; this.replyserial = call.getSerial(); this.destination = call.getSource();}
    public String getDestination() { return destination; }
    public String getObjectPath() { return objectpath; }
 

@@ -37,172 +37,6 @@ import java.util.regex.Pattern;
 
 import org.freedesktop.DBus;
 
-class SignalTuple
-{
-   String type;
-   String name;
-   String object;
-   String source;
-   public SignalTuple(String type, String name, String object, String source)
-   {
-      this.type = type;
-      this.name = name;
-      this.object = object;
-      this.source = source;
-   }
-   public boolean equals(Object o)
-   {
-      if (!(o instanceof SignalTuple)) return false;
-      SignalTuple other = (SignalTuple) o;
-      if (null == this.type && null != other.type) return false;
-      if (null != this.type && !this.type.equals(other.type)) return false;
-      if (null == this.name && null != other.name) return false;
-      if (null != this.name && !this.name.equals(other.name)) return false;
-      if (null == this.object && null != other.object) return false;
-      if (null != this.object && !this.object.equals(other.object)) return false;
-      if (null == this.source && null != other.source) return false;
-      if (null != this.source && !this.source.equals(other.source)) return false;
-      return true;
-   }
-   public int hashCode()
-   {
-      return (null == type ? 0 : type.hashCode())
-         +   (null == name ? 0 : name.hashCode())
-         +   (null == source ? 0 : source.hashCode())
-         +   (null == object ? 0 : object.hashCode());
-   }
-   public String toString()
-   {
-      return "SignalTuple("+type+","+name+","+object+","+source+")";
-   }
-}
-
-class MethodTuple
-{
-   String name;
-   String sig;
-   public MethodTuple(String name, String sig)
-   {
-      this.name = name;
-      this.sig = sig;
-   }
-   public boolean equals(Object o)
-   {
-      return o.getClass().equals(MethodTuple.class)
-            && ((MethodTuple) o).name.equals(this.name)
-            && ((MethodTuple) o).sig.equals(this.sig);
-   }
-   public int hashCode()
-   {
-      return name.hashCode()+sig.hashCode();
-   }
-}
-class ExportedObject
-{
-   private String getAnnotations(AnnotatedElement c)
-   {
-      String ans = "";
-      for (Annotation a: c.getDeclaredAnnotations()) {
-         Class t = a.annotationType();
-         String value = "";
-         try {
-            Method m = t.getMethod("value");
-            value = m.invoke(a).toString();
-         } catch (NoSuchMethodException NSMe) {
-         } catch (InvocationTargetException ITe) {
-         } catch (IllegalAccessException IAe) {}
-
-         ans += "  <annotation name=\""+DBusConnection.dollar_pattern.matcher(t.getName()).replaceAll(".")+"\" value=\""+value+"\" />\n";
-      }
-      return ans;
-   }
-   private Map<MethodTuple,Method> getExportedMethods(Class c) throws DBusException
-   {
-      if (DBusInterface.class.equals(c)) return new HashMap<MethodTuple,Method>();
-      Map<MethodTuple,Method> m = new HashMap<MethodTuple,Method>();
-      for (Class i: c.getInterfaces())
-         if (DBusInterface.class.equals(i)) {
-            // don't let people export things which don't have a
-            // valid D-Bus interface name
-            if (i.getName().equals(i.getSimpleName()))
-               throw new DBusException("DBusInterfaces cannot be declared outside a package");
-            // add this class's public methods
-            if (c.getName().length() > DBusConnection.MAX_NAME_LENGTH) 
-               throw new DBusException("Introspected interface name exceeds 255 characters. Cannot export objects of type "+c.getName()+".");
-            introspectiondata += " <interface name=\""+DBusConnection.dollar_pattern.matcher(c.getName()).replaceAll(".")+"\">\n";
-            introspectiondata += getAnnotations(c);
-            for (Method meth: c.getDeclaredMethods()) 
-               if (Modifier.isPublic(meth.getModifiers())) {
-                  String ms = "";
-                  if (meth.getName().length() > DBusConnection.MAX_NAME_LENGTH) 
-                     throw new DBusException("Introspected method name exceeds 255 characters. Cannot export objects with method "+meth.getName()+".");
-                  introspectiondata += "  <method name=\""+meth.getName()+"\" >\n";
-                  introspectiondata += getAnnotations(meth);
-                  for (Class ex: meth.getExceptionTypes())
-                     if (DBusExecutionException.class.isAssignableFrom(ex))
-                        introspectiondata +=
-                           "   <annotation name=\"org.freedesktop.DBus.Method.Error\" value=\""+DBusConnection.dollar_pattern.matcher(ex.getName()).replaceAll(".")+"\" />\n";
-                  for (Type pt: meth.getGenericParameterTypes())
-                     for (String s: DBusConnection.getDBusType(pt)) {
-                        introspectiondata += "   <arg type=\""+s+"\" direction=\"in\"/>\n";
-                        ms += s;
-                     }
-                  if (!Void.TYPE.equals(meth.getGenericReturnType())) {
-                     if (Tuple.class.isAssignableFrom((Class) meth.getReturnType())) {
-                        ParameterizedType tc = (ParameterizedType) meth.getGenericReturnType();
-                        Type[] ts = tc.getActualTypeArguments();
-
-                        for (Type t: ts)
-                           if (t != null)
-                              for (String s: DBusConnection.getDBusType(t))
-                                 introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
-                     } else if (Object[].class.equals(meth.getGenericReturnType())) {
-                        throw new DBusException("Return type of Object[] cannot be introspected properly");
-                     } else
-                        for (String s: DBusConnection.getDBusType(meth.getGenericReturnType()))
-                        introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
-                  }
-                  introspectiondata += "  </method>\n";
-                  m.put(new MethodTuple(meth.getName(), ms), meth);
-               }
-            for (Class sig: c.getDeclaredClasses()) 
-               if (DBusSignal.class.isAssignableFrom(sig)) {
-                  if (sig.getSimpleName().length() > DBusConnection.MAX_NAME_LENGTH) 
-                     throw new DBusException("Introspected signal name exceeds 255 characters. Cannot export objects with signals of type "+sig.getSimpleName()+".");
-                  introspectiondata += "  <signal name=\""+sig.getSimpleName()+"\">\n";
-                  Constructor con = sig.getConstructors()[0];
-                  Type[] ts = con.getGenericParameterTypes();
-                  for (int j = 1; j < ts.length; j++)
-                     for (String s: DBusConnection.getDBusType(ts[j]))
-                        introspectiondata += "   <arg type=\""+s+"\" direction=\"out\" />\n";
-                  introspectiondata += getAnnotations(sig);
-                  introspectiondata += "  </signal>\n";
-
-               }
-            introspectiondata += " </interface>\n";
-         } else {
-            // recurse
-            m.putAll(getExportedMethods(i));
-         }
-      return m;
-   }
-   Map<MethodTuple,Method> methods;
-   DBusInterface object;
-   String introspectiondata;
-   public ExportedObject(DBusInterface object) throws DBusException
-   {
-      this.object = object;
-      introspectiondata = "";
-      methods = getExportedMethods(object.getClass());
-      introspectiondata += 
-         " <interface name=\"org.freedesktop.DBus.Introspectable\">\n"+
-         "  <method name=\"Introspect\">\n"+
-         "   <arg type=\"s\" direction=\"out\"/>\n"+
-         "  </method>\n"+
-         " </interface>\n";
-   }
-}
-
 /** Handles a connection to DBus.
  * <p>
  * This is a Singleton class, only 1 connection to the SYSTEM or SESSION busses can be made.
@@ -376,20 +210,6 @@ public class DBusConnection
    EfficientQueue outgoing;
    LinkedList<DBusErrorMessage> pendingErrors;
 
-   private native int dbus_connect(int bustype) throws DBusException;
-   private static native boolean get_exception_debug_state();
-   private native int dbus_connect(String address) throws DBusException;
-   private native void dbus_disconnect(int connid);
-   private native void dbus_listen_signal(int connid, String type, String name) throws DBusException;
-   private native DBusMessage dbus_read_write_pop(int connid, int timeoutms, EfficientQueue outgoing);
-   private native int dbus_send_signal(int connid, String objectpath, String type, String name, Object... parameters);
-   private native int dbus_send_error_message(int connid, String destination, String name, long replyserial, Object... params);
-   private native int dbus_call_method(int connid, String busname, String objectpath, String type, String name, int flags, Object... params);
-   private native int dbus_reply_to_call(int connid, String destination, String type, String objectpath, String name, long replyserial, Object... params);
-   static {
-      System.loadLibrary("dbus-1");
-      System.loadLibrary("dbus-java");
-   }
    private static final Map<Object,DBusConnection> conn = new HashMap<Object,DBusConnection>();
    private static final Map<Thread,DBusCallInfo> infomap = new HashMap<Thread,DBusCallInfo>();
    private int _refcount = 0;
@@ -397,10 +217,12 @@ public class DBusConnection
    private Object connkey;
    private DBus _dbus;
    private _thread thread;
+   private Transport transport;
+   private BusAddress addr;
    static final Pattern dollar_pattern = Pattern.compile("[$]");
    public static final boolean EXCEPTION_DEBUG;
    static {
-      EXCEPTION_DEBUG = get_exception_debug_state();
+      EXCEPTION_DEBUG = (null == System.getenv("DBUS_JAVA_EXCEPTION_DEBUG"));
    }
 
    /**
@@ -433,15 +255,27 @@ public class DBusConnection
    public static DBusConnection getConnection(int bustype) throws DBusException
    {
       synchronized (conn) {
-         if (bustype > 1 || bustype < 0) throw new DBusException("Invalid Bus Specifier");
-         DBusConnection c = conn.get(bustype);
+         String s = null;
+         switch (bustype) {
+            case SYSTEM:
+               s = System.getenv("DBUS_SYSTEM_BUS_ADDRESS");
+               if (null == s) s = DEFAULT_BUS_ADDRESS;
+               break;
+            case SESSION:
+               s = System.getenv("DBUS_SESSION_BUS_ADDRESS");
+               if (null == s) throw new DBusException("Cannot Resolve Session Bus Address");
+               break;
+            default:
+               throw new DBusException("Invalid Bus Type: "+bustype);
+         }
+         DBusConnection c = conn.get(addr);
          if (null != c) {
             synchronized (c._reflock) { c._refcount++; }
             return c;
          }
          else {
-            c = new DBusConnection(bustype);
-            conn.put(bustype, c);
+            c = new DBusConnection(addr);
+            conn.put(addr, c);
             return c;
          }
       }
@@ -939,7 +773,8 @@ public class DBusConnection
       return parameters;
    }
 
-   private DBusConnection() throws DBusException
+   @SuppressWarnings("unchecked")
+   private DBusConnection(String address) throws DBusException
    {
       exportedObjects = new HashMap<String,ExportedObject>();
       importedObjects = new HashMap<DBusInterface,RemoteObject>();
@@ -963,39 +798,9 @@ public class DBusConnection
       synchronized (_reflock) {
          _refcount = 1; 
       }
-   }
-   @SuppressWarnings("unchecked")
-   private DBusConnection(String address) throws DBusException
-   {
-      this();
-      connkey = address;
-
-      connid = dbus_connect(address);
-
-      // start listening
-      thread = new _thread();
-      thread.start();
-      
-      // register ourselves
-      _dbus = (DBus) getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
-      try {
-         busnames.add(_dbus.Hello());
-      } catch (DBusExecutionException DBEe) {
-         if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
-         throw new DBusException(DBEe.getMessage());
-      }
-      // register disconnect handlers
-      addSigHandler(org.freedesktop.DBus.Local.Disconnected.class, new _sighandler());
-   }
-
-
-   @SuppressWarnings("unchecked")
-   private DBusConnection(int bustype) throws DBusException
-   {
-      this();
-      connkey = bustype;
-
-      connid = dbus_connect(bustype);
+      addr = new BusAddress(address);
+   
+      transport = new Transport(addr);
 
       // start listening
       thread = new _thread();
@@ -1575,8 +1380,8 @@ public class DBusConnection
                try {
                   synchronized (thread) { thread.wait(); }
                } catch (InterruptedException Ie) {}
-               dbus_disconnect(connid);
-               conn.remove(connkey);
+               transport.disconnect();
+               conn.remove(addr);
                synchronized(workers) {
                   for (_workerthread t: workers)
                      t.halt();
@@ -1800,46 +1605,30 @@ public class DBusConnection
    }
    private void sendMessage(DBusMessage m)
    {
-      if (m instanceof DBusSignal) 
-         try {
-            m.setSerial(dbus_send_signal(connid, ((DBusSignal) m).getObjectPath(), m.getType(), m.getName(), m.getParameters()));
-         } catch (Exception e) {}
-      else if (m instanceof DBusErrorMessage) 
-         try {
-            m.setSerial(dbus_send_error_message(connid, ((DBusErrorMessage) m).getDestination(), m.getType(), m.getReplySerial(), m.getParameters()));
-         } catch (Exception e) {}
-      else if (m instanceof MethodCall) {
-         try {
-            synchronized (pendingCalls) {
-               int flags = ((MethodCall) m).getFlags();
-               m.setSerial(dbus_call_method(connid, ((MethodCall) m).getDestination(), ((MethodCall) m).getObjectPath(), m.getType(), m.getName(), flags, m.getParameters()));
-               if (0 < m.getSerial()) {
-                  if (0 == (flags & MethodCall.NO_REPLY))
-                     pendingCalls.put(m.getSerial(),(MethodCall) m);
+      try {
+         transport.mout.writeMessage(m);
+         if (m instanceof MethodCall) {
+            if (0 == (flags & MethodCall.NO_REPLY))
+               synchronized (pendingCalls) {
+                  pendingCalls.put(m.getSerial(),(MethodCall) m);
                }
-               else
-                  ((MethodCall) m).setReply(new DBusErrorMessage(m, new InternalMessageException("Message Failed to Send")));
-            }
-         } catch (DBusExecutionException DBEe) {
-            if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
-            ((MethodCall) m).setReply(new DBusErrorMessage(m, DBEe));
-         } catch (Exception e) {
-            if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
-            ((MethodCall) m).setReply(new DBusErrorMessage(m, new DBusExecutionException("Message Failed to Send: "+e.getMessage())));
          }
+      } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+         if (m instanceof MethodCall && e instanceof DBusExecutionException) 
+            m.setReply(new DBusErrorMessage(m, DBEe));
+         else if (m instanceof MethodCall)
+
+            m.setReply(new DBusErrorMessage(m, new DBusExecutionException("Message Failed to Send: "+e.getMessage())));
+         else if (m instanceof MethodReply)
+            transport.mout.write(new Error(m, Message.ArgumentType.STRING_STRING, "Error sending reply: "+e. getMessage()));
       }
-      else if (m instanceof MethodReply) {
-         try {
-            m.setSerial(dbus_reply_to_call(connid, ((MethodReply) m).getDestination(), m.getType(), ((MethodReply) m).getObjectPath(), m.getName(), m.getReplySerial(), m.getParameters()));
-         } catch (Exception e) {
-            if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
-            dbus_send_error_message(connid, ((MethodReply) m).getDestination(), DBusExecutionException.class.getName(), m.getReplySerial(), new Object[] { "Error sending reply: "+e.getMessage() });
-         }
       }
    }
    private DBusMessage readIncoming(int timeoutms, EfficientQueue outgoing)
    {
-      DBusMessage m = dbus_read_write_pop(connid, timeoutms, outgoing);
+      // TODO do something with timeoutms and outgoing
+      DBusMessage m = transport.min.readMessage();
       return m;
    }
 }

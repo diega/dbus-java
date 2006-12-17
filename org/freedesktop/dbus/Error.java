@@ -1,7 +1,10 @@
-package test;
+package org.freedesktop.dbus;
 
 import java.util.Vector;
 
+/**
+ * Error messages which can be sent over the bus.
+ */
 public class Error extends Message
 {
    Error() { }
@@ -31,5 +34,49 @@ public class Error extends Message
       long c = bytecounter;
       if (null != sig) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
+   }
+   /* TODO NotNative! */
+   private static native Class<? extends DBusExecutionException> createExceptionClass(String name);
+   /**
+    * Turns this into an exception of the correct type
+    */
+   public DBusExecutionException getException()
+   {
+      try {
+         Class<? extends DBusExecutionException> c = createExceptionClass(type);
+         if (null == c) c = DBusExecutionException.class;
+         Constructor<? extends DBusExecutionException> con = c.getConstructor(String.class);
+         DBusExecutionException ex;
+         if (null == parameters || 0 == parameters.length)
+            ex = con.newInstance("");
+         else {
+            String s = "";
+            for (Object o: args)
+               s += o + " ";
+            ex = con.newInstance(s.trim());
+         }
+         ex.setType(type);
+         return ex;
+      } catch (Exception e) {
+         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+         DBusExecutionException ex;
+         if (null == parameters || 0 == parameters.length)
+            ex = new DBusExecutionException("");
+         else {
+            String s = "";
+            for (Object o: args)
+               s += o + " ";
+            ex = new DBusExecutionException(s.trim());
+         }
+         ex.setType(type);
+         return ex;
+      }
+   }
+   /**
+    * Throw this as an exception of the correct type
+    */
+   public void throwException() throws DBusExecutionException
+   {
+      throw getException();
    }
 }

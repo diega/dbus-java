@@ -1,4 +1,4 @@
-package test;
+package org.freedesktop.dbus;
 
 import java.io.OutputStream;
 import java.io.IOException;
@@ -16,6 +16,7 @@ public class MessageWriter
    public void writeMessage(Message m) throws IOException
    {
       for (byte[] buf: m.getWireData()) {
+         if (null == buf) break;
          Hexdump.print(buf);
          out.write(buf);
       }

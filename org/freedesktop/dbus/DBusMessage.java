@@ -64,14 +64,14 @@ public abstract class DBusMessage
     * @return The reply serial, or 0 if it is not a reply.
     */
    public long getReplySerial() { return replyserial; }
-   protected void setSerial(long serial) { this.serial = serial; }
-   protected void setSource(String source) { this.source = source; }
-   protected void setType(String type) { this.type = type; }
-   protected void setReplySerial(long serial) { this.replyserial = serial; }
    /**
     * Returns the parameters to this message as an Object array.
     */
    public Object[] getParameters() { return parameters; }
+   protected void setSerial(long serial) { this.serial = serial; }
+   protected void setSource(String source) { this.source = source; }
+   protected void setType(String type) { this.type = type; }
+   protected void setReplySerial(long serial) { this.replyserial = serial; }
    /**
     * Represent this message as a String
     */
