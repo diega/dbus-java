@@ -91,6 +91,8 @@ public class Message
    private int preallocated = 0;
    private int paofs = 0;
    private byte[] pabuf;
+   private static final int BUFFERINCREMENT = 3;
+   private int
    static {
       padding = new byte[][] {
          null,
@@ -104,7 +106,7 @@ public class Message
    }
    protected Message(byte endian, byte type, byte flags)
    {
-      wiredata = new Vector<byte[]>();
+      wiredata = new byte[BUFFERINCREMENT][];
       headers = new HashMap<Byte, Object>();
       big = (Endian.BIG == endian);
       bytecounter = 0;
@@ -116,7 +118,7 @@ public class Message
    }
    protected Message()
    {
-      wiredata = new Vector<byte[]>();
+      wiredata = new byte[BUFFERINCREMENT][];
       headers = new HashMap<Byte, Object>();
       bytecounter = 0;
    }
