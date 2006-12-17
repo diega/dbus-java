@@ -29,7 +29,7 @@ public class test
       m = conn.min.readMessage();
       Debug.print(m);
 
-      m = new MethodCall("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "RequestName34", "s", "org.testname");
+      m = new MethodCall("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "RequestName", "s", "org.testname");
       conn.mout.writeMessage(m);
       m = conn.min.readMessage();
       Debug.print(m);

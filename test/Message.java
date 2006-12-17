@@ -88,6 +88,9 @@ public class Message
    protected byte flags;
    protected byte protover;
    protected Object[] args;
+   private int preallocated = 0;
+   private int paofs = 0;
+   private byte[] pabuf;
    static {
       padding = new byte[][] {
          null,
@@ -108,6 +111,7 @@ public class Message
       serial = ++globalserial;
       this.type = type;
       this.flags = flags;
+      preallocate(12);
       append("yyyy", endian, type, flags, Message.PROTOCOL);
    }
    protected Message()
@@ -134,10 +138,35 @@ public class Message
          this.headers.put((Byte) ((Object[])o)[0], ((Object[])((Object[])o)[1])[1]);
       }
    }
+   private void preallocate(int num)
+   {
+      preallocated = 0;
+      pabuf = new byte[num];
+      appendBytes(pabuf);
+      preallocated = num;
+      paofs = 0;
+   }
    protected void appendBytes(byte[] buf) 
    {
       if (null == buf) return;
-      wiredata.add(buf); bytecounter += buf.length; 
+      if (preallocated > 0) {
+         System.arraycopy(buf, 0, pabuf, paofs, buf.length);
+         paofs += buf.length;
+         preallocated -= buf.length;
+      } else {
+         wiredata.add(buf);
+         bytecounter += buf.length; 
+      }
+   }
+   protected void appendByte(byte b) 
+   {
+      if (preallocated > 0) {
+         pabuf[paofs++] = b;
+         preallocated--;
+      } else {
+         wiredata.add(new byte[] { b });
+         bytecounter++; 
+      }
    }
    public long demarshallint(byte[] buf, int ofs, int width)
    { return big ? demarshallintBig(buf,ofs,width) : demarshallintLittle(buf,ofs,width); }
@@ -166,8 +195,7 @@ public class Message
    { 
       byte[] buf = new byte[width];
       marshallint(l, buf, 0, width);
-      wiredata.add(buf);
-      bytecounter += width;
+      appendBytes(buf);
    }
    public void marshallint(long l, byte[] buf, int ofs, int width)
    { if (big) marshallintBig(l, buf, 0,width); else marshallintLittle(l, buf, 0,width); }
@@ -202,7 +230,7 @@ public class Message
       pad(sigb[i]);
       switch (sigb[i]) {
          case ArgumentType.BYTE:
-            appendBytes(new byte[] { ((Number) data).byteValue() });
+            appendByte(((Number) data).byteValue());
             break;
          case ArgumentType.BOOLEAN:
             appendint(((Boolean) data).booleanValue() ? 1 : 0, 4);
@@ -243,9 +271,11 @@ public class Message
             break;
          case ArgumentType.SIGNATURE:
             payload = (String) data;
-            appendBytes(new byte[] { (byte) payload.length() });
-            appendBytes(payload.getBytes());
-            appendBytes(new byte[1]);
+            byte[] pbytes = payload.getBytes();
+            preallocate(2+pbytes.length);
+            appendByte((byte) pbytes.length);
+            appendBytes(pbytes);
+            appendByte((byte) 0);
             break;
          case ArgumentType.ARRAY:
             // TODO: optimise primatives
@@ -285,8 +315,16 @@ public class Message
    {
       Debug.print("padding for "+(char)type);
       int a = getAlignment(type);
-      if (0 == (bytecounter%a)) return;
-      appendBytes(padding[(int) (a-(bytecounter%a))]);
+      Debug.print(preallocated+" "+paofs+" "+bytecounter+" "+a);
+      int b = (int) ((bytecounter-preallocated)%a);
+      if (0 == b) return;
+      a = (a-b);
+      if (preallocated > 0) {
+         paofs += a;
+         preallocated -= a;
+      } else
+         appendBytes(padding[a]);
+      Debug.print(preallocated+" "+paofs+" "+bytecounter+" "+a);
    }
    private int getAlignment(byte type)
    {

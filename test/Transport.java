@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import cx.ath.matthew.unix.UnixSocket;
 import cx.ath.matthew.unix.UnixSocketAddress;
 import cx.ath.matthew.utils.Hexdump;
+import cx.ath.matthew.debug.Debug;
 import com.sun.security.auth.module.UnixSystem;
 
 public class Transport
@@ -35,6 +36,7 @@ public class Transport
          out.write(("AUTH DBUS_COOKIE_SHA1\r\n").getBytes());
       }
       String s = r.readLine();
+      Debug.print(s);
       String[] reply=s.split(" ");
       if (!"OK".equals(reply[0])) return false;
       if (null == address.getParameter("guid") || reply[1].equals(address.getParameter("guid"))) {
