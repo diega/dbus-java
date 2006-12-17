@@ -208,10 +208,12 @@ public class Message
             appendint(((Boolean) data).booleanValue() ? 1 : 0, 4);
             break;
          case ArgumentType.DOUBLE:
-            //TODO
+            long l = Double.doubleToLongBits((Double) data);
+            appendint(l, 8);
             break;
          case ArgumentType.FLOAT:
-            //TODO
+            int rf = Float.floatToIntBits((Float) data);
+            appendint(rf, 4);
             break;
          case ArgumentType.UINT32:
             appendint(((Number) data).longValue(), 4);
@@ -267,7 +269,7 @@ public class Message
             break;
          case ArgumentType.DICT_ENTRY1:
             contents = (Object[]) data;
-            int j = 0;
+            j = 0;
             for (i++; sigb[i] != ArgumentType.DICT_ENTRY2; i++)
                i = appendone(sigb, i, contents[j++]);
             break;
@@ -348,14 +350,39 @@ public class Message
             ofs[1] += 4;
             break;
          case ArgumentType.INT32:
+            rv = (int) demarshallint(buf, ofs[1], 4);
+            ofs[1] += 4;
+            break;
          case ArgumentType.INT16:
+            rv = (short) demarshallint(buf, ofs[1], 2);
+            ofs[1] += 2;
+            break;
          case ArgumentType.UINT16:
+            rv = (int) demarshallint(buf, ofs[1], 2);
+            ofs[1] += 2;
+            break;
          case ArgumentType.INT64:
+            rv = demarshallint(buf, ofs[1], 8);
+            ofs[1] += 8;
+            break;
          case ArgumentType.UINT64:
+            /*TODO rv = demarshallint(buf, ofs[1], 8);*/
+            ofs[1] += 8;
+            break;
          case ArgumentType.DOUBLE:
+            long l = demarshallint(buf, ofs[1], 8);
+            ofs[1] += 8;
+            rv = Double.longBitsToDouble(l);
+            break;
          case ArgumentType.FLOAT:
+            int rf = (int) demarshallint(buf, ofs[1], 4);
+            ofs[1] += 4;
+            rv = Float.intBitsToFloat(rf);
+            break;
          case ArgumentType.BOOLEAN:
-            // TODO
+            rf = (int) demarshallint(buf, ofs[1], 4);
+            ofs[1] += 4;
+            rv = (1==rf)?Boolean.TRUE:Boolean.FALSE;
             break;
          case ArgumentType.ARRAY:
             // TODO: optimise primatives
