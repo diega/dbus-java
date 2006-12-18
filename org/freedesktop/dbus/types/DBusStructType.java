@@ -8,7 +8,7 @@
 
    Full licence texts are included in the COPYING file with this program.
 */
-package org.freedesktop.dbus;
+package org.freedesktop.dbus.types;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

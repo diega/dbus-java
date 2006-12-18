@@ -10,7 +10,7 @@
 */
 package org.freedesktop.dbus;
 
-class DBusMatchRule
+public class DBusMatchRule
 {
    /* signal, error, method_call, method_reply */
    private String type;

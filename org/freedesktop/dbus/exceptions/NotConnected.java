@@ -8,7 +8,7 @@
 
    Full licence texts are included in the COPYING file with this program.
 */
-package org.freedesktop.dbus;
+package org.freedesktop.dbus.exceptions;
 
 /**
  * Thrown if a DBus action is called when not connected to the Bus.

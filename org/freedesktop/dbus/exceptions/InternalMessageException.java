@@ -8,7 +8,7 @@
 
    Full licence texts are included in the COPYING file with this program.
 */
-package org.freedesktop.dbus;
+package org.freedesktop.dbus.exceptions;
 
 @SuppressWarnings("serial")
 public class InternalMessageException extends DBusExecutionException

@@ -12,7 +12,7 @@ package org.freedesktop.dbus;
 
 import java.lang.reflect.Type;
 
-class TypeSignature 
+public class TypeSignature 
 {
    String sig;
    public TypeSignature(String sig)

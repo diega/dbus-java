@@ -8,37 +8,34 @@
 
    Full licence texts are included in the COPYING file with this program.
 */
-package org.freedesktop.dbus;
+package org.freedesktop.dbus.types;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Map;
+import java.util.List;
 
 /**
- * The type of a map.
- * Should be used whenever you need a Type variable for a map.
+ * The type of a list.
+ * Should be used whenever you need a Type variable for a list.
  */
-public class DBusMapType implements ParameterizedType
+public class DBusListType implements ParameterizedType
 {
-   private Type k;
    private Type v;
-   /** 
-    * Create a map type.
-    * @param k The type of the keys.
-    * @param v The type of the values.
+   /**
+    * Create a List type.
+    * @param v Type of the list contents.
     */
-   public DBusMapType(Type k, Type v)
+   public DBusListType(Type v)
    {
-      this.k = k;
       this.v = v;
    }
    public Type[] getActualTypeArguments()
    {
-      return new Type[] { k, v };
+      return new Type[] { v };
    }
    public Type getRawType()
    {
-      return Map.class;
+      return List.class;
    }
    public Type getOwnerType()
    {
