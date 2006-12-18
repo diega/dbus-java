@@ -1,7 +1,7 @@
 #!/bin/sh --
 
 JARPATH=%JARPATH%
-LIBPATH=%LIBPATH%
-DBUSLIBPATH=%DBUSLIBPATH%
+JAVAUNIXLIBPATH=%DJAVAUNIXLIBPATH%
+JAVAUNIXJARPATH=%DJAVAUNIXJARPATH%
 
-java -Djava.library.path=$DBUSLIBPATH:$LIBPATH -cp $JARPATH/dbus.jar org.freedesktop.dbus.CreateInterface "$@"
+java -Djava.library.path=$JAVAUNIXLIBPATH -cp $JAVAUNIXJARPATH/unix.jar:$JARPATH/dbus.jar org.freedesktop.dbus.CreateInterface "$@"

@@ -15,20 +15,12 @@ JAVAH?=javah
 JAVADOC?=javadoc
 JAR?=jar
 MAKE?=make
-CC?=gcc
-LD?=ld
-STRIP?=strip
 
 # Program parameters
-INCLUDES?=`pkg-config --cflags dbus-1` -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
-CFLAGS?= -Os -Wall -Werror -pedantic -std=c99
-CFLAGS+=$(INCLUDES)
-CFLAGS+=$(call cc-option,-fno-stack-protector,)
-LIBS?=`pkg-config --libs dbus-1`
 CPFLAG?=-classpath
 JCFLAGS?=-Xlint:all -O -g:none
-JCFLAGS+=-cp classes:$(CLASSPATH)
-JFLAGS+=-Djava.library.path=.:$(DBUSLIBDIR)
+JCFLAGS+=-cp classes:$(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar
+JFLAGS+=-Djava.library.path=$(JAVAUNIXLIBDIR)
 
 # Source/Class locations
 SRCDIR=org/freedesktop
@@ -39,23 +31,20 @@ CLASSDIR=classes/org/freedesktop/dbus
 #
 PREFIX?=/usr/local
 JARPREFIX?=$(PREFIX)/share/java
-LIBPREFIX?=$(PREFIX)/lib/jni
 BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
 
-# Installation directory of the D-Bus libraries
-DBUSLIBDIR?=/usr/lib
+# Installation directory of the java-unix libraries
+JAVAUNIXLIBDIR?=/usr/lib/jni
+# Installation directory of the java-unix jars
+JAVAUNIXJARDIR?=/usr/share/java
 
 # Version numbering
 VERSION = 1.13
 RELEASEVERSION = 1.12
 
-# Usage: cflags-y += $(call cc-option, -march=winchip-c6, -march=i586)
-cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
-> /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
- 
-all: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar bin/ListDBus bin/CreateInterface bin/DBusViewer
+all: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar bin/ListDBus bin/CreateInterface bin/DBusViewer
 
 clean:
 	rm -rf doc bin classes
@@ -74,28 +63,13 @@ viewerclasses: .viewerclasses
 	mkdir -p classes
 	$(JAVAC) -d classes $(JCFLAGS) $(SRCDIR)/dbus/viewer/*.java
 	touch .viewerclasses 
-.classes: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java  
+.classes: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/dbus/exceptions/*.java $(SRCDIR)/dbus/types/*.java $(SRCDIR)/dbus/bin/*.java  
 	mkdir -p classes
 	$(JAVAC) -d classes $(JCFLAGS) $^
 	touch .classes
 
-org_freedesktop_dbus_DBusConnection.h: .classes
-	$(JAVAH) -classpath classes:$(CLASSPATH) -d . org.freedesktop.dbus.DBusConnection
-	touch $@
-org_freedesktop_dbus_DBusErrorMessage.h: .classes
-	$(JAVAH) -classpath classes:$(CLASSPATH) -d . org.freedesktop.dbus.DBusErrorMessage
-	touch $@
-org_freedesktop_dbus_MethodCall.h: .classes
-	$(JAVAH) -classpath classes:$(CLASSPATH) -d . org.freedesktop.dbus.MethodCall
-	touch $@
-dbus-java.o: dbus-java.c org_freedesktop_dbus_DBusConnection.h org_freedesktop_dbus_DBusErrorMessage.h org_freedesktop_dbus_MethodCall.h
-	$(CC) $(CFLAGS) -fpic -c $< -o $@
-
-libdbus-java.so: dbus-java.o
-	$(LD) $(LDFLAGS) -fpic -shared -o $@ $^ $(LIBS)
-	$(STRIP) $@
 libdbus-java-$(VERSION).jar: .classes
-	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/*.class org/freedesktop/*.class)
+	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/dbus/types/*.class org/freedesktop/dbus/exceptions/*.class org/freedesktop/dbus/bin/*.class)
 dbus-java-test-$(VERSION).jar: .testclasses
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/test/*.class)
 dbus-java-viewer-$(VERSION).jar: .viewerclasses
@@ -130,30 +104,30 @@ doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
 	docbook-to-man $< > $@
 	
 bin/%: %.sh .bin
-	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%LIBPATH\%,$(LIBPREFIX),;s,\%DBUSLIBPATH\%,$(DBUSLIBDIR),' < $< > $@
+	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%JAVAUNIXJARPATH\%,$(JAVAUNIXJARDIR),;s,\%JAVAUNIXLIBPATH\%,$(JAVAUNIXLIBDIR),' < $< > $@
 
-testrun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
+testrun: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
 
-cross-test-server: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_server
+cross-test-server: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_server
 
-cross-test-client: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_client
+cross-test-client: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_client
 
-two-part-server: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.two_part_test_server
+two-part-server: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.two_part_test_server
 
-two-part-client: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.two_part_test_client
+two-part-client: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.two_part_test_client
 
-profilerun: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.profile $(PROFILE)
+profilerun: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.profile $(PROFILE)
 
-viewer: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):libdbus-java-$(VERSION).jar:dbus-java-viewer-$(VERSION).jar org.freedesktop.dbus.viewer.DBusViewer
+viewer: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:libdbus-java-$(VERSION).jar:dbus-java-viewer-$(VERSION).jar org.freedesktop.dbus.viewer.DBusViewer
 
-check:
+check: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	( PASS=false; \
 	  dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
@@ -162,9 +136,9 @@ check:
 	  kill $$(cat pid) ; \
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
 
-cross-test-compile: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+cross-test-compile: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 
-internal-cross-test: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+internal-cross-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	( dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
 	  $(MAKE) -s cross-test-server | tee server.log &\
@@ -172,7 +146,7 @@ internal-cross-test: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-
 	  $(MAKE) -s cross-test-client | tee client.log ;\
 	  kill $$(cat pid) ; )
 
-two-part-test: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+two-part-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	( dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
 	  $(MAKE) -s two-part-server | tee server.log &\
@@ -180,7 +154,7 @@ two-part-test: libdbus-java.so libdbus-java-$(VERSION).jar dbus-java-test-$(VERS
 	  $(MAKE) -s two-part-client | tee client.log ;\
 	  kill $$(cat pid) ; )
 
-profile:
+profile: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	( PASS=false; \
 	  dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
@@ -190,19 +164,18 @@ profile:
 
 uninstall: 
 	rm -f $(DESTDIR)$(JARPREFIX)/dbus.jar $(DESTDIR)$(JARPREFIX)/dbus-$(VERSION).jar $(DESTDIR)$(JARPREFIX)/dbus-viewer.jar $(DESTDIR)$(JARPREFIX)/dbus-viewer-$(VERSION).jar
-	rm -f $(DESTDIR)$(LIBPREFIX)/libdbus-java.so
 	rm -rf $(DESTDIR)$(DOCPREFIX)
 	rm -f $(DESTDIR)$(MANPREFIX)/CreateInterface.1 $(DESTDIR)$(MANPREFIX)/ListDBus.1  $(DESTDIR)$(MANPREFIX)/DBusViewer.1
 	rm -f $(DESTDIR)$(BINPREFIX)/CreateInterface $(DESTDIR)$(BINPREFIX)/ListDBus  $(DESTDIR)$(BINPREFIX)/DBusViewer
 
-install: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar libdbus-java.so bin/CreateInterface bin/ListDBus bin/DBusViewer 
+install: install-bin install-man
+
+install-bin: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar bin/CreateInterface bin/ListDBus bin/DBusViewer 
 	install -d $(DESTDIR)$(JARPREFIX)
 	install -m 644 libdbus-java-$(VERSION).jar $(DESTDIR)$(JARPREFIX)/dbus-$(VERSION).jar
 	install -m 644 dbus-java-viewer-$(VERSION).jar $(DESTDIR)$(JARPREFIX)/dbus-viewer-$(VERSION).jar
 	ln -sf dbus-$(VERSION).jar $(DESTDIR)$(JARPREFIX)/dbus.jar
 	ln -sf dbus-viewer-$(VERSION).jar $(DESTDIR)$(JARPREFIX)/dbus-viewer.jar
-	install -d $(DESTDIR)$(LIBPREFIX)
-	install libdbus-java.so $(DESTDIR)$(LIBPREFIX)
 	install -d $(DESTDIR)$(BINPREFIX)
 	install bin/DBusViewer $(DESTDIR)$(BINPREFIX)
 	install bin/CreateInterface $(DESTDIR)$(BINPREFIX)
@@ -232,7 +205,7 @@ install-doc: doc
 	cp -a doc/api/* $(DESTDIR)$(DOCPREFIX)/api
 
 dist: .dist
-.dist: dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh ListDBus.sh DBusViewer.sh
+.dist: dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh ListDBus.sh DBusViewer.sh
 	mkdir -p libdbus-java-$(VERSION)
 	cp -fa $^ libdbus-java-$(VERSION)
 	touch .dist
@@ -248,7 +221,7 @@ libdbus-java-$(VERSION): .dist
 libdbus-java-$(VERSION).tar.gz: .dist
 	tar zcf $@ libdbus-java-$(VERSION)
 	
-libdbus-java-$(RELEASEVERSION).tar.gz: dbus-java.c dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh ListDBus.sh DBusViewer.sh
+libdbus-java-$(RELEASEVERSION).tar.gz: dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh ListDBus.sh DBusViewer.sh
 	mkdir -p libdbus-java-$(RELEASEVERSION)/
 	cp -fa $^ libdbus-java-$(RELEASEVERSION)/
 	tar zcf $@ libdbus-java-$(RELEASEVERSION)
