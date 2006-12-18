@@ -68,6 +68,8 @@ public class DBusConnection
             synchronized (pendingErrors) {
                pendingErrors.add(err);
             }
+         } else if (s instanceof org.freedesktop.DBus.NameAcquired) {
+            busnames.add(((org.freedesktop.DBus.NameAcquired) s).name);
          }
       }
    }
@@ -146,7 +148,7 @@ public class DBusConnection
       public void Ping() { return; }
       public String Introspect() 
       {
-         String intro =  objectTree.Introspect(objectpath);
+         String intro = objectTree.Introspect(objectpath);
          if (null == intro) 
             throw new DBus.Error.UnknownObject("Introspecting on non-existant object");
          else return 
@@ -196,13 +198,14 @@ public class DBusConnection
    static final byte THREADCOUNT = 4;
    static final int MAX_ARRAY_LENGTH = 67108864;
    static final int MAX_NAME_LENGTH = 255;
+   public static final String DEFAULT_SYSTEM_BUS_ADDRESS = "unix:path=/var/run/dbus/system_bus_socket";
 
    private Map<String,ExportedObject> exportedObjects;
    private ObjectTree objectTree;
    private Map<DBusInterface,RemoteObject> importedObjects;
    private Map<SignalTuple,Vector<DBusSigHandler>> handledSignals;
    private EfficientMap pendingCalls;
-   private Vector<String> busnames;
+   private Set<String> busnames;
    private LinkedList<Runnable> runnables;
    private LinkedList<_workerthread> workers;
    private boolean _run;
@@ -259,7 +262,7 @@ public class DBusConnection
          switch (bustype) {
             case SYSTEM:
                s = System.getenv("DBUS_SYSTEM_BUS_ADDRESS");
-               if (null == s) s = DEFAULT_BUS_ADDRESS;
+               if (null == s) s = DEFAULT_SYSTEM_BUS_ADDRESS;
                break;
             case SESSION:
                s = System.getenv("DBUS_SESSION_BUS_ADDRESS");
@@ -288,7 +291,7 @@ public class DBusConnection
       exportedObjects.put(null, new ExportedObject(new _globalhandler()));
       handledSignals = new HashMap<SignalTuple,Vector<DBusSigHandler>>();
       pendingCalls = new EfficientMap(PENDING_MAP_INITIAL_SIZE);
-      busnames = new Vector<String>();
+      busnames = new TreeSet<String>();
       outgoing = new EfficientQueue(PENDING_MAP_INITIAL_SIZE);
       pendingErrors = new LinkedList<DBusErrorMessage>();
       runnables = new LinkedList<Runnable>();
@@ -305,7 +308,7 @@ public class DBusConnection
       synchronized (_reflock) {
          _refcount = 1; 
       }
-      addr = new BusAddress(address);
+      addr = address;
    
       transport = new Transport(addr);
 
@@ -322,7 +325,9 @@ public class DBusConnection
          throw new DBusException(DBEe.getMessage());
       }
       // register disconnect handlers
-      addSigHandler(org.freedesktop.DBus.Local.Disconnected.class, new _sighandler());
+      DBusSigHandler h = new _sighandler();
+      addSigHandler(org.freedesktop.DBus.Local.Disconnected.class, h);
+      addSigHandler(org.freedesktop.DBus.NameAcquired.class, h);
    }
 
    /**

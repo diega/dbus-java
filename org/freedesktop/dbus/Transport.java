@@ -33,6 +33,10 @@ public class Transport
    {
       connect(address);
    }
+   public Transport(String address) throws IOException
+   {
+      connect(new BusAddress(address));
+   }
    private boolean auth(BusAddress address, OutputStream out, InputStream in) throws IOException
    {
       out.write(new byte[] { 0 });
@@ -54,6 +58,10 @@ public class Transport
          return true;
       } 
       return false;
+   }
+   public void connect(String address) throws IOException
+   {
+      connect(new BusAddress(address));
    }
    public void connect(BusAddress address) throws IOException
    {
