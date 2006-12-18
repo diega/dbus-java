@@ -2,10 +2,10 @@ package org.freedesktop.dbus;
 
 import java.util.Vector;
 
-public class Signal extends Message
+public class DBusSignal extends Message
 {
-   Signal() { }
-   public Signal(String path, String iface, String member, String sig, Object... args) 
+   DBusSignal() { }
+   public DBusSignal(String path, String iface, String member, String sig, Object... args) 
    {
       super(Message.Endian.BIG, Message.MessageType.SIGNAL, (byte) 0);
 

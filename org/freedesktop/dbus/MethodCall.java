@@ -2,10 +2,10 @@ package org.freedesktop.dbus;
 
 import java.util.Vector;
 
-public class Call extends Message
+public class MethodCall extends Message
 {
-   Call() { }
-   public Call(String dest, String path, String iface, String member, String sig, Object... args) 
+   MethodCall() { }
+   public MethodCall(String dest, String path, String iface, String member, String sig, Object... args) 
    {
       super(Message.Endian.BIG, Message.MessageType.METHOD_CALL, (byte) 0);
 
