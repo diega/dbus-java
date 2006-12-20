@@ -11,11 +11,11 @@
 package org.freedesktop.dbus;
 
 /**
- * Provides a DBusMessage queue which doesn't allocate objects
+ * Provides a Message queue which doesn't allocate objects
  * on insertion/removal. */
 class EfficientQueue
 {
-   private DBusMessage[] mv;
+   private Message[] mv;
    private int start;
    private int end;
    private int init_size;
@@ -27,8 +27,8 @@ class EfficientQueue
    private void grow()
    {
       // create new vectors twice as long
-      DBusMessage[] oldmv = mv;
-      mv = new DBusMessage[oldmv.length*2];
+      Message[] oldmv = mv;
+      mv = new Message[oldmv.length*2];
 
       // copy start->length to the start of the new vector
       System.arraycopy(oldmv,start,mv,0,oldmv.length-start);
@@ -56,11 +56,11 @@ class EfficientQueue
    {
       if (null != mv && mv.length == init_size) return;
       // reset to original size
-      mv = new DBusMessage[init_size];
+      mv = new Message[init_size];
       start = 0;
       end = 0;
    }
-   public void add(DBusMessage m)
+   public void add(Message m)
    {
       // put this at the end
       mv[end] = m;
@@ -69,13 +69,13 @@ class EfficientQueue
       // if we are out of space, grow.
       if (end == start) grow();
    }
-   public DBusMessage remove()
+   public Message remove()
    {
       if (start == end) return null;
       // find the item
       int pos = start;
       // get the value
-      DBusMessage m = mv[pos];
+      Message m = mv[pos];
       // set it as unused
       mv[pos] = null;
       if (start == (mv.length-1)) start = 0; else start++;

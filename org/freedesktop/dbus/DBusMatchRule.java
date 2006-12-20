@@ -10,6 +10,9 @@
 */
 package org.freedesktop.dbus;
 
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
+
 public class DBusMatchRule
 {
    /* signal, error, method_call, method_reply */
@@ -30,19 +33,19 @@ public class DBusMatchRule
       member = null;
       type = "error";
    }
-   public DBusMatchRule(DBusMessage m)
+   public DBusMatchRule(Message m)
    {
       iface = m.getType();
       member = m.getName();
       if (m instanceof DBusSignal)
          type = "signal";
-      else if (m instanceof DBusErrorMessage) {
+      else if (m instanceof Error) {
          type = "error";
          member = null;
       }
       else if (m instanceof MethodCall)
          type = "method_call";
-      else if (m instanceof MethodReply)
+      else if (m instanceof MethodReturn)
          type = "method_reply";
    }
    public DBusMatchRule(Class<? extends DBusInterface> c, String method) throws DBusException
@@ -74,7 +77,7 @@ public class DBusMatchRule
          member = c.getSimpleName();
          type = "signal";
       }
-      else if (DBusErrorMessage.class.isAssignableFrom(c)) {
+      else if (Error.class.isAssignableFrom(c)) {
          iface = DBusConnection.dollar_pattern.matcher(c.getName()).replaceAll(".");
          if (!iface.matches(".*\\..*"))
             throw new DBusException("DBusInterfaces must be defined in a package.");

@@ -20,6 +20,8 @@ import java.util.Vector;
 import java.util.List;
 import java.util.Map;
 
+import org.freedesktop.dbus.exceptions.DBusException;
+
 class ListContainer
 {
    private Object[] values;

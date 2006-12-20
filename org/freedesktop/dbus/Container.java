@@ -15,7 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
-import org.freedesktop.dbus.Position;
+
+import org.freedesktop.dbus.exceptions.DBusException;
 
 /**
  * This class is the super class of both Structs and Tuples 
@@ -53,7 +54,7 @@ abstract class Container
          if (null == ts[p.value()])
             ts[p.value()] = f.getGenericType();
          try {
-            args[p.value()] = DBusConnection.convertParameters(
+            args[p.value()] = Marshalling.convertParameters(
                   new Object[] { f.get(this) },
                   new Type[] { ts[p.value()] })[0];
          } catch (Exception e) {
@@ -65,7 +66,7 @@ abstract class Container
       sig = "";
       for (Type t: ts)
          if (null != t)
-            for (String s: DBusConnection.getDBusType(t))
+            for (String s: Marshalling.getDBusType(t))
                sig += s;
 
       this.parameters = new Object[args.length - diff];

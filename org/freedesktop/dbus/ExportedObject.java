@@ -9,6 +9,13 @@
    Full licence texts are included in the COPYING file with this program.
 */
 package org.freedesktop.dbus;
+
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
+import java.util.Map;
+
+import org.freedesktop.dbus.exceptions.DBusException;
+
 class ExportedObject
 {
    private String getAnnotations(AnnotatedElement c)

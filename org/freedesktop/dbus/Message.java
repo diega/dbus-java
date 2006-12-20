@@ -26,12 +26,12 @@ import cx.ath.matthew.utils.Hexdump;
 public class Message
 {
    /** Defines constants representing the endianness of the message. */
-   public static final interface Endian {
+   public static interface Endian {
       public static final byte BIG = 'B';
       public static final byte LITTLE = 'l';
    }
    /** Defines constants representing the flags which can be set on a message. */
-   public static final interface Flags {
+   public static interface Flags {
       public static final byte NO_REPLY_EXPECTED = 0x01;
       public static final byte NO_AUTO_START = 0x02;
    }
@@ -212,7 +212,7 @@ public class Message
          if (bufferuse == wiredata.length) {
             Debug.print("Resizing "+bufferuse);
             byte[][] temp = new byte[wiredata.length+BUFFERINCREMENT][];
-            System.arrayCopy(wiredata, 0, temp, 0, wiredata.length);
+            System.arraycopy(wiredata, 0, temp, 0, wiredata.length);
             wiredata = temp;
          }
          wiredata[bufferuse++] = buf;
@@ -231,7 +231,7 @@ public class Message
          if (bufferuse == wiredata.length) {
             Debug.print("Resizing "+bufferuse);
             byte[][] temp = new byte[wiredata.length+BUFFERINCREMENT][];
-            System.arrayCopy(wiredata, 0, temp, 0, wiredata.length);
+            System.arraycopy(wiredata, 0, temp, 0, wiredata.length);
             wiredata = temp;
          }
          wiredata[bufferuse++] = new byte[] { b };
@@ -702,6 +702,10 @@ public class Message
     */
    public String getInterface() { return  (String) headers.get(HeaderField.INTERFACE); }
    /**
+    * Returns the object path of the message.
+    */
+   public String getPath() { return  (String) headers.get(HeaderField.PATH); }
+   /**
     * Returns the member name or error name this message represents.
     */
    public String getName() 
@@ -715,6 +719,10 @@ public class Message
     * Returns the dbus signature of the parameters.
     */
    public String getSig() { return (String) headers.get(HeaderField.SIGNATURE); }
+   /**
+    * Returns the message flags.
+    */
+   public int getFlags() { return flags; }
    /**
     * Returns the message serial ID (unique for this connection)
     * @return the message serial.

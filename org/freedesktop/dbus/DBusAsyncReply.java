@@ -16,6 +16,8 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.freedesktop.DBus.Error.NoReply;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 /**
  * A handle to an asynchronous method call.
@@ -49,10 +51,10 @@ public class DBusAsyncReply<ReturnType>
    private synchronized void checkReply()
    {
       if (mc.hasReply()) {
-         DBusMessage m = mc.getReply();
-         if (m instanceof DBusErrorMessage)
-            error = ((DBusErrorMessage) m).getException();
-         else if (m instanceof MethodReply) {
+         Message m = mc.getReply();
+         if (m instanceof Error)
+            error = ((Error) m).getException();
+         else if (m instanceof MethodReturn) {
             try {
                rval = (ReturnType) RemoteInvocationHandler.convertRV(m.getSig(), m.getParameters(), me);
             } catch (DBusExecutionException DBEe) {

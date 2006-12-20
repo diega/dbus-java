@@ -8,7 +8,15 @@
 
    Full licence texts are included in the COPYING file with this program.
 */
-package org.freedesktop.DBus;
+package org.freedesktop.dbus;
+
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.freedesktop.dbus.exceptions.DBusException;
+
 /**
  * Contains static methods for marshalling values.
  */

@@ -9,7 +9,7 @@
    Full licence texts are included in the COPYING file with this program.
 */
 package org.freedesktop.dbus;
-
+import org.freedesktop.dbus.exceptions.DBusException;
 /**
  * Custom classes may be sent over DBus if they implement this interface.
  * <p>

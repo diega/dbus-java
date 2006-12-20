@@ -11,6 +11,7 @@
 package org.freedesktop.dbus;
 
 import java.util.Vector;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 /**
  * Error messages which can be sent over the bus.

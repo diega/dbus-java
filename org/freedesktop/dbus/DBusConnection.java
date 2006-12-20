@@ -36,6 +36,9 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import org.freedesktop.DBus;
+import org.freedesktop.dbus.exceptions.NotConnected;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 /** Handles a connection to DBus.
  * <p>
@@ -53,7 +56,7 @@ public class DBusConnection
       public void handle(DBusSignal s)
       {
          if (s instanceof org.freedesktop.DBus.Local.Disconnected) {
-            DBusErrorMessage err = new DBusErrorMessage(
+            Error err = new Error(
                   busnames.get(0), busnames.get(0), 
                   "org.freedesktop.DBus.Local.Disconnected", "s",
                   new Object[] { "Disconnected" }, 0, 0);
@@ -82,7 +85,7 @@ public class DBusConnection
       public void run()
       {
          try {
-            DBusMessage m = null;
+            Message m = null;
             while (_run) {
                m = null;
 
@@ -97,10 +100,10 @@ public class DBusConnection
                         handleMessage((DBusSignal) m);
                      else if (m instanceof MethodCall)
                         handleMessage((MethodCall) m);
-                     else if (m instanceof MethodReply)
-                        handleMessage((MethodReply) m);
-                     else if (m instanceof DBusErrorMessage)
-                        handleMessage((DBusErrorMessage) m);
+                     else if (m instanceof MethodReturn)
+                        handleMessage((MethodReturn) m);
+                     else if (m instanceof Error)
+                        handleMessage((Error) m);
 
                      m = null;
                   }
@@ -205,13 +208,13 @@ public class DBusConnection
    private Map<DBusInterface,RemoteObject> importedObjects;
    private Map<SignalTuple,Vector<DBusSigHandler>> handledSignals;
    private EfficientMap pendingCalls;
-   private Set<String> busnames;
+   private List<String> busnames;
    private LinkedList<Runnable> runnables;
    private LinkedList<_workerthread> workers;
    private boolean _run;
    private int connid;
    EfficientQueue outgoing;
-   LinkedList<DBusErrorMessage> pendingErrors;
+   LinkedList<Error> pendingErrors;
 
    private static final Map<Object,DBusConnection> conn = new HashMap<Object,DBusConnection>();
    private static final Map<Thread,DBusCallInfo> infomap = new HashMap<Thread,DBusCallInfo>();
@@ -291,9 +294,9 @@ public class DBusConnection
       exportedObjects.put(null, new ExportedObject(new _globalhandler()));
       handledSignals = new HashMap<SignalTuple,Vector<DBusSigHandler>>();
       pendingCalls = new EfficientMap(PENDING_MAP_INITIAL_SIZE);
-      busnames = new TreeSet<String>();
+      busnames = new Vector<String>();
       outgoing = new EfficientQueue(PENDING_MAP_INITIAL_SIZE);
-      pendingErrors = new LinkedList<DBusErrorMessage>();
+      pendingErrors = new LinkedList<Error>();
       runnables = new LinkedList<Runnable>();
       workers = new LinkedList<_workerthread>();
       objectTree = new ObjectTree();
@@ -968,24 +971,24 @@ public class DBusConnection
          meth = eo.methods.get(new MethodTuple(m.getName(), m.getSig()));
       }
       if (null != meth)
-         o = new _globalhandler(m.getObjectPath());
+         o = new _globalhandler(m.getPath());
 
       else {
          // now check for specific exported functions
 
          synchronized (exportedObjects) {
-            eo = exportedObjects.get(m.getObjectPath());
+            eo = exportedObjects.get(m.getPath());
          }
 
          if (null == eo) {
             synchronized (outgoing) {
-               outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownObject(m.getObjectPath()+" is not an object provided by this process."))); }
+               outgoing.add(new Error(m, new DBus.Error.UnknownObject(m.getPath()+" is not an object provided by this process."))); }
             return;
          }
          meth = eo.methods.get(new MethodTuple(m.getName(), m.getSig()));
          if (null == meth) {
             synchronized (outgoing) {
-               outgoing.add(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("The method `"+m.getType()+"."+m.getName()+"' does not exist on this object."))); }
+               outgoing.add(new Error(m, new DBus.Error.UnknownMethod("The method `"+m.getType()+"."+m.getName()+"' does not exist on this object."))); }
             return;
          }
          o = eo.object;
@@ -1007,7 +1010,7 @@ public class DBusConnection
             } catch (Exception e) {
                if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                synchronized (outqueue) {
-                  outqueue.add(new DBusErrorMessage(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); }
+                  outqueue.add(new Error(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); }
                return;
             }
 
@@ -1026,16 +1029,16 @@ public class DBusConnection
                   infomap.remove(Thread.currentThread());
                }
                if (!noreply) {
-                  MethodReply reply;
+                  MethodReturn reply;
                   if (Void.TYPE.equals(me.getReturnType())) 
-                     reply = new MethodReply(m);
+                     reply = new MethodReturn(m);
                   else {
                      // need to recursively convert Tuple with types
                      if (Tuple.class.isAssignableFrom(me.getReturnType()))
                         ((Tuple) result).getParameters(((ParameterizedType) me.getGenericReturnType()).getActualTypeArguments());
                      else
                         result = convertParameter(result, me.getGenericReturnType());
-                     reply = new MethodReply(m, result);
+                     reply = new MethodReturn(m, result);
                   }
                   synchronized (outqueue) {
                      outqueue.add(reply);
@@ -1044,12 +1047,12 @@ public class DBusConnection
             } catch (DBusExecutionException DBEe) {
                if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
                synchronized (outqueue) {
-                  outqueue.add(new DBusErrorMessage(m, DBEe)); 
+                  outqueue.add(new Error(m, DBEe)); 
                }
             } catch (Throwable e) {
                if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                synchronized (outqueue) {
-                  outqueue.add(new DBusErrorMessage(m, new DBusExecutionException("Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage()))); 
+                  outqueue.add(new Error(m, new DBusExecutionException("Error Executing Method "+m.getType()+"."+m.getName()+": "+e.getMessage()))); 
                }
             } 
          }
@@ -1063,11 +1066,11 @@ public class DBusConnection
          Vector<DBusSigHandler> t;
          t = handledSignals.get(new SignalTuple(s.getType(), s.getName(), null, null));
          if (null != t) v.addAll(t);
-         t = handledSignals.get(new SignalTuple(s.getType(), s.getName(), s.getObjectPath(), null));
+         t = handledSignals.get(new SignalTuple(s.getType(), s.getName(), s.getPath(), null));
          if (null != t) v.addAll(t);
          t = handledSignals.get(new SignalTuple(s.getType(), s.getName(), null, s.getSource()));
          if (null != t) v.addAll(t);
-         t = handledSignals.get(new SignalTuple(s.getType(), s.getName(), s.getObjectPath(), s.getSource()));
+         t = handledSignals.get(new SignalTuple(s.getType(), s.getName(), s.getPath(), s.getSource()));
          if (null != t) v.addAll(t);
       }
       if (0 == v.size()) return;
@@ -1081,13 +1084,13 @@ public class DBusConnection
                } catch (DBusException DBe) {
                   if (DBusConnection.EXCEPTION_DEBUG) DBe.printStackTrace();
                   synchronized (outqueue) {
-                     outqueue.add(new DBusErrorMessage(s, new DBusExecutionException("Error handling signal "+s.getType()+"."+s.getName()+": "+DBe.getMessage()))); 
+                     outqueue.add(new Error(s, new DBusExecutionException("Error handling signal "+s.getType()+"."+s.getName()+": "+DBe.getMessage()))); 
                   }
                }
             }
          } });
    }
-   private void handleMessage(final DBusErrorMessage err)
+   private void handleMessage(final Error err)
    {
       MethodCall m = null;
       synchronized (pendingCalls) {
@@ -1100,7 +1103,7 @@ public class DBusConnection
          synchronized (pendingErrors) {
             pendingErrors.addLast(err); }
    }
-   private void handleMessage(final MethodReply mr)
+   private void handleMessage(final MethodReturn mr)
    {
       MethodCall m = null;
       synchronized (pendingCalls) {
@@ -1112,10 +1115,10 @@ public class DBusConnection
          mr.setCall(m);
       } else
          synchronized (outgoing) {
-            outgoing.add(new DBusErrorMessage(mr, new DBusExecutionException("Spurious reply. No message with the given serial id was awaiting a reply."))); 
+            outgoing.add(new Error(mr, new DBusExecutionException("Spurious reply. No message with the given serial id was awaiting a reply."))); 
          }
    }
-   private void sendMessage(DBusMessage m)
+   private void sendMessage(Message m)
    {
       try {
          transport.mout.writeMessage(m);
@@ -1128,19 +1131,18 @@ public class DBusConnection
       } catch (Exception e) {
          if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          if (m instanceof MethodCall && e instanceof DBusExecutionException) 
-            m.setReply(new DBusErrorMessage(m, DBEe));
+            m.setReply(new Error(m, DBEe));
          else if (m instanceof MethodCall)
 
-            m.setReply(new DBusErrorMessage(m, new DBusExecutionException("Message Failed to Send: "+e.getMessage())));
-         else if (m instanceof MethodReply)
+            m.setReply(new Error(m, new DBusExecutionException("Message Failed to Send: "+e.getMessage())));
+         else if (m instanceof MethodReturn)
             transport.mout.write(new Error(m, Message.ArgumentType.STRING_STRING, "Error sending reply: "+e. getMessage()));
       }
-      }
    }
-   private DBusMessage readIncoming(int timeoutms, EfficientQueue outgoing)
+   private Message readIncoming(int timeoutms, EfficientQueue outgoing)
    {
       // TODO do something with timeoutms and outgoing
-      DBusMessage m = transport.min.readMessage();
+      Message m = transport.min.readMessage();
       return m;
    }
 }

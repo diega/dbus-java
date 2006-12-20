@@ -12,6 +12,7 @@ package org.freedesktop.dbus;
 
 import java.lang.reflect.Type;
 import java.util.Vector;
+import org.freedesktop.dbus.DBusException;
 
 /**
  * A Wrapper class for Variant values. 
@@ -34,7 +35,7 @@ public class Variant<T>
       if (null == o) throw new IllegalArgumentException("Can't wrap Null in a Variant");
       type = o.getClass();
       try {
-         String[] ss = DBusConnection.getDBusType(o.getClass(), true);
+         String[] ss = Marshalling.getDBusType(o.getClass(), true);
          if (ss.length != 1)
          throw new IllegalArgumentException("Can't wrap a multi-valued type in a Variant ("+type+")");
          this.sig = ss[0];
@@ -55,7 +56,7 @@ public class Variant<T>
       if (null == o) throw new IllegalArgumentException("Can't wrap Null in a Variant");
       this.type = type;
       try {
-         String[] ss = DBusConnection.getDBusType(type);
+         String[] ss = Marshalling.getDBusType(type);
          if (ss.length != 1)
          throw new IllegalArgumentException("Can't wrap a multi-valued type in a Variant ("+type+")");
          this.sig = ss[0];
@@ -77,7 +78,7 @@ public class Variant<T>
       this.sig = sig;
       try {
          Vector<Type> ts = new Vector<Type>();
-         DBusConnection.getJavaType(sig, ts,1);
+         Marshalling.getJavaType(sig, ts,1);
          if (ts.size() != 1)
             throw new IllegalArgumentException("Can't wrap multiple or no types in a Variant ("+sig+")");
          this.type = ts.get(0);

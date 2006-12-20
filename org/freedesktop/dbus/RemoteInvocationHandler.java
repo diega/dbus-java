@@ -22,6 +22,8 @@ import java.lang.reflect.TypeVariable;
 import java.util.List;
 
 import org.freedesktop.DBus;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 class RemoteInvocationHandler implements InvocationHandler
 {
@@ -98,7 +100,7 @@ class RemoteInvocationHandler implements InvocationHandler
       // get reply
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) return null;
 
-      DBusMessage reply = call.getReply();
+      Message reply = call.getReply();
       if (null == reply) throw new DBus.Error.NoReply("No reply within specified time");
                
       if (reply instanceof DBusErrorMessage)

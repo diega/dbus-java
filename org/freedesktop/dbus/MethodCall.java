@@ -51,12 +51,12 @@ public class MethodCall extends Message
       marshallint(bytecounter-c, blen, 0, 4);
    }
    static long REPLY_WAIT_TIMEOUT = 20000;
-   DBusMessage reply = null;
+   Message reply = null;
    public synchronized boolean hasReply()
    {
       return null != reply;
    }
-   public synchronized DBusMessage getReply()
+   public synchronized Message getReply()
    {
       if (null != reply) return reply;
       try {
@@ -64,7 +64,7 @@ public class MethodCall extends Message
          return reply;
       } catch (InterruptedException Ie) { return reply; }
    }
-   protected synchronized void setReply(DBusMessage reply)
+   protected synchronized void setReply(Message reply)
    {
       this.reply = reply;
       notifyAll();

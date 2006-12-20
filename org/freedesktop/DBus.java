@@ -18,8 +18,6 @@ import java.lang.annotation.Target;
 import java.util.Map;
 import java.util.List;
 
-import org.freedesktop.dbus.DBusException;
-import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.Position;
@@ -29,6 +27,8 @@ import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
 import org.freedesktop.dbus.Variant;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 public interface DBus extends DBusInterface
 {
