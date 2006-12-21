@@ -10,11 +10,19 @@
 */
 package org.freedesktop.dbus;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 class ExportedObject
 {
@@ -62,7 +70,7 @@ class ExportedObject
                         introspectiondata +=
                            "   <annotation name=\"org.freedesktop.DBus.Method.Error\" value=\""+DBusConnection.dollar_pattern.matcher(ex.getName()).replaceAll(".")+"\" />\n";
                   for (Type pt: meth.getGenericParameterTypes())
-                     for (String s: DBusConnection.getDBusType(pt)) {
+                     for (String s: Marshalling.getDBusType(pt)) {
                         introspectiondata += "   <arg type=\""+s+"\" direction=\"in\"/>\n";
                         ms += s;
                      }
@@ -73,12 +81,12 @@ class ExportedObject
 
                         for (Type t: ts)
                            if (t != null)
-                              for (String s: DBusConnection.getDBusType(t))
+                              for (String s: Marshalling.getDBusType(t))
                                  introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
                      } else if (Object[].class.equals(meth.getGenericReturnType())) {
                         throw new DBusException("Return type of Object[] cannot be introspected properly");
                      } else
-                        for (String s: DBusConnection.getDBusType(meth.getGenericReturnType()))
+                        for (String s: Marshalling.getDBusType(meth.getGenericReturnType()))
                         introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
                   }
                   introspectiondata += "  </method>\n";
@@ -92,7 +100,7 @@ class ExportedObject
                   Constructor con = sig.getConstructors()[0];
                   Type[] ts = con.getGenericParameterTypes();
                   for (int j = 1; j < ts.length; j++)
-                     for (String s: DBusConnection.getDBusType(ts[j]))
+                     for (String s: Marshalling.getDBusType(ts[j]))
                         introspectiondata += "   <arg type=\""+s+"\" direction=\"out\" />\n";
                   introspectiondata += getAnnotations(sig);
                   introspectiondata += "  </signal>\n";

@@ -16,6 +16,9 @@ import java.io.IOException;
 import cx.ath.matthew.debug.Debug;
 import cx.ath.matthew.utils.Hexdump;
 
+import org.freedesktop.dbus.exceptions.MessageTypeException;
+import org.freedesktop.dbus.exceptions.MessageProtocolVersionException;
+
 public class MessageReader
 {
    private InputStream in;
@@ -52,7 +55,7 @@ public class MessageReader
             m = new MethodReturn();
             break;
          case Message.MessageType.SIGNAL:
-            m = new Signal();
+            m = new DBusSignal();
             break;
          case Message.MessageType.ERROR:
             m = new Error();
@@ -62,5 +65,9 @@ public class MessageReader
       }
       m.populate(buf, header, body);
       return m;
+   }
+   public void close()
+   {
+      in.close();
    }
 }

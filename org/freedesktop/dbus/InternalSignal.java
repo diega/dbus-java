@@ -12,13 +12,9 @@ package org.freedesktop.dbus;
 import org.freedesktop.dbus.exceptions.DBusException;
 class InternalSignal extends DBusSignal
 {
-   public InternalSignal(String source, String objectpath, String name, String type, String sig, long serial, Object... parameters) throws DBusException
+   public InternalSignal(String source, String objectpath, String name, String iface, String sig, long serial, Object... parameters) throws DBusException
    {
-      super(objectpath, parameters);
-      this.type = type;
-      this.name = name;
+      super(objectpath, iface, name, sig, parameters);
       this.serial = serial;
-      this.source = source;
-      this.sig = sig;
    }
 }

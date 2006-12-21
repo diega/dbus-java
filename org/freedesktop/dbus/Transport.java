@@ -94,6 +94,11 @@ public class Transport
       mout = new MessageWriter(out);
       min = new MessageReader(in);
    }
+   public void disconnect() throws IOException
+   {
+      min.close();
+      mout.close();
+   }
 }
 
 

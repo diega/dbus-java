@@ -12,6 +12,7 @@ package org.freedesktop.dbus.types;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import org.freedesktop.dbus.Struct;
 
 /**
  * The type of a struct.

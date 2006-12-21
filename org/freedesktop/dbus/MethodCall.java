@@ -15,9 +15,9 @@ import java.util.Vector;
 public class MethodCall extends Message
 {
    MethodCall() { }
-   public MethodCall(String dest, String path, String iface, String member, String sig, Object... args) 
+   public MethodCall(String dest, String path, String iface, String member, int flags, String sig, Object... args) 
    {
-      super(Message.Endian.BIG, Message.MessageType.METHOD_CALL, (byte) 0);
+      super(Message.Endian.BIG, Message.MessageType.METHOD_CALL, flags);
 
       headers.put(Message.HeaderField.PATH,path);
       headers.put(Message.HeaderField.DESTINATION,dest);

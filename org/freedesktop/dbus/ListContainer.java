@@ -32,7 +32,7 @@ class ListContainer
       Class c;
       try {
          Vector<Type> vt = new Vector<Type>();
-         DBusConnection.getJavaType(sig, vt, 1);
+         Marshalling.getJavaType(sig, vt, 1);
          if (vt.get(0) instanceof ParameterizedType)
             c = (Class) ((ParameterizedType) vt.get(0)).getRawType();
          else
@@ -59,7 +59,7 @@ class ListContainer
    {
       this.values = ArrayFrob.wrap(content);
 
-      String[] s = DBusConnection.getDBusType(content.getClass().getComponentType());
+      String[] s = Marshalling.getDBusType(content.getClass().getComponentType());
       if (1 != s.length) throw new DBusException("List Contents not single type");
       sig = s[0];
    }
@@ -82,14 +82,14 @@ class ListContainer
       values = (Object[]) Array.newInstance(c, content.length);
       try {
          for (int i = 0; i < content.length; i++) 
-            values[i] = DBusConnection.convertParameter(content[i], t);
+            values[i] = Marshalling.convertParameter(content[i], t);
 
       } catch (Exception e) {
          if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusException(e.getMessage());
       }
 
-      String[] s = DBusConnection.getDBusType(t);
+      String[] s = Marshalling.getDBusType(t);
       if (1 != s.length) throw new DBusException("List Contents not single type");
       sig = s[0];
    }
@@ -113,14 +113,14 @@ class ListContainer
 
       try {
          for (int i = 0; i < l.size(); i++) 
-            values[i] = DBusConnection.convertParameter(l.get(i), ts[0]);
+            values[i] = Marshalling.convertParameter(l.get(i), ts[0]);
 
       } catch (Exception e) {
          if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusException(e.getMessage());
       }
 
-      String[] s = DBusConnection.getDBusType(ts[0]);
+      String[] s = Marshalling.getDBusType(ts[0]);
       if (1 != s.length) throw new DBusException("List Contents not single type");
       sig = s[0];
 
@@ -146,7 +146,7 @@ class ListContainer
 
       Object[] ov = new Object[values.length];
       for (int i = 0; i < values.length; i++) 
-         ov[i] = DBusConnection.deSerializeParameter(this.values[i], ts[0]);
+         ov[i] = Marshalling.deSerializeParameter(this.values[i], ts[0]);
       this.list = Arrays.asList(ov); 
       return list;
    }

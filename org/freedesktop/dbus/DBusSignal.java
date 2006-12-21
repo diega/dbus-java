@@ -89,18 +89,17 @@ public class DBusSignal extends Message
       }
 
       try {
-         parameters = DBusConnection.deSerializeParameters(parameters, types);
          DBusSignal s;
-         if (null == parameters) s = (DBusSignal) con.newInstance(objectpath);
+         if (null == args) s = (DBusSignal) con.newInstance(getPath());
          else {
-            Object[] args = new Object[parameters.length + 1];
-            args[0] = objectpath;
-            System.arraycopy(parameters, 0, args, 1, parameters.length);
+            Object[] params = new Object[args.length + 1];
+            params[0] = getPath();
+            System.arraycopy(args, 0, params, 1, args.length);
 
-            s = (DBusSignal) con.newInstance(args);
+            s = (DBusSignal) con.newInstance(params);
          }
-         s.setSerial(serial);
-         s.setSource(source);
+         s.headers = headers;
+         s.wiredata = wiredata;
          return s;
       } catch (Exception e) { 
          if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
@@ -111,41 +110,67 @@ public class DBusSignal extends Message
     * Create a new signal.
     * This contructor MUST be called by all sub classes.
     * @param objectpath The path to the object this is emitted from.
-    * @param parameters The parameters of the signal.
+    * @param args The parameters of the signal.
     * @throws DBusException This is thrown if the subclass is incorrectly defined.
     */
-   protected DBusSignal(String objectpath, Object... parameters) throws DBusException
+   protected DBusSignal(String objectpath, Object... args) throws DBusException
    {
-      super(null, "", null, "", parameters, 0);
+      super(Message.Endian.BIG, Message.MessageType.SIGNAL, (byte) 0);
+
       if (!objectpath.matches(DBusConnection.OBJECT_REGEX)) throw new DBusException("Invalid object path");
+
       Class tc = getClass();
-      try {
-         name = tc.getSimpleName();
-         if (null != tc.getEnclosingClass())
-            type = DBusConnection.dollar_pattern.matcher(tc.getEnclosingClass().getName()).replaceAll(".");
-         this.objectpath = objectpath;
+      String member = tc.getSimpleName();
+      String iface = null;
+      Class enc = tc.getEnclosingClass();
+      if (null == enc ||
+            !DBusInterface.class.isAssignableFrom(enc) ||
+            enc.getName().equals(enc.getSimpleName()))
+         throw new DBusException("Signals must be declared as a member of a class implementing DBusInterface which is the member of a package.");
+      else
+         iface = DBusConnection.dollar_pattern.matcher(enc.getName()).replaceAll(".");
 
-         // convert recursively everything
-         Type[] types = typeCache.get(tc);
-         if (null == types) {
-            Constructor con = tc.getDeclaredConstructors()[0];
-            conCache.put(tc, con);
-            Type[] ts = con.getGenericParameterTypes();
-            types = new Type[ts.length-1];
-            for (int i = 1; i <= types.length; i++) 
-               if (ts[i] instanceof TypeVariable)
-                  types[i-1] = ((TypeVariable) ts[i]).getBounds()[0];
-               else
-                  types[i-1] = ts[i];
+      headers.put(Message.HeaderField.PATH,objectpath);
+      headers.put(Message.HeaderField.MEMBER,member);
+      headers.put(Message.HeaderField.INTERFACE,iface);
 
-            typeCache.put(tc, types);
+      Vector<Object> hargs = new Vector<Object>();
+      hargs.add(new Object[] { Message.HeaderField.PATH, new Object[] { ArgumentType.OBJECT_PATH_STRING, objectpath } });
+      hargs.add(new Object[] { Message.HeaderField.INTERFACE, new Object[] { ArgumentType.STRING_STRING, iface } });
+      hargs.add(new Object[] { Message.HeaderField.MEMBER, new Object[] { ArgumentType.STRING_STRING, member } });
+
+      String sig = null;
+      if (0 < args.length) {
+         try {
+            Type[] types = typeCache.get(tc);
+            if (null == types) {
+               Constructor con = tc.getDeclaredConstructors()[0];
+               conCache.put(tc, con);
+               Type[] ts = con.getGenericParameterTypes();
+               types = new Type[ts.length-1];
+               for (int i = 1; i <= types.length; i++) 
+                  if (ts[i] instanceof TypeVariable)
+                     types[i-1] = ((TypeVariable) ts[i]).getBounds()[0];
+                  else
+                     types[i-1] = ts[i];
+               typeCache.put(tc, types);
+            }
+            sig = Marshalling.getDBusType(types);
+            hargs.add(new Object[] { Message.HeaderField.SIGNATURE, new Object[] { ArgumentType.SIGNATURE_STRING, sig } });
+            headers.put(Message.HeaderField.SIGNATURE,sig);
+            this.args = args;
+         } catch (Exception e) {
+            throw new DBusException("Failed to add signal parameters: "+e.getMessage());
          }
-         if (null != parameters)
-            parameters = DBusConnection.convertParameters(parameters, types);
-
-      } catch (Exception e) {
-         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
-         throw new DBusException("Failed to correctly determine DBusSignal type: "+e);
       }
+
+      byte[] blen = new byte[4];
+      appendBytes(blen);
+      append("ua(yv)", ++serial, hargs.toArray());
+      pad((byte)8);
+
+      long c = bytecounter;
+      if (null != this.args) append(sig, args);
+      marshallint(bytecounter-c, blen, 0, 4);
    }
 }

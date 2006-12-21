@@ -24,7 +24,7 @@ public class TypeSignature
    {
       StringBuffer sb = new StringBuffer();
       for (Type t: types) {
-         String[] ts = DBusConnection.getDBusType(t);
+         String[] ts = Marshalling.getDBusType(t);
          for (String s: ts)
             sb.append(s);
       }

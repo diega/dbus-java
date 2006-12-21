@@ -8,11 +8,13 @@
 
    Full licence texts are included in the COPYING file with this program.
 */
-package org.freedesktop.dbus;
+package org.freedesktop.dbus.bin;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.HashMap;
+
+import org.freedesktop.dbus.exceptions.DBusException;
 
 class StructStruct
 {

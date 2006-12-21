@@ -10,12 +10,24 @@
 */
 package org.freedesktop.dbus;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.types.DBusListType;
+import org.freedesktop.dbus.types.DBusMapType;
+import org.freedesktop.dbus.types.DBusStructType;
 
 /**
  * Contains static methods for marshalling values.
@@ -366,12 +378,12 @@ public class Marshalling
       }
 
       else if (type instanceof GenericArrayType) {
-         if (Array.getLength(parameter) > MAX_ARRAY_LENGTH) throw new DBusException("Array exceeds maximum length of "+MAX_ARRAY_LENGTH);
+         if (Array.getLength(parameter) > DBusConnection.MAX_ARRAY_LENGTH) throw new DBusException("Array exceeds maximum length of "+DBusConnection.MAX_ARRAY_LENGTH);
          Type t = ((GenericArrayType) type).getGenericComponentType();
          if (!(t instanceof Class) || !((Class) t).isPrimitive())
             parameter = new ListContainer((Object[]) parameter, t);
       } else if (type instanceof Class && ((Class) type).isArray()) {
-         if (Array.getLength(parameter) > MAX_ARRAY_LENGTH) throw new DBusException("Array exceeds maximum length of "+MAX_ARRAY_LENGTH);
+         if (Array.getLength(parameter) > DBusConnection.MAX_ARRAY_LENGTH) throw new DBusException("Array exceeds maximum length of "+DBusConnection.MAX_ARRAY_LENGTH);
          if (!((Class) type).getComponentType().isPrimitive())
             parameter = new ListContainer((Object[]) parameter, ((Class) type).getComponentType());
       }

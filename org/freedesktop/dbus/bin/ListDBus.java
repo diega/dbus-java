@@ -11,6 +11,8 @@
 package org.freedesktop.dbus.bin;
 
 import org.freedesktop.DBus;
+import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 /**
  * This class lists all the names currently connected on the bus

@@ -35,7 +35,7 @@ public class DBusMatchRule
    }
    public DBusMatchRule(Message m)
    {
-      iface = m.getType();
+      iface = m.getInterface();
       member = m.getName();
       if (m instanceof DBusSignal)
          type = "signal";

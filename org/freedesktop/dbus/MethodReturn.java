@@ -41,7 +41,12 @@ public class MethodReturn extends Message
       if (null != sig) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
    }
+   public MethodReturn(MethodCall mc, String sig, Object... args) 
+   {
+      this(mc.getSource(), mc.getReplySerial(), sig, args);
+      this.call = mc;
+   }
    MethodCall call;
    public MethodCall getCall() { return call; }
-   protected void setCall(MethodCall call) { this.call = call; this.replyserial = call.getSerial(); this.destination = call.getSource();}
+   protected void setCall(MethodCall call) { this.call = call; }
 }

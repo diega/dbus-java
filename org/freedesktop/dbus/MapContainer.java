@@ -35,7 +35,7 @@ class MapContainer
       Class[] cs = new Class[2];
       try {
          Vector<Type> vt = new Vector<Type>();
-         DBusConnection.getJavaType(sig.substring(1), vt, 2);
+         Marshalling.getJavaType(sig.substring(1), vt, 2);
          if (vt.get(0) instanceof ParameterizedType)
             cs[0] = (Class) ((ParameterizedType) vt.get(0)).getRawType();
          else
@@ -77,7 +77,7 @@ class MapContainer
       //keys = m.keySet().toArray((Object[]) Array.newInstance(c, 0));
       keys = (Object[]) Array.newInstance(c, m.size());
 
-      String[] s = DBusConnection.getDBusType(ts[0]);
+      String[] s = Marshalling.getDBusType(ts[0]);
       if (1 != s.length) throw new DBusException("List Contents not single type");
       sig += s[0];
 
@@ -96,7 +96,7 @@ class MapContainer
       try {
          int i = 0;
          for (Map.Entry e: m.entrySet()) {
-            values[i] = DBusConnection.convertParameter( e.getValue(), ts[1]);
+            values[i] = Marshalling.convertParameter( e.getValue(), ts[1]);
             keys[i] = e.getKey();
             i++;
          }
@@ -105,7 +105,7 @@ class MapContainer
          throw new DBusException(e.getMessage());
       }
 
-      s = DBusConnection.getDBusType(ts[1]);
+      s = Marshalling.getDBusType(ts[1]);
       if (1 != s.length) throw new DBusException("List Contents not single type");
       sig += s[0];
       sig += '}';
@@ -122,8 +122,8 @@ class MapContainer
 
       Object[] newvalues = new Object[values.length];
       for (int i = 0; i < keys.length; i++) {
-         keys[i] = DBusConnection.deSerializeParameter(this.keys[i], ts[0]);
-         newvalues[i] = DBusConnection.deSerializeParameter(this.values[i], ts[1]);
+         keys[i] = Marshalling.deSerializeParameter(this.keys[i], ts[0]);
+         newvalues[i] = Marshalling.deSerializeParameter(this.values[i], ts[1]);
       }
       values = newvalues;
       this.map = new DBusMap<Object,Object>(keys,values);

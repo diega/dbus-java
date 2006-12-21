@@ -44,7 +44,7 @@ class RemoteInvocationHandler implements InvocationHandler
          case 1:
 
             try { 
-               rp = DBusConnection.deSerializeParameters(rp, 
+               rp = Marshalling.deSerializeParameters(rp, 
                      new Type[] { m.getGenericReturnType() });
             }
             catch (Exception e) { 
@@ -59,7 +59,7 @@ class RemoteInvocationHandler implements InvocationHandler
             if (!Tuple.class.isAssignableFrom(c))
                throw new DBusExecutionException("Wrong return type (not expecting Tuple)");
             try {
-               rp = DBusConnection.deSerializeParameters(rp, ((ParameterizedType) m.getGenericReturnType()).getActualTypeArguments());
+               rp = Marshalling.deSerializeParameters(rp, ((ParameterizedType) m.getGenericReturnType()).getActualTypeArguments());
             } catch (Exception e) { 
                if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                throw new DBusExecutionException("Wrong return type (failed to de-serialize correct types: "+e.getMessage()+")");
@@ -77,20 +77,16 @@ class RemoteInvocationHandler implements InvocationHandler
    public static Object executeRemoteMethod(RemoteObject ro, Method m, DBusConnection conn, boolean async, Object... args) throws DBusExecutionException
    {
       Type[] ts = m.getGenericParameterTypes();
-      try {
-         args = DBusConnection.convertParameters(args, ts);
-      } catch (Exception e) {
-         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
-         throw new DBusExecutionException(e.getMessage());
-      }
+      String sig = Marshalling.getDBusType(ts);
       MethodCall call;
+      int flags;
+      if (ro.autostart) flags |= Message.Flags.AUTO_START;
+      if (async) flags |= Message.Flags.ASYNC;
+      if (m.isAnnotationPresent(DBus.Method.NoReply.class)) flags |= Message.Flags.NO_REPLY_EXPECTED;
       if (null == ro.iface)
-         call = new MethodCall(ro.busname, ro.objectpath, null, m.getName(), args);
+         call = new MethodCall(ro.busname, ro.objectpath, null, m.getName(),flags, sig, args);
       else
-         call = new MethodCall(ro.busname, ro.objectpath, DBusConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), m.getName(), args);
-      if (ro.autostart) call.setFlags(MethodCall.AUTO_START);
-      if (async) call.setFlags(MethodCall.ASYNC);
-      if (m.isAnnotationPresent(DBus.Method.NoReply.class)) call.setFlags(MethodCall.NO_REPLY);
+         call = new MethodCall(ro.busname, ro.objectpath, DBusConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), m.getName(), flags, sig, args);
       synchronized (conn.outgoing) {
          conn.outgoing.add(call);
       }
@@ -103,8 +99,8 @@ class RemoteInvocationHandler implements InvocationHandler
       Message reply = call.getReply();
       if (null == reply) throw new DBus.Error.NoReply("No reply within specified time");
                
-      if (reply instanceof DBusErrorMessage)
-         ((DBusErrorMessage) reply).throwException();
+      if (reply instanceof Error)
+         ((Error) reply).throwException();
 
       try {
          return convertRV(reply.getSig(), reply.getParameters(), m);

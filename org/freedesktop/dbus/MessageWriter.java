@@ -32,4 +32,8 @@ public class MessageWriter
       }
       out.flush();
    }
+   public void close()
+   {
+      out.close();
+   }
 }

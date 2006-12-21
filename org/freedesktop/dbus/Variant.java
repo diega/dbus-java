@@ -12,7 +12,7 @@ package org.freedesktop.dbus;
 
 import java.lang.reflect.Type;
 import java.util.Vector;
-import org.freedesktop.dbus.DBusException;
+import org.freedesktop.dbus.exceptions.DBusException;
 
 /**
  * A Wrapper class for Variant values. 
