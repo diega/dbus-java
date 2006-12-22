@@ -147,7 +147,7 @@ public class Message
     * @param type The message type.
     * @param flags Any message flags.
     */
-   protected Message(byte endian, byte type, byte flags)
+   protected Message(byte endian, byte type, byte flags) throws DBusException
    {
       wiredata = new byte[BUFFERINCREMENT][];
       headers = new HashMap<Byte, Object>();
@@ -174,7 +174,7 @@ public class Message
     * @param headers D-Bus serialized data of type a(yv)
     * @param body D-Bus serialized data of the signature defined in headers.
     */
-   void populate(byte[] msg, byte[] headers, byte[] body) 
+   void populate(byte[] msg, byte[] headers, byte[] body) throws DBusException
    {
       big = (msg[0] == Endian.BIG);
       type = msg[1];
@@ -550,7 +550,7 @@ public class Message
                   appendone(new byte[] {ArgumentType.SIGNATURE}, 0, contents[0]);
                   appendone(((String) contents[0]).getBytes(), 0, contents[1]);
                } else {
-                  String sig = Marshalling.getDBusType(data.getClass());
+                  String sig = Marshalling.getDBusType(data.getClass())[0];
                   appendone(new byte[] {ArgumentType.SIGNATURE}, 0, sig);
                   appendone((sig).getBytes(), 0, data);
                }
@@ -622,7 +622,7 @@ public class Message
     * @param sig The signature(s) of the value(s).
     * @param data The value(s).
     */
-   public void append(String sig, Object... data)
+   public void append(String sig, Object... data) throws DBusException
    {
       byte[] sigb = sig.getBytes();
       int j = 0;
@@ -651,7 +651,7 @@ public class Message
     *            updated to the start of the next value ofter demarshalling.
     * @return The demarshalled value.
     */
-   private Object extractone(byte[] sigb, byte[] buf, int[] ofs)
+   private Object extractone(byte[] sigb, byte[] buf, int[] ofs) throws DBusException
    {
       Debug.print("Extracting type: "+((char)sigb[ofs[0]])+" from offset "+ofs[1]);
       Object rv = null;
@@ -773,6 +773,7 @@ public class Message
                      entries.add((Object[]) extractone(sigb, buf, ofs));
                   }
                   rv = new DBusMap(entries.toArray(new Object[0][]));
+                  break;
                default:
                   ofssave = ofs[0];
                   end = ofs[1]+size;
@@ -807,15 +808,22 @@ public class Message
             ofs[1] = newofs[1];
             break;
          case ArgumentType.STRING:
-         case ArgumentType.OBJECT_PATH:
             length = (int) demarshallint(buf, ofs[1], 4);
             ofs[1] += 4;
             rv = new String(buf, ofs[1], length);
             ofs[1] += length + 1;
             break;
+         case ArgumentType.OBJECT_PATH:
+            length = (int) demarshallint(buf, ofs[1], 4);
+            ofs[1] += 4;
+            rv = new ObjectPath(new String(buf, ofs[1], length), getSource());
+            ofs[1] += length + 1;
+            break;
          case ArgumentType.SIGNATURE:
             length = (buf[ofs[1]++] & 0xFF);
-            rv = Marshalling.getJavaType(new String(buf, ofs[1], (int)length));
+            Vector<Type> types = new Vector<Type>();
+            Marshalling.getJavaType(new String(buf, ofs[1], (int)length), types, -1);
+            rv = types.toArray(new Type[0]);
             ofs[1] += length + 1;
             break;
          default: 
@@ -831,7 +839,7 @@ public class Message
     * @param ofs The offset into the data buffer to start.
     * @return The demarshalled value(s).
     */
-   public Object[] extract(String sig, byte[] buf, int ofs)
+   public Object[] extract(String sig, byte[] buf, int ofs) throws DBusException
    {
       return extract(sig, buf, new int[] { 0, ofs });
    }
@@ -844,7 +852,7 @@ public class Message
     *            updated to the start of the next value ofter demarshalling.
     * @return The demarshalled value(s).
     */
-   public Object[] extract(String sig, byte[] buf, int[] ofs)
+   public Object[] extract(String sig, byte[] buf, int[] ofs) throws DBusException
    {
       Debug.print("extract("+sig+",#"+buf.length+", {"+ofs[0]+","+ofs[1]+"}");
       Vector<Object> rv = new Vector<Object>();

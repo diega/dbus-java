@@ -27,7 +27,7 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 class RemoteInvocationHandler implements InvocationHandler
 {
-   public static Object convertRV(String sig, Object[] rp, Method m) throws DBusException
+   public static Object convertRV(String sig, Object[] rp, Method m, DBusConnection conn) throws DBusException
    {
       Class c = m.getReturnType();
 
@@ -45,7 +45,7 @@ class RemoteInvocationHandler implements InvocationHandler
 
             try { 
                rp = Marshalling.deSerializeParameters(rp, 
-                     new Type[] { m.getGenericReturnType() });
+                     new Type[] { m.getGenericReturnType() }, conn);
             }
             catch (Exception e) { 
                if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
@@ -59,7 +59,7 @@ class RemoteInvocationHandler implements InvocationHandler
             if (!Tuple.class.isAssignableFrom(c))
                throw new DBusExecutionException("Wrong return type (not expecting Tuple)");
             try {
-               rp = Marshalling.deSerializeParameters(rp, ((ParameterizedType) m.getGenericReturnType()).getActualTypeArguments());
+               rp = Marshalling.deSerializeParameters(rp, ((ParameterizedType) m.getGenericReturnType()).getActualTypeArguments(), conn);
             } catch (Exception e) { 
                if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                throw new DBusExecutionException("Wrong return type (failed to de-serialize correct types: "+e.getMessage()+")");
@@ -77,21 +77,30 @@ class RemoteInvocationHandler implements InvocationHandler
    public static Object executeRemoteMethod(RemoteObject ro, Method m, DBusConnection conn, boolean async, Object... args) throws DBusExecutionException
    {
       Type[] ts = m.getGenericParameterTypes();
-      String sig = Marshalling.getDBusType(ts);
+      String sig = null;
+      try {
+         sig = Marshalling.getDBusType(ts);
+      } catch (DBusException DBe) {
+         throw new DBusExecutionException("Failed to construct D-Bus type: "+DBe.getMessage());
+      }
       MethodCall call;
-      byte flags;
+      byte flags = 0;
       if (!ro.autostart) flags |= Message.Flags.NO_AUTO_START;
       if (async) flags |= Message.Flags.ASYNC;
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) flags |= Message.Flags.NO_REPLY_EXPECTED;
-      if (null == ro.iface)
-         call = new MethodCall(ro.busname, ro.objectpath, null, m.getName(),flags, sig, args);
-      else
-         call = new MethodCall(ro.busname, ro.objectpath, DBusConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), m.getName(), flags, sig, args);
+      try {
+         if (null == ro.iface)
+            call = new MethodCall(ro.busname, ro.objectpath, null, m.getName(),flags, sig, args);
+         else
+            call = new MethodCall(ro.busname, ro.objectpath, DBusConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), m.getName(), flags, sig, args);
+      } catch (DBusException DBe) {
+         throw new DBusExecutionException("Failed to construct outgoing method call: "+DBe.getMessage());
+      }
       synchronized (conn.outgoing) {
          conn.outgoing.add(call);
       }
 
-      if (async) return new DBusAsyncReply(call, m);
+      if (async) return new DBusAsyncReply(call, m, conn);
 
       // get reply
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) return null;
@@ -103,7 +112,7 @@ class RemoteInvocationHandler implements InvocationHandler
          ((Error) reply).throwException();
 
       try {
-         return convertRV(reply.getSig(), reply.getParameters(), m);
+         return convertRV(reply.getSig(), reply.getParameters(), m, conn);
       } catch (DBusException e) {
          if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          throw new DBusExecutionException(e.getMessage());

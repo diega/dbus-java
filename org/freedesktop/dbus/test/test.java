@@ -21,17 +21,18 @@ import java.util.Vector;
 import org.freedesktop.dbus.DBusAsyncReply;
 import org.freedesktop.dbus.DBusCallInfo;
 import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.DBusException;
-import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
-import org.freedesktop.dbus.DBusListType;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.DBusSignal;
+import org.freedesktop.dbus.Marshalling;
 import org.freedesktop.dbus.Path;
 import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
 import org.freedesktop.dbus.Variant;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.freedesktop.dbus.types.DBusListType;
 
 import org.freedesktop.DBus;
 import org.freedesktop.DBus.Error.MatchRuleInvalid;
@@ -460,7 +461,7 @@ public class test
 
       /* Test type signatures */
       Vector<Type> ts = new Vector<Type>();
-      DBusConnection.getJavaType("ya{si}", ts, -1);
+      Marshalling.getJavaType("ya{si}", ts, -1);
       tri.sig(ts.toArray(new Type[0]));
 
       tri.newpathtest(new Path("/new/path/test"));

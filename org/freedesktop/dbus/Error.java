@@ -10,7 +10,9 @@
 */
 package org.freedesktop.dbus;
 
+import java.lang.reflect.Constructor;
 import java.util.Vector;
+import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 /**
@@ -19,7 +21,7 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 public class Error extends Message
 {
    Error() { }
-   public Error(String dest, String errorName, long replyserial, String sig, Object... args) 
+   public Error(String dest, String errorName, long replyserial, String sig, Object... args) throws DBusException
    {
       super(Message.Endian.BIG, Message.MessageType.ERROR, (byte) 0);
 
@@ -46,19 +48,33 @@ public class Error extends Message
       if (null != sig) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
    }
-   /* TODO NotNative! */
-   private static native Class<? extends DBusExecutionException> createExceptionClass(String name);
+   public Error(Message m, Exception e)  throws DBusException
+   {
+      this(m.getSource(), DBusConnection.dollar_pattern.matcher(e.getClass().getName()).replaceAll("."), m.getSerial(), "s", e.getMessage());
+   }
+   @SuppressWarnings("unchecked")
+   private static Class<? extends DBusExecutionException> createExceptionClass(String name)
+   {
+      Class<? extends DBusExecutionException> c = null;
+      do {
+         try {
+            c = (Class<? extends org.freedesktop.dbus.exceptions.DBusExecutionException>) Class.forName(name);
+         } catch (ClassNotFoundException CNFe) {}
+         name = name.replaceAll("\\.([^\\.]*)$", "$$$1");
+      } while (null == c && name.matches(".*\\..*"));
+      return c;
+   }
    /**
     * Turns this into an exception of the correct type
     */
    public DBusExecutionException getException()
    {
       try {
-         Class<? extends DBusExecutionException> c = createExceptionClass(type);
+         Class<? extends DBusExecutionException> c = createExceptionClass(getName());
          if (null == c) c = DBusExecutionException.class;
          Constructor<? extends DBusExecutionException> con = c.getConstructor(String.class);
          DBusExecutionException ex;
-         if (null == parameters || 0 == parameters.length)
+         if (null == args || 0 == args.length)
             ex = con.newInstance("");
          else {
             String s = "";
@@ -66,12 +82,12 @@ public class Error extends Message
                s += o + " ";
             ex = con.newInstance(s.trim());
          }
-         ex.setType(type);
+         ex.setType(getName());
          return ex;
       } catch (Exception e) {
          if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
          DBusExecutionException ex;
-         if (null == parameters || 0 == parameters.length)
+         if (null == args || 0 == args.length)
             ex = new DBusExecutionException("");
          else {
             String s = "";
@@ -79,7 +95,7 @@ public class Error extends Message
                s += o + " ";
             ex = new DBusExecutionException(s.trim());
          }
-         ex.setType(type);
+         ex.setType(getName());
          return ex;
       }
    }

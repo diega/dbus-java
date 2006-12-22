@@ -10,12 +10,12 @@
 */
 package org.freedesktop.dbus.test;
 
-import org.freedesktop.dbus.DBusException;
+import org.freedesktop.DBus.Description;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.Variant;
-import org.freedesktop.DBus.Description;
+import org.freedesktop.dbus.exceptions.DBusException;
 
 import java.util.List;
 

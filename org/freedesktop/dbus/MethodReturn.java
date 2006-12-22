@@ -11,11 +11,12 @@
 package org.freedesktop.dbus;
 
 import java.util.Vector;
+import org.freedesktop.dbus.exceptions.DBusException;
 
 public class MethodReturn extends Message
 {
    MethodReturn() { }
-   public MethodReturn(String dest, long replyserial, String sig, Object... args) 
+   public MethodReturn(String dest, long replyserial, String sig, Object... args) throws DBusException
    {
       super(Message.Endian.BIG, Message.MessageType.METHOD_RETURN, (byte) 0);
 
@@ -41,7 +42,7 @@ public class MethodReturn extends Message
       if (null != sig) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
    }
-   public MethodReturn(MethodCall mc, String sig, Object... args) 
+   public MethodReturn(MethodCall mc, String sig, Object... args) throws DBusException
    {
       this(mc.getSource(), mc.getReplySerial(), sig, args);
       this.call = mc;

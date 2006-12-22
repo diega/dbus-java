@@ -11,11 +11,12 @@
 package org.freedesktop.dbus;
 
 import java.util.Vector;
+import org.freedesktop.dbus.exceptions.DBusException;
 
 public class MethodCall extends Message
 {
    MethodCall() { }
-   public MethodCall(String dest, String path, String iface, String member, byte flags, String sig, Object... args) 
+   public MethodCall(String dest, String path, String iface, String member, byte flags, String sig, Object... args) throws DBusException
    {
       super(Message.Endian.BIG, Message.MessageType.METHOD_CALL, flags);
 

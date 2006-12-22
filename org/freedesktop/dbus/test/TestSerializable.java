@@ -16,8 +16,9 @@ import java.util.List;
 import java.util.Vector;
 
 import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusSerializable;
+import org.freedesktop.dbus.Marshalling;
+import org.freedesktop.dbus.exceptions.DBusException;
 
 public class TestSerializable<A> implements DBusSerializable
 {
@@ -39,7 +40,7 @@ public class TestSerializable<A> implements DBusSerializable
    }
    public Object[] serialize() throws DBusException
    {
-      return DBusConnection.convertParameters(new Object[] { a, b, c }, new Type[] { TestSerializable.class });
+      return Marshalling.convertParameters(new Object[] { a, b, c }, new Type[] { TestSerializable.class });
    }
    public int getInt() { return a; }
    public String getString() { return b; }

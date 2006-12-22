@@ -42,10 +42,12 @@ public class DBusAsyncReply<ReturnType>
    private DBusExecutionException error = null;
    private MethodCall mc;
    private Method me;
-   DBusAsyncReply(MethodCall mc, Method me)
+   private DBusConnection conn;
+   DBusAsyncReply(MethodCall mc, Method me, DBusConnection conn)
    {
       this.mc = mc;
       this.me = me;
+      this.conn = conn;
    }
    @SuppressWarnings("unchecked")
    private synchronized void checkReply()
@@ -56,7 +58,7 @@ public class DBusAsyncReply<ReturnType>
             error = ((Error) m).getException();
          else if (m instanceof MethodReturn) {
             try {
-               rval = (ReturnType) RemoteInvocationHandler.convertRV(m.getSig(), m.getParameters(), me);
+               rval = (ReturnType) RemoteInvocationHandler.convertRV(m.getSig(), m.getParameters(), me, conn);
             } catch (DBusExecutionException DBEe) {
                error = DBEe;
             } catch (DBusException DBe) {

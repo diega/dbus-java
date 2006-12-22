@@ -39,6 +39,22 @@ public class Marshalling
     * Will return the DBus type corresponding to the given Java type.
     * Note, container type should have their ParameterizedType not their
     * Class passed in here.
+    * @param c The Java types.
+    * @return The DBus types.
+    * @throws DBusException If the given type cannot be converted to a DBus type.
+    */
+   public static String getDBusType(Type[] c) throws DBusException
+   {
+      StringBuffer sb = new StringBuffer();
+      for (Type t: c) 
+         for (String s: getDBusType(t))
+            sb.append(s);
+      return sb.toString();
+   }
+   /**
+    * Will return the DBus type corresponding to the given Java type.
+    * Note, container type should have their ParameterizedType not their
+    * Class passed in here.
     * @param c The Java type.
     * @return The DBus type.
     * @throws DBusException If the given type cannot be converted to a DBus type.
@@ -326,37 +342,15 @@ public class Marshalling
       return parameters;
    }
    @SuppressWarnings("unchecked")
-   static Object deSerializeParameter(Object parameter, Type type) throws Exception
+   static Object deSerializeParameter(Object parameter, Type type, DBusConnection conn) throws Exception
    {
       if (null == parameter) 
          return null;
 
-      // it's a TypeSignature, turn it into a Type[]
-      if (parameter instanceof TypeSignature) {
-         Vector<Type> ts = new Vector<Type>();
-         getJavaType(((TypeSignature) parameter).sig, ts, -1);
-         parameter = ts.toArray(new Type[0]);
-      }
       // its a wrapped variant, unwrap it
       if (type instanceof TypeVariable 
             && parameter instanceof Variant) {
          parameter = ((Variant)parameter).getValue();
-      }
-
-      // recurse on these
-      if (parameter instanceof Variant) {
-         parameter = new Variant(deSerializeParameter(((Variant) parameter).getValue(),
-                                                      ((Variant) parameter).getType()),
-                                 ((Variant) parameter).getType());
-      }
-
-      // its a wrapped map, unwrap it
-      if (parameter instanceof MapContainer)
-         parameter = ((MapContainer) parameter).getMap(type);
-
-      // its a wrapped list, unwrap it
-      if (parameter instanceof ListContainer) {
-         parameter = ((ListContainer) parameter).getList(type);
       }
 
       // its an object path, get/create the proxy
@@ -364,7 +358,7 @@ public class Marshalling
          if (type instanceof Class && Path.class.equals((Class) type))
             parameter = new Path(((ObjectPath) parameter).path);
          else
-            parameter = ((ObjectPath) parameter).conn.getExportedObject(
+            parameter = conn.getExportedObject(
                   ((ObjectPath) parameter).source,
                   ((ObjectPath) parameter).path);
       }
@@ -386,7 +380,7 @@ public class Marshalling
          }
 
          // recurse over struct contents
-         parameter = deSerializeParameters((Object[]) parameter, ts);
+         parameter = deSerializeParameters((Object[]) parameter, ts, conn);
          for (Constructor con: ((Class) type).getDeclaredConstructors()) {
             try {
                parameter = con.newInstance((Object[]) parameter);
@@ -400,7 +394,7 @@ public class Marshalling
          Type[] ts = new Type[((Object[]) parameter).length];
          Arrays.fill(ts, parameter.getClass().getComponentType());
          parameter = deSerializeParameters((Object[]) parameter,
-               ts);
+               ts, conn);
       }
 
       // make sure arrays are in the correct format
@@ -430,7 +424,7 @@ public class Marshalling
       }
       return parameter;
    }
-   static Object[] deSerializeParameters(Object[] parameters, Type[] types) throws Exception
+   static Object[] deSerializeParameters(Object[] parameters, Type[] types, DBusConnection conn) throws Exception
    {
       if (null == parameters) return null;
       for (int i = 0; i < parameters.length; i++) {
@@ -444,7 +438,7 @@ public class Marshalling
                try {
                   Object[] sub = new Object[newtypes.length];
                   System.arraycopy(parameters, i, sub, 0, newtypes.length); 
-                  sub = deSerializeParameters(sub, newtypes);
+                  sub = deSerializeParameters(sub, newtypes, conn);
                   DBusSerializable sz = (DBusSerializable) ((Class) types[i]).newInstance();
                   m.invoke(sz, sub);
                   Object[] compress = new Object[parameters.length - newtypes.length + 1];
@@ -458,7 +452,7 @@ public class Marshalling
                }
             }
       } else
-         parameters[i] = deSerializeParameter(parameters[i], types[i]);
+         parameters[i] = deSerializeParameter(parameters[i], types[i], conn);
       }
       return parameters;
    }

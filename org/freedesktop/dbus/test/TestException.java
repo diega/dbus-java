@@ -10,8 +10,8 @@
 */
 package org.freedesktop.dbus.test;
 
-import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.DBus.Description;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 @Description("A test exception to throw over DBus")
 @SuppressWarnings("serial")

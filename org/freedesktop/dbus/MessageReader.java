@@ -16,6 +16,7 @@ import java.io.IOException;
 import cx.ath.matthew.debug.Debug;
 import cx.ath.matthew.utils.Hexdump;
 
+import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.MessageTypeException;
 import org.freedesktop.dbus.exceptions.MessageProtocolVersionException;
 
@@ -26,7 +27,7 @@ public class MessageReader
    {
       this.in = in;
    }
-   public Message readMessage() throws IOException
+   public Message readMessage() throws IOException, DBusException
    {
       byte[] buf = new byte[12];
       in.read(buf);
@@ -64,9 +65,12 @@ public class MessageReader
             throw new MessageTypeException("Message type "+type+" unsupported");
       }
       m.populate(buf, header, body);
+      if (DBusConnection.DBUS_JAVA_DEBUG && Debug.debug) {
+         Debug.print("=> "+m);
+      }
       return m;
    }
-   public void close()
+   public void close() throws IOException
    {
       in.close();
    }

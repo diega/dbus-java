@@ -22,7 +22,7 @@ import org.freedesktop.dbus.exceptions.DBusException;
 public class DBusSignal extends Message
 {
    DBusSignal() { }
-   public DBusSignal(String path, String iface, String member, String sig, Object... args) 
+   public DBusSignal(String path, String iface, String member, String sig, Object... args) throws DBusException
    {
       super(Message.Endian.BIG, Message.MessageType.SIGNAL, (byte) 0);
 
@@ -52,7 +52,7 @@ public class DBusSignal extends Message
    }
    private static class internalsig extends DBusSignal
    {
-      public internalsig(String source, String objectpath, String type, String name, String sig, Object[] parameters, long serial)
+      public internalsig(String source, String objectpath, String type, String name, String sig, Object[] parameters, long serial) throws DBusException
       {
          super(source, objectpath, type, name, sig, parameters, serial);
       }

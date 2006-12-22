@@ -30,9 +30,9 @@ import javax.swing.table.TableModel;
 import org.freedesktop.DBus;
 import org.freedesktop.DBus.Introspectable;
 import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.DBusException;
-import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.UInt32;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 /**
  * A viewer for DBus

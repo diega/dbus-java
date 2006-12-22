@@ -22,8 +22,6 @@ import java.util.Vector;
 import org.freedesktop.DBus;
 import org.freedesktop.dbus.DBusCallInfo;
 import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.DBusException;
-import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.Struct;
@@ -31,6 +29,8 @@ import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
 import org.freedesktop.dbus.Variant;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.SingleTests, DBusSigHandler<DBus.Binding.TestSignals.Trigger>
 {

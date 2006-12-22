@@ -24,7 +24,7 @@ public class DBusExecutionException extends RuntimeException
    {
       super(message);
    }
-   void setType(String type)
+   public void setType(String type)
    {
       this.type = type;
    }

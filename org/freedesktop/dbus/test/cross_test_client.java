@@ -28,17 +28,17 @@ import java.util.Vector;
 import org.freedesktop.DBus;
 import org.freedesktop.dbus.DBusCallInfo;
 import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.DBusException;
-import org.freedesktop.dbus.DBusExecutionException;
 import org.freedesktop.dbus.DBusInterface;
-import org.freedesktop.dbus.DBusListType;
-import org.freedesktop.dbus.DBusMapType;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.Struct;
 import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
 import org.freedesktop.dbus.Variant;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.freedesktop.dbus.types.DBusListType;
+import org.freedesktop.dbus.types.DBusMapType;
 
 public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHandler<DBus.Binding.TestSignals.Triggered>
 {
@@ -62,12 +62,12 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
    public void handle(DBus.Binding.TestSignals.Triggered t)
    {
       failed.remove("org.freedesktop.DBus.Binding.TestSignals.Triggered");
-      if (new UInt64(21389479283L).equals(t.a) && "/Test".equals(t.getObjectPath()))
+      if (new UInt64(21389479283L).equals(t.a) && "/Test".equals(t.getPath()))
          pass("org.freedesktop.DBus.Binding.TestSignals.Triggered");
       else if (!new UInt64(21389479283L).equals(t.a))
          fail("org.freedesktop.DBus.Binding.TestSignals.Triggered", "Incorrect signal content; expected 21389479283 got "+t.a);
-      else if (!"/Test".equals(t.getObjectPath()))
-         fail("org.freedesktop.DBus.Binding.TestSignals.Triggered", "Incorrect signal source object; expected /Test got "+t.getObjectPath());
+      else if (!"/Test".equals(t.getPath()))
+         fail("org.freedesktop.DBus.Binding.TestSignals.Triggered", "Incorrect signal source object; expected /Test got "+t.getPath());
    }
    public void Response(UInt16 a, double b)
    {
