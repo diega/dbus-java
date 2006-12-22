@@ -79,7 +79,7 @@ class RemoteInvocationHandler implements InvocationHandler
       Type[] ts = m.getGenericParameterTypes();
       String sig = Marshalling.getDBusType(ts);
       MethodCall call;
-      int flags;
+      byte flags;
       if (!ro.autostart) flags |= Message.Flags.NO_AUTO_START;
       if (async) flags |= Message.Flags.ASYNC;
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) flags |= Message.Flags.NO_REPLY_EXPECTED;

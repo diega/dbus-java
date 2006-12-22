@@ -12,13 +12,15 @@ package org.freedesktop.dbus;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Vector;
 
 class DBusMap<K, V> implements Map<K, V>
 {
-   private Object[] entries;
+   private Object[][] entries;
    public DBusMap(Object[][] entries)
    {
       this.entries=entries;
@@ -62,16 +64,16 @@ class DBusMap<K, V> implements Map<K, V>
    {
       throw new UnsupportedOperationException();
    }
-   public boolean  containsKey(Object key)
+   public boolean containsKey(Object key)
    {
       for (int i = 0; i < entries.length; i++)
          if (key == entries[i][0] || (key != null && key.equals(entries[i][0])))
             return true;
       return false;
    }
-   public boolean   containsValue(Object value)
+   public boolean containsValue(Object value)
    {
-      for (int i = 0; i < values.length; i++)
+      for (int i = 0; i < entries.length; i++)
          if (value == entries[i][1] || (value != null && value.equals(entries[i][1])))
             return true;
       return false;
@@ -83,48 +85,48 @@ class DBusMap<K, V> implements Map<K, V>
          s.add(new Entry(i));
       return s;
    }
-   public V   get(Object key)
+   public V get(Object key)
    {
-      for (int i = 0; i < keys.length; i++)
+      for (int i = 0; i < entries.length; i++)
          if (key == entries[i][0] || (key != null && key.equals(entries[i][0])))
-            return entries[i][1];
+            return (V) entries[i][1];
       return null;
    }
-   public boolean  isEmpty() 
+   public boolean isEmpty() 
    { 
       return entries.length == 0;
    }
-   public Set<K>    keySet()
+   public Set<K> keySet()
    {
       Set<K> s = new TreeSet<K>();
       for (Object[] entry: entries)
-         s.add(entry[0]);
+         s.add((K) entry[0]);
       return s;
    }
-   public V    put(K key, V value)
+   public V put(K key, V value)
    {
       throw new UnsupportedOperationException();
    }
-   public void  putAll(Map<? extends K,? extends V> t)
+   public void putAll(Map<? extends K,? extends V> t)
    {
       throw new UnsupportedOperationException();
    }
-   public V   remove(Object key)
+   public V remove(Object key)
    {
       throw new UnsupportedOperationException();
    }
-   public int  size()
+   public int size()
    {
       return entries.length;
    }
-   public Collection<V>  values()
+   public Collection<V> values()
    {
-      List l = new Vector v;
+      List<V> l = new Vector<V>();
       for (Object[] entry: entries)
-         l.add(entry[0]);
+         l.add((V) entry[0]);
       return l;
    }
-   public int  hashCode() 
+   public int hashCode() 
    {
       return Arrays.deepHashCode(entries);
    }

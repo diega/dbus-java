@@ -35,6 +35,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.freedesktop.DBus.Introspectable;
 import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.Marshalling;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.types.DBusStructType;

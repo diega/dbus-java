@@ -10,6 +10,7 @@
 */
 package org.freedesktop.dbus;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,10 @@ import java.util.Vector;
 
 import cx.ath.matthew.debug.Debug;
 import cx.ath.matthew.utils.Hexdump;
+
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.MarshallingException;
+import org.freedesktop.dbus.exceptions.UnknownTypeCodeException;
 
 /**
  * Superclass of all messages which are sent over the Bus.
@@ -34,7 +39,7 @@ public class Message
    public static interface Flags {
       public static final byte NO_REPLY_EXPECTED = 0x01;
       public static final byte NO_AUTO_START = 0x02;
-      public static final byte ASYNC = 0x80;
+      public static final byte ASYNC = 0x40;
    }
    /** Defines constants for each message type. */
    public static interface MessageType {
@@ -426,7 +431,10 @@ public class Message
                // followed by the String, followed by a null byte.
                // Signatures are generally short, so preallocate the array
                // for the string, length and null byte.
-               payload = (String) data;
+               if (data instanceof Type[])
+                  payload = Marshalling.getDBusType((Type[]) data);
+               else
+                  payload = (String) data;
                byte[] pbytes = payload.getBytes();
                preallocate(2+pbytes.length);
                appendByte((byte) pbytes.length);
@@ -439,8 +447,8 @@ public class Message
                // order. The length is the length from the end of the
                // initial padding to the end of the last element.
 
-               byte[] len = new byte[4];
-               appendBytes(len);
+               byte[] alen = new byte[4];
+               appendBytes(alen);
                pad(sigb[++i]);
                long c = bytecounter;
 
@@ -473,7 +481,7 @@ public class Message
                         primbuf = new byte[len*algn];
                         for (int j = 0, k = 0; j < len; j++, k += algn)
                            marshallint(
-                                 Float.FloatToRawIntBits(((float[])data)[j]),
+                                 Float.floatToRawIntBits(((float[])data)[j]),
                                  primbuf, k, algn);
                         break;
                      default:
@@ -489,7 +497,7 @@ public class Message
                   i = diff;
                } else if (data instanceof Map) {
                   int diff = i;
-                  for (Map.Entry o: ((Map) data).entrySet())
+                  for (Map.Entry<Object,Object> o: ((Map<Object,Object>) data).entrySet())
                      diff = appendone(sigb, i, o);
                   i = diff;
                } else {
@@ -500,11 +508,12 @@ public class Message
                   i = diff;
                }
                Debug.print("start: "+c+" end: "+bytecounter+" length: "+(bytecounter-c));
-               marshallint(bytecounter-c-2, len, 0, 4);
+               marshallint(bytecounter-c-2, alen, 0, 4);
                break;
             case ArgumentType.STRUCT1:
                // Structs are aligned to 8 bytes
                // and simply contain each element marshalled in order
+               Object[] contents;
                if (data instanceof Container) 
                   contents = ((Container) data).getParameters();
                else
@@ -547,7 +556,7 @@ public class Message
          }
          return i;
       } catch (ClassCastException CCe) {
-         throw new MarshallingException("Trying to marshall to unconvertable type (from "+data.getCLass().getName()+" to "+sigb[sigofs]+")");
+         throw new MarshallingException("Trying to marshall to unconvertable type (from "+data.getClass().getName()+" to "+sigb[sigofs]+")");
       }
    }
    /**
@@ -662,7 +671,7 @@ public class Message
             ofs[1] += 2;
             break;
          case ArgumentType.UINT16:
-            rv = new UInt16(demarshallint(buf, ofs[1], 2));
+            rv = new UInt16((int) demarshallint(buf, ofs[1], 2));
             ofs[1] += 2;
             break;
          case ArgumentType.INT64:
@@ -702,14 +711,16 @@ public class Message
          case ArgumentType.ARRAY:
             long size = demarshallint(buf, ofs[1], 4);
             ofs[1] += 4;
-            int algn = getAlignment(sigb[++ofs[0]]);
+            byte algn = (byte) getAlignment(sigb[++ofs[0]]);
             ofs[1] = align(ofs[1], algn);
-            int length = (int) size=algn;
+            int length = (int) (size / algn);
+            if (length > DBusConnection.MAX_ARRAY_LENGTH)
+               throw new MarshallingException("Arrays must not exceed "+DBusConnection.MAX_ARRAY_LENGTH);
             // optimise primatives
             switch (sigb[ofs[0]]) {
                case ArgumentType.BYTE:
-                  rv = new byte[size];
-                  System.arraycopy(buf, ofs[1], rv, 0, size);
+                  rv = new byte[length];
+                  System.arraycopy(buf, ofs[1], rv, 0, length);
                   ofs[1] += size;
                   ofs[0]++;
                   break;
@@ -757,12 +768,12 @@ public class Message
                   Vector<Object[]> entries = new Vector<Object[]>();
                   while (ofs[1] < end) {
                      ofs[0] = ofssave;
-                     contents.add(extractone(sigb, buf, ofs));
+                     entries.add((Object[]) extractone(sigb, buf, ofs));
                   }
-                  rv = new DBusMap(entries.toArray(new Object[0][]);
+                  rv = new DBusMap(entries.toArray(new Object[0][]));
                default:
-                  int ofssave = ofs[0];
-                  long end = ofs[1]+size;
+                  ofssave = ofs[0];
+                  end = ofs[1]+size;
                   Vector<Object> contents = new Vector<Object>();
                   while (ofs[1] < end) {
                      ofs[0] = ofssave;
@@ -772,37 +783,37 @@ public class Message
             }
             break;
          case ArgumentType.STRUCT1:
-            contents = new Vector<Object>();
+            Vector<Object> contents = new Vector<Object>();
             while (sigb[++ofs[0]] != ArgumentType.STRUCT2)
                contents.add(extractone(sigb, buf, ofs));
             ofs[0]++;
             rv = contents.toArray();
             break;
          case ArgumentType.DICT_ENTRY1:
-            contents = Object[2];
-            contents[0] = extractone(sigb, buf, ofs);
+            Object[] decontents = new Object[2];
+            decontents[0] = extractone(sigb, buf, ofs);
             ofs[0]++;
-            contents[1] = extractone(sigb, buf, ofs);
+            decontents[1] = extractone(sigb, buf, ofs);
             ofs[0]++;
-            rv = contents;
+            rv = decontents;
             break;
          case ArgumentType.VARIANT:
             int[] newofs = new int[] { 0, ofs[1] };
             String sig = (String) extract(ArgumentType.SIGNATURE_STRING, buf, newofs)[0];
             newofs[0] = 0;
-            rv = new Variant(extract(sig, buf, newofs)[0] , sig);
+            rv = new Variant<Object>(extract(sig, buf, newofs)[0] , sig);
             ofs[1] = newofs[1];
             break;
          case ArgumentType.STRING:
          case ArgumentType.OBJECT_PATH:
-            length = demarshallint(buf, ofs[1], 4);
+            length = (int) demarshallint(buf, ofs[1], 4);
             ofs[1] += 4;
-            rv = new String(buf, ofs[1], (int)length);
+            rv = new String(buf, ofs[1], length);
             ofs[1] += length + 1;
             break;
          case ArgumentType.SIGNATURE:
             length = (buf[ofs[1]++] & 0xFF);
-            rv = new String(buf, ofs[1], (int)length);
+            rv = Marshalling.getJavaType(new String(buf, ofs[1], (int)length));
             ofs[1] += length + 1;
             break;
          default: 

@@ -294,13 +294,13 @@ public class Marshalling
          throw new DBusException("Failed to parse DBus type signature: "+dbus);
       }
    }
-   /*
+   /**
     * Recursively converts types for serialization onto DBus.
     * @param parameters The parameters to convert.
     * @param types The (possibly generic) types of the parameters.
     * @return The converted parameters.
     * @throws DBusException Thrown if there is an error in converting the objects.
-    *
+    */
    @SuppressWarnings("unchecked")
    public static Object[] convertParameters(Object[] parameters, Type[] types) throws DBusException
    {
@@ -308,87 +308,23 @@ public class Marshalling
       for (int i = 0; i < parameters.length; i++) {
          if (null == parameters[i]) continue;
 
-         if (types[i] instanceof Class &&
-               DBusSerializable.class.isAssignableFrom((Class) types[i])) {
-            for (Method m: ((Class) types[i]).getDeclaredMethods()) 
+         if (parameters[i] instanceof DBusSerializable) {
+            for (Method m: parameters[i].getClass().getDeclaredMethods()) 
                if (m.getName().equals("deserialize")) {
-                  Type[] newtypes = m.getGenericParameterTypes();
+                  Type[] newtypes = m.getParameterTypes();
                   Type[] expand = new Type[types.length + newtypes.length - 1];
                   System.arraycopy(types, 0, expand, 0, i); 
                   System.arraycopy(newtypes, 0, expand, i, newtypes.length); 
                   System.arraycopy(types, i+1, expand, i+newtypes.length, types.length-i-1); 
                   types = expand;
                }
-         } else 
-            parameters[i] = convertParameter(parameters[i], types[i]);
-        
+         } else if (types[i] instanceof TypeVariable &&
+               !(parameters[i] instanceof Variant)) 
+            // its an unwrapped variant, wrap it
+            parameters[i] = new Variant<Object>(parameters[i]);
       }
       return parameters;
    }
-   @SuppressWarnings("unchecked")
-   static Object convertParameter(Object parameter, Type type) throws DBusException
-   {
-      // its an unwrapped variant, wrap it
-      if (type instanceof TypeVariable &&
-            !(parameter instanceof Variant)) {
-         parameter = new Variant<Object>(parameter);
-      }
-
-      // recurse on Variants
-      else if (parameter instanceof Variant)
-      {
-         parameter = new Variant(convertParameter(((Variant) parameter).getValue(),
-                                                   ((Variant) parameter).getType()),
-                                 ((Variant) parameter).getType());
-      }
-
-      // wrap TypeSignatures
-      else if (parameter instanceof Type[])
-         parameter = new TypeSignature((Type[]) parameter);
-
-      // its something parameterised
-      else if (type instanceof ParameterizedType) {
-         ParameterizedType p = (ParameterizedType) type;
-         Class r = (Class) p.getRawType();
-
-         // its a list, wrap it in our typed container class
-         if (List.class.isAssignableFrom(r) && !(parameter instanceof ListContainer)) {
-            parameter = new ListContainer((List<Object>) parameter, p);
-         }
-         // its a map, wrap it in our typed container class
-         else if (Map.class.isAssignableFrom(r) && !(parameter instanceof MapContainer)) {
-            parameter = new MapContainer((Map<Object,Object>) parameter, p);
-         }
-         // its a struct or tuple, recurse over it
-         else if (Container.class.isAssignableFrom(r)) {
-            Constructor con = r.getDeclaredConstructors()[0];
-            Object[] newparams;
-            if (Tuple.class.isAssignableFrom(r)) {
-               Type[] ts = p.getActualTypeArguments();
-               newparams = ((Container) parameter).getParameters(ts);
-            } else
-               newparams = ((Container) parameter).getParameters();
-            try {
-               parameter = con.newInstance(newparams);
-            } catch (Exception e) {
-               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
-               throw new DBusException("Failure in serializing parameters: "+e.getMessage());
-            }
-         }
-      }
-
-      else if (type instanceof GenericArrayType) {
-         if (Array.getLength(parameter) > DBusConnection.MAX_ARRAY_LENGTH) throw new DBusException("Array exceeds maximum length of "+DBusConnection.MAX_ARRAY_LENGTH);
-         Type t = ((GenericArrayType) type).getGenericComponentType();
-         if (!(t instanceof Class) || !((Class) t).isPrimitive())
-            parameter = new ListContainer((Object[]) parameter, t);
-      } else if (type instanceof Class && ((Class) type).isArray()) {
-         if (Array.getLength(parameter) > DBusConnection.MAX_ARRAY_LENGTH) throw new DBusException("Array exceeds maximum length of "+DBusConnection.MAX_ARRAY_LENGTH);
-         if (!((Class) type).getComponentType().isPrimitive())
-            parameter = new ListContainer((Object[]) parameter, ((Class) type).getComponentType());
-      }
-      return parameter;
-   }*/
    @SuppressWarnings("unchecked")
    static Object deSerializeParameter(Object parameter, Type type) throws Exception
    {

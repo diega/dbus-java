@@ -45,8 +45,8 @@ public class UInt64 extends Number implements Comparable<UInt64>
       if (value < MIN_VALUE || value > MAX_LONG_VALUE)
          throw new NumberFormatException(value +" is not between "+ MIN_VALUE +" and "+ MAX_LONG_VALUE);
       this.value = new BigInteger(""+value);
-      this.top = value.shiftRight(32).and(new BigInteger("4294967295")).longValue();
-      this.bottom = value.and(new BigInteger("4294967295")).longValue();
+      this.top = this.value.shiftRight(32).and(new BigInteger("4294967295")).longValue();
+      this.bottom = this.value.and(new BigInteger("4294967295")).longValue();
    }
    /**
     * Create a UInt64 from two longs.
@@ -79,8 +79,8 @@ public class UInt64 extends Number implements Comparable<UInt64>
       if (0 < value.compareTo(MAX_BIG_VALUE))
          throw new NumberFormatException(value +" is not between "+ MIN_VALUE +" and "+ MAX_BIG_VALUE);
       this.value = value;
-      this.top = value.shiftRight(32).and(new BigInteger("4294967295")).longValue();
-      this.bottom = value.and(new BigInteger("4294967295")).longValue();
+      this.top = this.value.shiftRight(32).and(new BigInteger("4294967295")).longValue();
+      this.bottom = this.value.and(new BigInteger("4294967295")).longValue();
    }
    /** Create a UInt64 from a String.
     * @param value Must parse to a valid integer within MIN_VALUE&ndash;MAX_BIG_VALUE 
@@ -96,8 +96,8 @@ public class UInt64 extends Number implements Comparable<UInt64>
       if (0 < a.compareTo(MAX_BIG_VALUE))
          throw new NumberFormatException(a +" is not between "+ MIN_VALUE +" and "+ MAX_BIG_VALUE);
       this.value = a;
-      this.top = value.shiftRight(32).and(new BigInteger("4294967295")).longValue();
-      this.bottom = value.and(new BigInteger("4294967295")).longValue();
+      this.top = this.value.shiftRight(32).and(new BigInteger("4294967295")).longValue();
+      this.bottom = this.value.and(new BigInteger("4294967295")).longValue();
    }
    /** The value of this as a BigInteger. */
    public BigInteger value() { return value; }
