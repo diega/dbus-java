@@ -1004,7 +1004,7 @@ public class DBusConnection
          { 
             try {
                Type[] ts = me.getGenericParameterTypes();
-               m.args = deSerializeParameters(m.args, ts);
+               m.args = Marshalling.deSerializeParameters(m.args, ts);
             } catch (Exception e) {
                if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                synchronized (outqueue) {

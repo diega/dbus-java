@@ -80,7 +80,7 @@ class RemoteInvocationHandler implements InvocationHandler
       String sig = Marshalling.getDBusType(ts);
       MethodCall call;
       int flags;
-      if (ro.autostart) flags |= Message.Flags.AUTO_START;
+      if (!ro.autostart) flags |= Message.Flags.NO_AUTO_START;
       if (async) flags |= Message.Flags.ASYNC;
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) flags |= Message.Flags.NO_REPLY_EXPECTED;
       if (null == ro.iface)

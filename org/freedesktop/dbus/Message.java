@@ -34,6 +34,7 @@ public class Message
    public static interface Flags {
       public static final byte NO_REPLY_EXPECTED = 0x01;
       public static final byte NO_AUTO_START = 0x02;
+      public static final byte ASYNC = 0x80;
    }
    /** Defines constants for each message type. */
    public static interface MessageType {
@@ -120,7 +121,7 @@ public class Message
    private static final int BUFFERINCREMENT = 3;
 
    private boolean big;
-   private byte[][] wiredata;
+   protected byte[][] wiredata;
    protected long bytecounter;
    protected Map<Byte, Object> headers;
    protected static long globalserial = 0;

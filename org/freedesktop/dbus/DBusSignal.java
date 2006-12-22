@@ -100,6 +100,7 @@ public class DBusSignal extends Message
          }
          s.headers = headers;
          s.wiredata = wiredata;
+         s.bytecounter = wiredata.length;
          return s;
       } catch (Exception e) { 
          if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();

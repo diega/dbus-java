@@ -294,13 +294,13 @@ public class Marshalling
          throw new DBusException("Failed to parse DBus type signature: "+dbus);
       }
    }
-   /**
+   /*
     * Recursively converts types for serialization onto DBus.
     * @param parameters The parameters to convert.
     * @param types The (possibly generic) types of the parameters.
     * @return The converted parameters.
     * @throws DBusException Thrown if there is an error in converting the objects.
-    */
+    *
    @SuppressWarnings("unchecked")
    public static Object[] convertParameters(Object[] parameters, Type[] types) throws DBusException
    {
@@ -388,7 +388,7 @@ public class Marshalling
             parameter = new ListContainer((Object[]) parameter, ((Class) type).getComponentType());
       }
       return parameter;
-   }
+   }*/
    @SuppressWarnings("unchecked")
    static Object deSerializeParameter(Object parameter, Type type) throws Exception
    {
