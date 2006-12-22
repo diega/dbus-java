@@ -110,10 +110,18 @@ public class DBusConnection
                      m = null;
                   }
                } catch (IOException IOe) { 
+                  if (EXCEPTION_DEBUG)
+                     IOe.printStackTrace();            
                   try {
                      handleMessage(new org.freedesktop.DBus.Local.Disconnected("/"));
-                  } catch (Exception e) {}
-               } catch (Exception e) { }
+                  } catch (Exception e) {
+                     if (EXCEPTION_DEBUG)
+                        e.printStackTrace();            
+                  }
+               } catch (Exception e) { 
+                  if (EXCEPTION_DEBUG)
+                     e.printStackTrace();            
+               }
 
                // write to the wire
                synchronized (outgoing) {
@@ -235,8 +243,8 @@ public class DBusConnection
    public static final boolean EXCEPTION_DEBUG;
    public static final boolean DBUS_JAVA_DEBUG;
    static {
-      EXCEPTION_DEBUG = (null == System.getenv("DBUS_JAVA_EXCEPTION_DEBUG"));
-      DBUS_JAVA_DEBUG = (null == System.getenv("DBUS_JAVA_DEBUG"));
+      EXCEPTION_DEBUG = (null != System.getenv("DBUS_JAVA_EXCEPTION_DEBUG"));
+      DBUS_JAVA_DEBUG = (null != System.getenv("DBUS_JAVA_DEBUG"));
    }
 
    /**
@@ -324,6 +332,8 @@ public class DBusConnection
       try {
          transport = new Transport(addr);
       } catch (IOException IOe) {
+         if (EXCEPTION_DEBUG)
+            IOe.printStackTrace();            
          throw new DBusException("Failed to connect to bus "+IOe.getMessage());
       }
 
@@ -909,7 +919,10 @@ public class DBusConnection
                } catch (InterruptedException Ie) {}
                try {
                   transport.disconnect();
-               } catch (IOException IOe) {}
+               } catch (IOException IOe) {
+                  if (EXCEPTION_DEBUG)
+                     IOe.printStackTrace();            
+               }
                conn.remove(addr);
                synchronized(workers) {
                   for (_workerthread t: workers)
@@ -1170,7 +1183,12 @@ public class DBusConnection
             try {
                transport.mout.writeMessage(new Error(m, e));
             } catch(IOException IOe) {
-            } catch(DBusException IOe) {}
+               if (EXCEPTION_DEBUG)
+                  IOe.printStackTrace();            
+            } catch(DBusException IOe) {
+               if (EXCEPTION_DEBUG)
+                  e.printStackTrace();            
+            }
       }
    }
    private Message readIncoming(int timeoutms, EfficientQueue outgoing) throws IOException, DBusException
