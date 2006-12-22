@@ -38,10 +38,12 @@ class DBusMap<K, V> implements Map<K, V>
          if (!(o instanceof DBusMap.Entry)) return false;
          return this.entry == ((Entry) o).entry;
       }
+      @SuppressWarnings("unchecked")
       public K getKey()
       {
          return (K) entries[entry][0];
       }
+      @SuppressWarnings("unchecked")
       public V getValue()
       {
          return (V) entries[entry][1];
@@ -85,6 +87,7 @@ class DBusMap<K, V> implements Map<K, V>
          s.add(new Entry(i));
       return s;
    }
+   @SuppressWarnings("unchecked")
    public V get(Object key)
    {
       for (int i = 0; i < entries.length; i++)
@@ -96,6 +99,7 @@ class DBusMap<K, V> implements Map<K, V>
    { 
       return entries.length == 0;
    }
+   @SuppressWarnings("unchecked")
    public Set<K> keySet()
    {
       Set<K> s = new TreeSet<K>();
@@ -119,11 +123,12 @@ class DBusMap<K, V> implements Map<K, V>
    {
       return entries.length;
    }
+   @SuppressWarnings("unchecked")
    public Collection<V> values()
    {
       List<V> l = new Vector<V>();
       for (Object[] entry: entries)
-         l.add((V) entry[0]);
+         l.add((V) entry[1]);
       return l;
    }
    public int hashCode() 

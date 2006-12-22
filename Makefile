@@ -19,7 +19,6 @@ MAKE?=make
 # Program parameters
 CPFLAG?=-classpath
 JCFLAGS?=-Xlint:all -O -g:none
-JCFLAGS+=-cp classes:$(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar
 JFLAGS+=-Djava.library.path=$(JAVAUNIXLIBDIR)
 
 # Source/Class locations
@@ -39,6 +38,7 @@ MANPREFIX?=$(PREFIX)/share/man/man1
 JAVAUNIXLIBDIR?=/usr/lib/jni
 # Installation directory of the java-unix jars
 JAVAUNIXJARDIR?=/usr/share/java
+DEBUG=enable
 
 # Version numbering
 VERSION = 1.13
@@ -65,7 +65,7 @@ viewerclasses: .viewerclasses
 	touch .viewerclasses 
 .classes: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/dbus/exceptions/*.java $(SRCDIR)/dbus/types/*.java $(SRCDIR)/dbus/bin/*.java  
 	mkdir -p classes
-	$(JAVAC) -d classes $(JCFLAGS) $^
+	$(JAVAC) -d classes -cp classes:${JAVAUNIXJARDIR}/unix.jar:${JAVAUNIXJARDIR}/debug-$(DEBUG).jar:${JAVAUNIXJARDIR}/hexdump.jar:$(CLASSPATH) $(JCFLAGS) $^
 	touch .classes
 
 libdbus-java-$(VERSION).jar: .classes

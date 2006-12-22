@@ -11,6 +11,7 @@
 package org.freedesktop.dbus;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -368,6 +369,7 @@ public class Message
     * @param data The value to marshall.
     * @return The offset into the signature of the end of this value's type.
     */
+   @SuppressWarnings("unchecked")
    private int appendone(byte[] sigb, int sigofs, Object data) throws DBusException
    {
       try {

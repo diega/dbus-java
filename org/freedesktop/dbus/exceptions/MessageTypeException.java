@@ -12,6 +12,7 @@ package org.freedesktop.dbus.exceptions;
 
 import java.io.IOException;
 
+@SuppressWarnings("serial")
 public class MessageTypeException extends IOException implements NonFatalException
 {
    public MessageTypeException(String message)
