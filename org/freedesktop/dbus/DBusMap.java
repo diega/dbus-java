@@ -18,12 +18,10 @@ import java.util.TreeSet;
 
 class DBusMap<K, V> implements Map<K, V>
 {
-   private K[] keys;
-   private V[] values;
-   public DBusMap(K[] keys, V[] values)
+   private Object[] entries;
+   public DBusMap(Object[][] entries)
    {
-      this.keys=keys;
-      this.values=values;
+      this.entries=entries;
    }
    class Entry implements Map.Entry<K,V>, Comparable<Entry>
    {
@@ -40,15 +38,15 @@ class DBusMap<K, V> implements Map<K, V>
       }
       public K getKey()
       {
-         return keys[entry];
+         return (K) entries[entry][0];
       }
       public V getValue()
       {
-         return values[entry];
+         return (V) entries[entry][1];
       }
       public int hashCode()
       {
-         return keys[entry].hashCode();
+         return entries[entry][0].hashCode();
       }
       public V setValue(V value)
       {
@@ -66,40 +64,41 @@ class DBusMap<K, V> implements Map<K, V>
    }
    public boolean  containsKey(Object key)
    {
-      for (int i = 0; i < keys.length; i++)
-         if (key == keys[i] || (key != null && key.equals(keys[i])))
+      for (int i = 0; i < entries.length; i++)
+         if (key == entries[i][0] || (key != null && key.equals(entries[i][0])))
             return true;
       return false;
    }
    public boolean   containsValue(Object value)
    {
       for (int i = 0; i < values.length; i++)
-         if (value == values[i] || (value != null && value.equals(values[i])))
+         if (value == entries[i][1] || (value != null && value.equals(entries[i][1])))
             return true;
       return false;
    }
-   public Set<Map.Entry<K,V>>    entrySet()
+   public Set<Map.Entry<K,V>> entrySet()
    {
       Set<Map.Entry<K,V>> s = new TreeSet<Map.Entry<K,V>>();
-      for (int i = 0; i < keys.length; i++) 
+      for (int i = 0; i < entries.length; i++) 
          s.add(new Entry(i));
       return s;
    }
    public V   get(Object key)
    {
       for (int i = 0; i < keys.length; i++)
-         if (key == keys[i] || (key != null && key.equals(keys[i])))
-            return values[i];
+         if (key == entries[i][0] || (key != null && key.equals(entries[i][0])))
+            return entries[i][1];
       return null;
    }
    public boolean  isEmpty() 
    { 
-      return keys.length == 0;
+      return entries.length == 0;
    }
    public Set<K>    keySet()
    {
       Set<K> s = new TreeSet<K>();
-      s.addAll(Arrays.asList(keys));
+      for (Object[] entry: entries)
+         s.add(entry[0]);
       return s;
    }
    public V    put(K key, V value)
@@ -116,15 +115,18 @@ class DBusMap<K, V> implements Map<K, V>
    }
    public int  size()
    {
-      return keys.length;
+      return entries.length;
    }
    public Collection<V>  values()
    {
-      return Arrays.asList(values);
+      List l = new Vector v;
+      for (Object[] entry: entries)
+         l.add(entry[0]);
+      return l;
    }
    public int  hashCode() 
    {
-      return Arrays.hashCode(keys) + Arrays.hashCode(values);
+      return Arrays.deepHashCode(entries);
    }
    public boolean equals(Object o) 
    {
@@ -135,8 +137,8 @@ class DBusMap<K, V> implements Map<K, V>
    public String toString()
    {
       String s = "{ ";
-      for (int i = 0; i < keys.length; i++) 
-         s += keys[i] + " => " + values[i] + ",";
+      for (int i = 0; i < entries.length; i++) 
+         s += entries[i][0] + " => " + entries[i][0] + ",";
       return s.replaceAll(".$", " }");
    }
 }

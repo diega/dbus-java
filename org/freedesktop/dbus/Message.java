@@ -363,112 +363,192 @@ public class Message
     * @param data The value to marshall.
     * @return The offset into the signature of the end of this value's type.
     */
-   private int appendone(byte[] sigb, int sigofs, Object data)
+   private int appendone(byte[] sigb, int sigofs, Object data) throws DBusException
    {
-      int i = sigofs;
-      Debug.print(bytecounter);
-      Debug.print("Appending type: "+((char)sigb[i])+" value: "+data);
+      try {
+         int i = sigofs;
+         Debug.print(bytecounter);
+         Debug.print("Appending type: "+((char)sigb[i])+" value: "+data);
 
-      // pad to the alignment of this type.
-      pad(sigb[i]);
-      switch (sigb[i]) {
-         case ArgumentType.BYTE:
-            appendByte(((Number) data).byteValue());
-            break;
-         case ArgumentType.BOOLEAN:
-            appendint(((Boolean) data).booleanValue() ? 1 : 0, 4);
-            break;
-         case ArgumentType.DOUBLE:
-            long l = Double.doubleToLongBits((Double) data);
-            appendint(l, 8);
-            break;
-         case ArgumentType.FLOAT:
-            int rf = Float.floatToIntBits((Float) data);
-            appendint(rf, 4);
-            break;
-         case ArgumentType.UINT32:
-            appendint(((Number) data).longValue(), 4);
-            break;
-         case ArgumentType.INT64:
-            appendint(((Number) data).longValue(), 8);
-            break;
-         case ArgumentType.UINT64:
-            //TODO appendint(((Number) data).longValue(), 8);
-            break;
-         case ArgumentType.INT32:
-            appendint(((Number) data).intValue(), 4);
-            break;
-         case ArgumentType.UINT16:
-            appendint(((Number) data).intValue(), 2);
-            break;
-         case ArgumentType.INT16:
-            appendint(((Number) data).shortValue(), 2);
-            break;
-         case ArgumentType.STRING:
-         case ArgumentType.OBJECT_PATH:
-            // Strings are marshalled as a UInt32 with the length,
-            // followed by the String, followed by a null byte.
-            String payload = (String) data;
-            appendint(payload.length(), 4);
-            appendBytes(payload.getBytes());
-            int m = payload.length()+4;
-            //pad(ArgumentType.STRING);? do we need this?
-            break;
-         case ArgumentType.SIGNATURE:
-            // Signatures are marshalled as a byte with the length,
-            // followed by the String, followed by a null byte.
-            // Signatures are generally short, so preallocate the array
-            // for the string, length and null byte.
-            payload = (String) data;
-            byte[] pbytes = payload.getBytes();
-            preallocate(2+pbytes.length);
-            appendByte((byte) pbytes.length);
-            appendBytes(pbytes);
-            appendByte((byte) 0);
-            break;
-         case ArgumentType.ARRAY:
-            // Arrays are given as a UInt32 for the length in bytes,
-            // padding to the element alignment, then elements in
-            // order. The length is the length from the end of the
-            // initial padding to the end of the last element.
-            
-            // TODO: optimise primatives
-            byte[] len = new byte[4];
-            appendBytes(len);
-            Object[] contents = (Object[]) data;
-            pad(sigb[++i]);
-            long c = bytecounter;
-            int diff = i;
-            for (Object o: contents) 
-               diff = appendone(sigb, i, o);
-            i = diff;
-            Debug.print("start: "+c+" end: "+bytecounter+" length: "+(bytecounter-c));
-            marshallint(bytecounter-c-2, len, 0, 4);
-            break;
-         case ArgumentType.STRUCT1:
-            // Structs are aligned to 8 bytes
-            // and simply contain each element marshalled in order
-            contents = (Object[]) data;
-            int j = 0;
-            for (i++; sigb[i] != ArgumentType.STRUCT2; i++)
-               i = appendone(sigb, i, contents[j++]);
-            break;
-         case ArgumentType.DICT_ENTRY1:
-            // Dict entries are the same as structs.
-            contents = (Object[]) data;
-            j = 0;
-            for (i++; sigb[i] != ArgumentType.DICT_ENTRY2; i++)
-               i = appendone(sigb, i, contents[j++]);
-            break;
-         case ArgumentType.VARIANT:
-            // Variants are marshalled as a signature
-            // followed by the value.
-            contents = (Object[]) data;
-            appendone(new byte[] {ArgumentType.SIGNATURE}, 0, contents[0]);
-            appendone(((String) contents[0]).getBytes(), 0, contents[1]);
-            break;
+         // pad to the alignment of this type.
+         pad(sigb[i]);
+         switch (sigb[i]) {
+            case ArgumentType.BYTE:
+               appendByte(((Number) data).byteValue());
+               break;
+            case ArgumentType.BOOLEAN:
+               appendint(((Boolean) data).booleanValue() ? 1 : 0, 4);
+               break;
+            case ArgumentType.DOUBLE:
+               long l = Double.doubleToLongBits((Double) data);
+               appendint(l, 8);
+               break;
+            case ArgumentType.FLOAT:
+               int rf = Float.floatToIntBits((Float) data);
+               appendint(rf, 4);
+               break;
+            case ArgumentType.UINT32:
+               appendint(((Number) data).longValue(), 4);
+               break;
+            case ArgumentType.INT64:
+               appendint(((Number) data).longValue(), 8);
+               break;
+            case ArgumentType.UINT64:
+               if (big) {
+                  appendint(((UInt64) data).top(), 4);
+                  appendint(((UInt64) data).bottom(), 4);
+               } else {
+                  appendint(((UInt64) data).bottom(), 4);
+                  appendint(((UInt64) data).top(), 4);
+               }
+               break;
+            case ArgumentType.INT32:
+               appendint(((Number) data).intValue(), 4);
+               break;
+            case ArgumentType.UINT16:
+               appendint(((Number) data).intValue(), 2);
+               break;
+            case ArgumentType.INT16:
+               appendint(((Number) data).shortValue(), 2);
+               break;
+            case ArgumentType.STRING:
+            case ArgumentType.OBJECT_PATH:
+               // Strings are marshalled as a UInt32 with the length,
+               // followed by the String, followed by a null byte.
+               String payload = data.toString();
+               appendint(payload.length(), 4);
+               appendBytes(payload.getBytes());
+               appendBytes(padding[1]);
+               //pad(ArgumentType.STRING);? do we need this?
+               break;
+            case ArgumentType.SIGNATURE:
+               // Signatures are marshalled as a byte with the length,
+               // followed by the String, followed by a null byte.
+               // Signatures are generally short, so preallocate the array
+               // for the string, length and null byte.
+               payload = (String) data;
+               byte[] pbytes = payload.getBytes();
+               preallocate(2+pbytes.length);
+               appendByte((byte) pbytes.length);
+               appendBytes(pbytes);
+               appendByte((byte) 0);
+               break;
+            case ArgumentType.ARRAY:
+               // Arrays are given as a UInt32 for the length in bytes,
+               // padding to the element alignment, then elements in
+               // order. The length is the length from the end of the
+               // initial padding to the end of the last element.
+
+               byte[] len = new byte[4];
+               appendBytes(len);
+               pad(sigb[++i]);
+               long c = bytecounter;
+
+               // optimise primatives
+               if (data.getClass().isArray() && 
+                     data.getClass().getComponentType().isPrimitive()) {
+                  byte[] primbuf;
+                  int algn = getAlignment(sigb[i]);
+                  int len = Array.getLength(data);
+                  switch (sigb[i]) {
+                     case ArgumentType.BYTE:
+                        primbuf = (byte[]) data;
+                        break;
+                     case ArgumentType.INT16:
+                     case ArgumentType.INT32:
+                     case ArgumentType.INT64:
+                     case ArgumentType.BOOLEAN:
+                        primbuf = new byte[len*algn];
+                        for (int j = 0, k = 0; j < len; j++, k += algn)
+                           marshallint(Array.getLong(data, j), primbuf, k, algn);
+                        break;
+                     case ArgumentType.DOUBLE:
+                        primbuf = new byte[len*algn];
+                        for (int j = 0, k = 0; j < len; j++, k += algn)
+                           marshallint(
+                                 Double.doubleToRawLongBits(((double[])data)[j]),
+                                 primbuf, k, algn);
+                        break;
+                     case ArgumentType.FLOAT:
+                        primbuf = new byte[len*algn];
+                        for (int j = 0, k = 0; j < len; j++, k += algn)
+                           marshallint(
+                                 Float.FloatToRawIntBits(((float[])data)[j]),
+                                 primbuf, k, algn);
+                        break;
+                     default:
+                        throw new MarshallingException("Primative array being sent as non-primative array.");
+                  }
+                  appendBytes(primbuf);
+                  i++;
+               } else if (data instanceof List) {
+                  Object[] contents = ((List) data).toArray();
+                  int diff = i;
+                  for (Object o: contents) 
+                     diff = appendone(sigb, i, o);
+                  i = diff;
+               } else if (data instanceof Map) {
+                  int diff = i;
+                  for (Map.Entry o: ((Map) data).entrySet())
+                     diff = appendone(sigb, i, o);
+                  i = diff;
+               } else {
+                  Object[] contents = (Object[]) data;
+                  int diff = i;
+                  for (Object o: contents) 
+                     diff = appendone(sigb, i, o);
+                  i = diff;
+               }
+               Debug.print("start: "+c+" end: "+bytecounter+" length: "+(bytecounter-c));
+               marshallint(bytecounter-c-2, len, 0, 4);
+               break;
+            case ArgumentType.STRUCT1:
+               // Structs are aligned to 8 bytes
+               // and simply contain each element marshalled in order
+               if (data instanceof Container) 
+                  contents = ((Container) data).getParameters();
+               else
+                  contents = (Object[]) data;
+               int j = 0;
+               for (i++; sigb[i] != ArgumentType.STRUCT2; i++)
+                  i = appendone(sigb, i, contents[j++]);
+               break;
+            case ArgumentType.DICT_ENTRY1:
+               // Dict entries are the same as structs.
+               if (data instanceof Map.Entry) {
+                  i++;
+                  i = appendone(sigb, i, ((Map.Entry) data).getKey());
+                  i = appendone(sigb, i, ((Map.Entry) data).getValue());
+                  i++;
+               } else {
+                  contents = (Object[]) data;
+                  j = 0;
+                  for (i++; sigb[i] != ArgumentType.DICT_ENTRY2; i++)
+                     i = appendone(sigb, i, contents[j++]);
+               }
+               break;
+            case ArgumentType.VARIANT:
+               // Variants are marshalled as a signature
+               // followed by the value.
+               if (data instanceof Variant) {
+                  Variant var = (Variant) data;
+                  appendone(new byte[] {ArgumentType.SIGNATURE}, 0, var.getSig());
+                  appendone((var.getSig()).getBytes(), 0, var.getValue());
+               } else if (data instanceof Object[]) {
+                  contents = (Object[]) data;
+                  appendone(new byte[] {ArgumentType.SIGNATURE}, 0, contents[0]);
+                  appendone(((String) contents[0]).getBytes(), 0, contents[1]);
+               } else {
+                  String sig = Marshalling.getDBusType(data.getClass());
+                  appendone(new byte[] {ArgumentType.SIGNATURE}, 0, sig);
+                  appendone((sig).getBytes(), 0, data);
+               }
+               break;
+         }
+         return i;
+      } catch (ClassCastException CCe) {
+         throw new MarshallingException("Trying to marshall to unconvertable type (from "+data.getCLass().getName()+" to "+sigb[sigofs]+")");
       }
-      return i;
    }
    /**
     * Pad the message to the proper alignment for the given type.
@@ -500,6 +580,7 @@ public class Message
             return 2;
          case 4:
          case ArgumentType.BOOLEAN:
+         case ArgumentType.FLOAT:
          case ArgumentType.INT32:
          case ArgumentType.UINT32:
          case ArgumentType.STRING:
@@ -569,7 +650,7 @@ public class Message
             rv = buf[ofs[1]++];
             break;
          case ArgumentType.UINT32:
-            rv = demarshallint(buf, ofs[1], 4);
+            rv = new UInt32(demarshallint(buf, ofs[1], 4));
             ofs[1] += 4;
             break;
          case ArgumentType.INT32:
@@ -581,7 +662,7 @@ public class Message
             ofs[1] += 2;
             break;
          case ArgumentType.UINT16:
-            rv = (int) demarshallint(buf, ofs[1], 2);
+            rv = new UInt16(demarshallint(buf, ofs[1], 2));
             ofs[1] += 2;
             break;
          case ArgumentType.INT64:
@@ -589,8 +670,19 @@ public class Message
             ofs[1] += 8;
             break;
          case ArgumentType.UINT64:
-            /*TODO rv = demarshallint(buf, ofs[1], 8);*/
-            ofs[1] += 8;
+            long top;
+            long bottom;
+            if (big) {
+               top = demarshallint(buf, ofs[1], 4);
+               ofs[1] += 4;
+               bottom = demarshallint(buf, ofs[1], 4);
+            } else {
+               bottom = demarshallint(buf, ofs[1], 4);
+               ofs[1] += 4;
+               top = demarshallint(buf, ofs[1], 4);
+            }
+            rv = new UInt64(top, bottom);
+            ofs[1] += 4;
             break;
          case ArgumentType.DOUBLE:
             long l = demarshallint(buf, ofs[1], 8);
@@ -608,40 +700,97 @@ public class Message
             rv = (1==rf)?Boolean.TRUE:Boolean.FALSE;
             break;
          case ArgumentType.ARRAY:
-            // TODO: optimise primatives
-            long length = demarshallint(buf, ofs[1], 4);
+            long size = demarshallint(buf, ofs[1], 4);
             ofs[1] += 4;
-            ofs[1] = align(ofs[1], sigb[++ofs[0]]);
-            int ofssave = ofs[0];
-            long end = ofs[1]+length;
-            Vector<Object> contents = new Vector<Object>();
-            while (ofs[1] < end) {
-               ofs[0] = ofssave;
-               contents.add(extractone(sigb, buf, ofs));
+            int algn = getAlignment(sigb[++ofs[0]]);
+            ofs[1] = align(ofs[1], algn);
+            int length = (int) size=algn;
+            // optimise primatives
+            switch (sigb[ofs[0]]) {
+               case ArgumentType.BYTE:
+                  rv = new byte[size];
+                  System.arraycopy(buf, ofs[1], rv, 0, size);
+                  ofs[1] += size;
+                  ofs[0]++;
+                  break;
+               case ArgumentType.INT16:
+                  rv = new short[length];
+                  for (int j = 0; j < length; j++, ofs[1] += algn) 
+                     ((short[]) rv)[j] = (short) demarshallint(buf, ofs[1], algn);
+                  ofs[0]++;
+                  break;
+               case ArgumentType.INT32:
+                  rv = new int[length];
+                  for (int j = 0; j < length; j++, ofs[1] += algn) 
+                     ((int[]) rv)[j] = (int) demarshallint(buf, ofs[1], algn);
+                  ofs[0]++;
+                  break;
+               case ArgumentType.INT64:
+                  rv = new long[length];
+                  for (int j = 0; j < length; j++, ofs[1] += algn) 
+                     ((long[]) rv)[j] = (long) demarshallint(buf, ofs[1], algn);
+                  ofs[0]++;
+                  break;
+               case ArgumentType.BOOLEAN:
+                  rv = new boolean[length];
+                  for (int j = 0; j < length; j++, ofs[1] += algn) 
+                     ((boolean[]) rv)[j] = (1 == demarshallint(buf, ofs[1], algn));
+                  ofs[0]++;
+                  break;
+               case ArgumentType.FLOAT:
+                  rv = new float[length];
+                  for (int j = 0; j < length; j++, ofs[1] += algn) 
+                     ((float[]) rv)[j] =
+                        Float.intBitsToFloat((int)demarshallint(buf, ofs[1], algn));
+                  ofs[0]++;
+                  break;
+               case ArgumentType.DOUBLE:
+                  rv = new double[length];
+                  for (int j = 0; j < length; j++, ofs[1] += algn) 
+                     ((double[]) rv)[j] =
+                        Double.longBitsToDouble(demarshallint(buf, ofs[1], algn));
+                  ofs[0]++;
+                  break;
+               case ArgumentType.DICT_ENTRY1:
+                  int ofssave = ofs[0];
+                  long end = ofs[1]+size;
+                  Vector<Object[]> entries = new Vector<Object[]>();
+                  while (ofs[1] < end) {
+                     ofs[0] = ofssave;
+                     contents.add(extractone(sigb, buf, ofs));
+                  }
+                  rv = new DBusMap(entries.toArray(new Object[0][]);
+               default:
+                  int ofssave = ofs[0];
+                  long end = ofs[1]+size;
+                  Vector<Object> contents = new Vector<Object>();
+                  while (ofs[1] < end) {
+                     ofs[0] = ofssave;
+                     contents.add(extractone(sigb, buf, ofs));
+                  }
+                  rv = contents;
             }
-            rv = contents.toArray();
             break;
          case ArgumentType.STRUCT1:
             contents = new Vector<Object>();
-            while (sigb[++ofs[0]] != ArgumentType.STRUCT2) {
+            while (sigb[++ofs[0]] != ArgumentType.STRUCT2)
                contents.add(extractone(sigb, buf, ofs));
-            }
             ofs[0]++;
             rv = contents.toArray();
             break;
          case ArgumentType.DICT_ENTRY1:
-            contents = new Vector<Object>();
-            while (sigb[++ofs[0]] != ArgumentType.DICT_ENTRY2) {
-               contents.add(extractone(sigb, buf, ofs));
-            }
+            contents = Object[2];
+            contents[0] = extractone(sigb, buf, ofs);
             ofs[0]++;
-            rv = contents.toArray();
+            contents[1] = extractone(sigb, buf, ofs);
+            ofs[0]++;
+            rv = contents;
             break;
          case ArgumentType.VARIANT:
             int[] newofs = new int[] { 0, ofs[1] };
             String sig = (String) extract(ArgumentType.SIGNATURE_STRING, buf, newofs)[0];
             newofs[0] = 0;
-            rv = new Object[] { sig, extract(sig, buf, newofs)[0] };
+            rv = new Variant(extract(sig, buf, newofs)[0] , sig);
             ofs[1] = newofs[1];
             break;
          case ArgumentType.STRING:
@@ -656,6 +805,8 @@ public class Message
             rv = new String(buf, ofs[1], (int)length);
             ofs[1] += length + 1;
             break;
+         default: 
+            throw new UnknownTypeCodeException(sigb[ofs[0]]);
       }
       Debug.print("Extracted: "+rv);
       return rv;

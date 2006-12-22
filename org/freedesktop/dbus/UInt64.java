@@ -34,6 +34,8 @@ public class UInt64 extends Number implements Comparable<UInt64>
    /** Minimum allowed value */
    public static final long MIN_VALUE = 0;
    private BigInteger value;
+   private long top;
+   private long bottom;
    /** Create a UInt64 from a long.
     * @param value Must be a valid integer within MIN_VALUE&ndash;MAX_VALUE 
     * @throws NumberFormatException if value is not between MIN_VALUE and MAX_VALUE
@@ -43,17 +45,26 @@ public class UInt64 extends Number implements Comparable<UInt64>
       if (value < MIN_VALUE || value > MAX_LONG_VALUE)
          throw new NumberFormatException(value +" is not between "+ MIN_VALUE +" and "+ MAX_LONG_VALUE);
       this.value = new BigInteger(""+value);
+      this.top = value.shiftRight(32).and(new BigInteger("4294967295")).longValue();
+      this.bottom = value.and(new BigInteger("4294967295")).longValue();
    }
-   public UInt64(long valuea, long valueb)
+   /**
+    * Create a UInt64 from two longs.
+    * @param top Most significant 4 bytes.
+    * @param bottom Least significant 4 bytes.
+    */
+   public UInt64(long top, long bottom)
    {
-      BigInteger a = new BigInteger(""+valuea);
-      a = a.multiply(new BigInteger("4"));
-      a = a.add(new BigInteger(""+valueb));
+      BigInteger a = new BigInteger(""+top);
+      a = a.shiftLeft(32);
+      a = a.add(new BigInteger(""+bottom));
       if (0 > a.compareTo(BigInteger.ZERO))
          throw new NumberFormatException(a +" is not between "+ MIN_VALUE +" and "+ MAX_BIG_VALUE);
       if (0 < a.compareTo(MAX_BIG_VALUE))
          throw new NumberFormatException(a +" is not between "+ MIN_VALUE +" and "+ MAX_BIG_VALUE);
       this.value = a;
+      this.top = top;
+      this.bottom = bottom;
    }
    /** Create a UInt64 from a BigInteger
     * @param value Must be a valid BigInteger between MIN_VALUE&ndash;MAX_BIG_VALUE
@@ -68,6 +79,8 @@ public class UInt64 extends Number implements Comparable<UInt64>
       if (0 < value.compareTo(MAX_BIG_VALUE))
          throw new NumberFormatException(value +" is not between "+ MIN_VALUE +" and "+ MAX_BIG_VALUE);
       this.value = value;
+      this.top = value.shiftRight(32).and(new BigInteger("4294967295")).longValue();
+      this.bottom = value.and(new BigInteger("4294967295")).longValue();
    }
    /** Create a UInt64 from a String.
     * @param value Must parse to a valid integer within MIN_VALUE&ndash;MAX_BIG_VALUE 
@@ -83,6 +96,8 @@ public class UInt64 extends Number implements Comparable<UInt64>
       if (0 < a.compareTo(MAX_BIG_VALUE))
          throw new NumberFormatException(a +" is not between "+ MIN_VALUE +" and "+ MAX_BIG_VALUE);
       this.value = a;
+      this.top = value.shiftRight(32).and(new BigInteger("4294967295")).longValue();
+      this.bottom = value.and(new BigInteger("4294967295")).longValue();
    }
    /** The value of this as a BigInteger. */
    public BigInteger value() { return value; }
@@ -119,13 +134,19 @@ public class UInt64 extends Number implements Comparable<UInt64>
    {
       return value.toString();
    }
-   public int longValueMod()
+   /**
+    * Most significant 4 bytes.
+    */
+   public long top()
    {
-      return value.mod(new BigInteger("4")).intValue();
+      return top;
    }
-   public long longValueDiv()
+   /**
+    * Least significant 4 bytes.
+    */
+   public long bottom()
    {
-      return value.divide(new BigInteger("4")).longValue();
+      return bottom;
    }
 }
 
