@@ -26,11 +26,11 @@ public class MessageWriter
    public void writeMessage(Message m) throws IOException
    {
       if (DBusConnection.DBUS_JAVA_DEBUG && Debug.debug) {
-         Debug.print("<= "+m);
+         Debug.print(Debug.INFO, "<= "+m);
       }
       for (byte[] buf: m.getWireData()) {
          if (null == buf) break;
-         Hexdump.print(buf);
+         Debug.print(Debug.VERBOSE, Hexdump.format(buf));
          out.write(buf);
       }
       out.flush();

@@ -60,7 +60,7 @@ public class Error extends Message
          try {
             c = (Class<? extends org.freedesktop.dbus.exceptions.DBusExecutionException>) Class.forName(name);
          } catch (ClassNotFoundException CNFe) {}
-         name = name.replaceAll("\\.([^\\.]*)$", "$$$1");
+         name = name.replaceAll("\\.([^\\.]*)$", "\\$$1");
       } while (null == c && name.matches(".*\\..*"));
       return c;
    }
@@ -71,7 +71,7 @@ public class Error extends Message
    {
       try {
          Class<? extends DBusExecutionException> c = createExceptionClass(getName());
-         if (null == c) c = DBusExecutionException.class;
+         if (null == c || !DBusExecutionException.class.isAssignableFrom(c)) c = DBusExecutionException.class;
          Constructor<? extends DBusExecutionException> con = c.getConstructor(String.class);
          DBusExecutionException ex;
          if (null == args || 0 == args.length)
@@ -86,6 +86,8 @@ public class Error extends Message
          return ex;
       } catch (Exception e) {
          if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && null != e.getCause()) 
+            e.getCause().printStackTrace();
          DBusExecutionException ex;
          if (null == args || 0 == args.length)
             ex = new DBusExecutionException("");

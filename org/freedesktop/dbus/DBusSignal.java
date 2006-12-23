@@ -50,7 +50,7 @@ public class DBusSignal extends Message
       if (null != sig) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
    }
-   private static class internalsig extends DBusSignal
+   static class internalsig extends DBusSignal
    {
       public internalsig(String source, String objectpath, String type, String name, String sig, Object[] parameters, long serial) throws DBusException
       {
@@ -118,7 +118,7 @@ public class DBusSignal extends Message
    {
       super(Message.Endian.BIG, Message.MessageType.SIGNAL, (byte) 0);
 
-      if (!objectpath.matches(DBusConnection.OBJECT_REGEX)) throw new DBusException("Invalid object path");
+      if (!objectpath.matches(DBusConnection.OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
 
       Class tc = getClass();
       String member = tc.getSimpleName();

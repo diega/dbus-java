@@ -12,6 +12,7 @@ package org.freedesktop.dbus;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.EOFException;
 
 import cx.ath.matthew.debug.Debug;
 import cx.ath.matthew.utils.Hexdump;
@@ -23,30 +24,87 @@ import org.freedesktop.dbus.exceptions.MessageProtocolVersionException;
 public class MessageReader
 {
    private InputStream in;
+   private byte[] buf = null;
+   private byte[] tbuf = null;
+   private byte[] header = null;
+   private byte[] body = null;
+   private int[] len = new int[4];
    public MessageReader(InputStream in)
    {
       this.in = in;
    }
    public Message readMessage() throws IOException, DBusException
    {
-      byte[] buf = new byte[12];
-      in.read(buf);
+      int rv;
+      /* Read the 12 byte fixed header, retrying as neccessary */
+      if (null == buf) { buf = new byte[12]; len[0] = 0; }
+      if (len[0] < 12) {
+         rv = in.read(buf, len[0], 12-len[0]);
+         if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
+         len[0] += rv;
+      }
+      if (len[0] == 0) return null;
+      if (len[0] < 12) {
+         if (Debug.debug) Debug.print(Debug.DEBUG, "Only got "+len[0]+" of 12 bytes of header");
+         return null;
+      }
+
+      /* Parse the details from the header */
       byte endian = buf[0];
       byte type = buf[1];
       byte protover = buf[3];
-      if (protover > Message.PROTOCOL)
+      if (protover > Message.PROTOCOL) {
+         buf = null;
          throw new MessageProtocolVersionException("Protocol version "+protover+" is unsupported");
-      int bodylen = (int) Message.demarshallint(buf, 4, endian, 4);
-      byte[] tbuf = new byte[4];
-      in.read(tbuf);
-      int headerlen = (int) Message.demarshallint(tbuf, 0, endian, 4);
-      if (0 != headerlen % 8)
-         headerlen += 8-(headerlen%8);
-      byte[] header=new byte[headerlen+8];
-      byte[] body=new byte[bodylen];
-      System.arraycopy(tbuf, 0, header, 0, 4);
-      in.read(header, 8, headerlen);
-      in.read(body);
+      }
+
+      /* Read the length of the variable header */
+      if (null == tbuf) { tbuf = new byte[4]; len[1] = 0; }
+      if (len[1] < 4) {
+         rv = in.read(tbuf, len[1], 4-len[1]);
+         if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
+         len[1] += rv;
+      }
+      if (len[1] < 4) {
+         if (Debug.debug) Debug.print(Debug.DEBUG, "Only got "+len[1]+" of 4 bytes of header");
+         return null;
+      }
+
+      /* Parse the variable header length */
+      int headerlen = 0;
+      if (null == header) {
+         headerlen = (int) Message.demarshallint(tbuf, 0, endian, 4);
+         if (0 != headerlen % 8)
+            headerlen += 8-(headerlen%8);
+      } else
+         headerlen = header.length-8;
+
+      /* Read the variable header */
+      if (null == header) { header = new byte[headerlen+8]; len[2] = 0; }
+      if (len[2] < headerlen) {
+         rv = in.read(header, 8+len[2], headerlen-len[2]);
+         if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
+         len[2] += rv;
+      }
+      if (len[2] < headerlen) {
+         if (Debug.debug) Debug.print(Debug.DEBUG, "Only got "+len[2]+" of "+headerlen+" bytes of header");
+         return null;
+      }
+
+      /* Read the body */
+      int bodylen = 0;
+      if (null == body) bodylen = (int) Message.demarshallint(buf, 4, endian, 4);
+      if (null == body) { body=new byte[bodylen]; len[3] = 0; }
+      if (len[3] < body.length) {
+         rv = in.read(body, len[3], body.length-len[3]);
+         if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
+         len[3] += rv;
+      }
+      if (len[3] < body.length) {
+         if (Debug.debug) Debug.print(Debug.DEBUG, "Only got "+len[3]+" of "+body.length+" bytes of body");
+         return null;
+      }
+
       Message m;
       switch (type) {
          case Message.MessageType.METHOD_CALL:
@@ -66,8 +124,12 @@ public class MessageReader
       }
       m.populate(buf, header, body);
       if (DBusConnection.DBUS_JAVA_DEBUG && Debug.debug) {
-         Debug.print("=> "+m);
+         Debug.print(Debug.INFO, "=> "+m);
       }
+      buf = null;
+      tbuf = null;
+      body = null;
+      header = null;
       return m;
    }
    public void close() throws IOException

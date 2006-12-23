@@ -25,6 +25,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 
+import java.io.File;
 import java.io.IOException;
 
 import java.util.Arrays;
@@ -42,6 +43,8 @@ import org.freedesktop.dbus.exceptions.NotConnected;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
+import cx.ath.matthew.debug.Debug;
+
 /** Handles a connection to DBus.
  * <p>
  * This is a Singleton class, only 1 connection to the SYSTEM or SESSION busses can be made.
@@ -58,9 +61,10 @@ public class DBusConnection
       public void handle(DBusSignal s)
       {
          if (s instanceof org.freedesktop.DBus.Local.Disconnected) {
+            if (Debug.debug) Debug.print(Debug.WARN, "Handling Disconnected signal from bus");
             try {
                Error err = new Error(
-                     busnames.get(0), "org.freedesktop.DBus.Local.Disconnected", 0, "s", new Object[] { "Disconnected" });
+                     "org.freedesktop.DBus.Local" , "org.freedesktop.DBus.Local.Disconnected", 0, "s", new Object[] { "Disconnected" });
                synchronized (pendingCalls) {
                   long[] set = pendingCalls.getKeys();
                   for (long l: set) if (-1 != l) {
@@ -245,6 +249,19 @@ public class DBusConnection
    static {
       EXCEPTION_DEBUG = (null != System.getenv("DBUS_JAVA_EXCEPTION_DEBUG"));
       DBUS_JAVA_DEBUG = (null != System.getenv("DBUS_JAVA_DEBUG"));
+      if (DBUS_JAVA_DEBUG) Debug.print("Debugging enabled");
+      if (EXCEPTION_DEBUG) Debug.print("Debugging of internal exceptions enabled");
+      if (Debug.debug && DBUS_JAVA_DEBUG) {
+         File f = new File("debug.conf");
+         if (f.exists()) {
+            Debug.print("Loading debug config file: "+f);
+            try {
+               Debug.loadConfig(f);
+            } catch (IOException IOe) {}
+         } else {
+            Debug.print("debug config file "+f+" does not exist, not loading.");
+         }
+      }
    }
 
    /**
@@ -341,6 +358,11 @@ public class DBusConnection
       thread = new _thread();
       thread.start();
       
+      // register disconnect handlers
+      DBusSigHandler h = new _sighandler();
+      addSigHandlerWithoutMatch(org.freedesktop.DBus.Local.Disconnected.class, h);
+      addSigHandlerWithoutMatch(org.freedesktop.DBus.NameAcquired.class, h);
+
       // register ourselves
       _dbus = (DBus) getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
       try {
@@ -349,10 +371,6 @@ public class DBusConnection
          if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
          throw new DBusException(DBEe.getMessage());
       }
-      // register disconnect handlers
-      DBusSigHandler h = new _sighandler();
-      addSigHandler(org.freedesktop.DBus.Local.Disconnected.class, h);
-      addSigHandler(org.freedesktop.DBus.NameAcquired.class, h);
    }
 
    /**
@@ -899,6 +917,20 @@ public class DBusConnection
             v.add(handler);
       }
    }
+   private void addSigHandlerWithoutMatch(Class signal, DBusSigHandler handler) throws DBusException
+   {
+      DBusMatchRule rule = new DBusMatchRule(signal);
+      SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember(), rule.getObject(), rule.getSource());
+      synchronized (handledSignals) {
+         Vector<DBusSigHandler> v = handledSignals.get(key);
+         if (null == v) {
+            v = new Vector<DBusSigHandler>();
+            v.add(handler);
+            handledSignals.put(key, v);
+         } else
+            v.add(handler);
+      }
+   }
    /** 
     * Disconnect from the Bus.
     * This only disconnects when the last reference to the bus has disconnect called on it
@@ -1116,7 +1148,11 @@ public class DBusConnection
          addRunnable(new Runnable() { public void run() {
             {
                try {
-                  DBusSignal rs = s.createReal();
+                  DBusSignal rs;
+                  if (s instanceof DBusSignal.internalsig || s.getClass().equals(DBusSignal.class))
+                     rs = s.createReal();
+                  else
+                     rs = s;
                   h.handle(rs); 
                } catch (DBusException DBe) {
                   if (DBusConnection.EXCEPTION_DEBUG) DBe.printStackTrace();
