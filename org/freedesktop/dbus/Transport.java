@@ -72,6 +72,7 @@ public class Transport
       InputStream in = null;
       if ("unix".equals(address.getType())) {
          UnixSocket us = new UnixSocket();
+         us.setBlocking(false);
          if (null != address.getParameter("abstract"))
             us.connect(new UnixSocketAddress(address.getParameter("abstract"), true));
          else if (null != address.getParameter("path"))
