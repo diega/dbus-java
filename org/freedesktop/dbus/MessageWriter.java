@@ -10,6 +10,7 @@
 */
 package org.freedesktop.dbus;
 
+import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 
@@ -21,7 +22,7 @@ public class MessageWriter
    private OutputStream out;
    public MessageWriter(OutputStream out)
    {
-      this.out = out;
+      this.out = new BufferedOutputStream(out);
    }
    public void writeMessage(Message m) throws IOException
    {

@@ -20,6 +20,8 @@ import java.util.Vector;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.MessageFormatException;
 
+import cx.ath.matthew.debug.Debug;
+
 public class DBusSignal extends Message
 {
    DBusSignal() { }
@@ -73,9 +75,23 @@ public class DBusSignal extends Message
       s.c = c;
       return s;
    }
+   @SuppressWarnings("unchecked")
+   private static Class<? extends DBusSignal> createSignalClass(String name)
+   {
+      Class<? extends DBusSignal> c = null;
+      do {
+         try {
+            c = (Class<? extends DBusSignal>) Class.forName(name);
+         } catch (ClassNotFoundException CNFe) {}
+         name = name.replaceAll("\\.([^\\.]*)$", "\\$$1");
+      } while (null == c && name.matches(".*\\..*"));
+      return c;
+   }
    DBusSignal createReal() throws DBusException
    {
-      if (null == c) return this;
+      if (null == c) 
+         c = createSignalClass(getInterface()+"$"+getName());
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Converting signal to type: "+c);
       Type[] types = typeCache.get(c);
       Constructor con = conCache.get(c);
       if (null == types) {

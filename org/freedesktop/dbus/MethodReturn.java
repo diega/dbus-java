@@ -47,7 +47,7 @@ public class MethodReturn extends Message
    }
    public MethodReturn(MethodCall mc, String sig, Object... args) throws DBusException
    {
-      this(mc.getSource(), mc.getReplySerial(), sig, args);
+      this(mc.getSource(), mc.getSerial(), sig, args);
       this.call = mc;
    }
    MethodCall call;

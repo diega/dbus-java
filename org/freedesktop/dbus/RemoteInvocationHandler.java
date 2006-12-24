@@ -94,6 +94,8 @@ class RemoteInvocationHandler implements InvocationHandler
          else
             call = new MethodCall(ro.busname, ro.objectpath, DBusConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), m.getName(), flags, sig, args);
       } catch (DBusException DBe) {
+         if (DBusConnection.EXCEPTION_DEBUG)
+            DBe.printStackTrace();
          throw new DBusExecutionException("Failed to construct outgoing method call: "+DBe.getMessage());
       }
       if (null == conn.outgoing) throw new NotConnected("Not Connected");
