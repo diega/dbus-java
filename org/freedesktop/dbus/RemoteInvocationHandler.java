@@ -24,6 +24,7 @@ import java.util.List;
 import org.freedesktop.DBus;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.freedesktop.dbus.exceptions.NotConnected;
 
 class RemoteInvocationHandler implements InvocationHandler
 {
@@ -33,16 +34,15 @@ class RemoteInvocationHandler implements InvocationHandler
 
       if (null == rp) { 
          if(null == c || Void.TYPE.equals(c)) return null;
-         else throw new DBusExecutionException("Wrong return type (expected void)");
+         else throw new DBusExecutionException("Wrong return type (got void, expected a value)");
       }
 
       switch (rp.length) {
          case 0:
             if (null == c || Void.TYPE.equals(c))
                return null;
-            else throw new DBusExecutionException("Wrong return type (expected void)");
+            else throw new DBusExecutionException("Wrong return type (got void, expected a value)");
          case 1:
-
             try { 
                rp = Marshalling.deSerializeParameters(rp, 
                      new Type[] { m.getGenericReturnType() }, conn);
@@ -78,7 +78,7 @@ class RemoteInvocationHandler implements InvocationHandler
    {
       Type[] ts = m.getGenericParameterTypes();
       String sig = null;
-      try {
+      if (ts.length > 0) try {
          sig = Marshalling.getDBusType(ts);
       } catch (DBusException DBe) {
          throw new DBusExecutionException("Failed to construct D-Bus type: "+DBe.getMessage());
@@ -96,6 +96,7 @@ class RemoteInvocationHandler implements InvocationHandler
       } catch (DBusException DBe) {
          throw new DBusExecutionException("Failed to construct outgoing method call: "+DBe.getMessage());
       }
+      if (null == conn.outgoing) throw new NotConnected("Not Connected");
       synchronized (conn.outgoing) {
          conn.outgoing.add(call);
       }

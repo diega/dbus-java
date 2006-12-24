@@ -135,11 +135,30 @@ public class Message
    protected byte type;
    protected byte flags;
    protected byte protover;
-   protected Object[] args;
+   private Object[] args;
+   private byte[] body;
    private int preallocated = 0;
    private int paofs = 0;
    private byte[] pabuf;
    private int bufferuse = 0;
+
+   /**
+    * Returns the name of the given header field.
+    */
+   public static String getHeaderFieldName(byte field)
+   {
+      switch (field) {
+         case HeaderField.PATH: return "Path";
+         case HeaderField.INTERFACE: return "Interface";
+         case HeaderField.MEMBER: return "Member";
+         case HeaderField.ERROR_NAME: return "Error Name";
+         case HeaderField.REPLY_SERIAL: return "Reply Serial";
+         case HeaderField.DESTINATION: return "Destination";
+         case HeaderField.SENDER: return "Sender";
+         case HeaderField.SIGNATURE: return "Signature";
+         default: return "Invalid";
+      }
+   }
 
    /**
     * Create a message; only to be called by sub-classes.
@@ -156,7 +175,7 @@ public class Message
       serial = ++globalserial;
       this.type = type;
       this.flags = flags;
-      preallocate(12);
+      preallocate(4);
       append("yyyy", endian, type, flags, Message.PROTOCOL);
    }
    /**
@@ -174,6 +193,7 @@ public class Message
     * @param headers D-Bus serialized data of type a(yv)
     * @param body D-Bus serialized data of the signature defined in headers.
     */
+   @SuppressWarnings("unchecked")
    void populate(byte[] msg, byte[] headers, byte[] body) throws DBusException
    {
       big = (msg[0] == Endian.BIG);
@@ -183,14 +203,15 @@ public class Message
       wiredata[0] = msg;
       wiredata[1] = headers;
       wiredata[2] = body;
+      this.body = body;
       bufferuse = 3;
-      serial = (Long) extract(Message.ArgumentType.UINT32_STRING, msg, 8)[0];
+      serial = ((Number) extract(Message.ArgumentType.UINT32_STRING, msg, 8)[0]).longValue();
       bytecounter = msg.length+headers.length+body.length;
       Debug.print(Debug.DEBUG, headers);
       Object[] hs = extract("a(yv)", headers, 0);
       Debug.print(Debug.DEBUG, Arrays.deepToString(hs));
-      for (Object o: (Object[]) hs[0]) {
-         this.headers.put((Byte) ((Object[])o)[0], ((Object[])((Object[])o)[1])[1]);
+      for (Object o: (Vector<Object>) hs[0]) {
+         this.headers.put((Byte) ((Object[])o)[0], ((Variant<Object>)((Object[])o)[1]).getValue());
       }
    }
    /**
@@ -352,7 +373,45 @@ public class Message
     */
    public String toString()
    {
-      return headers.toString();
+      StringBuffer sb = new StringBuffer();
+      sb.append(getClass().getSimpleName());
+      sb.append ('(');
+      sb.append (flags);
+      sb.append (',');
+      sb.append(serial);
+      sb.append (')');
+      sb.append (' ');
+      sb.append ('{');
+      sb.append(' ');
+      if (headers.size() == 0)
+         sb.append('}');
+      else {
+         for (Byte field: headers.keySet()) {
+            sb.append(getHeaderFieldName(field));
+            sb.append('=');
+            sb.append('>');
+            sb.append(headers.get(field).toString());
+            sb.append(',');
+            sb.append(' ');
+         }
+         sb.setCharAt(sb.length()-2,' ');
+         sb.setCharAt(sb.length()-1,'}');
+      }
+      sb.append(' ');
+      sb.append('{');
+      sb.append(' ');
+      if (null == args || 0 == args.length)
+         sb.append('}');
+      else {
+         for (Object o: args) {
+            sb.append(o.toString());
+            sb.append(',');
+            sb.append(' ');
+         }
+         sb.setCharAt(sb.length()-2,' ');
+         sb.setCharAt(sb.length()-1,'}');
+      }
+      return sb.toString();
    }
    /**
     * Returns the value of the header field of a given field.
@@ -510,7 +569,7 @@ public class Message
                   i = diff;
                }
                Debug.print(Debug.VERBOSE, "start: "+c+" end: "+bytecounter+" length: "+(bytecounter-c));
-               marshallint(bytecounter-c-2, alen, 0, 4);
+               marshallint(bytecounter-c, alen, 0, 4);
                break;
             case ArgumentType.STRUCT1:
                // Structs are aligned to 8 bytes
@@ -712,9 +771,10 @@ public class Message
             break;
          case ArgumentType.ARRAY:
             long size = demarshallint(buf, ofs[1], 4);
+            Debug.print(Debug.VERBOSE, "Reading array of size: "+size);
             ofs[1] += 4;
             byte algn = (byte) getAlignment(sigb[++ofs[0]]);
-            ofs[1] = align(ofs[1], algn);
+            ofs[1] = align(ofs[1], sigb[ofs[0]]);
             int length = (int) (size / algn);
             if (length > DBusConnection.MAX_ARRAY_LENGTH)
                throw new MarshallingException("Arrays must not exceed "+DBusConnection.MAX_ARRAY_LENGTH);
@@ -775,12 +835,15 @@ public class Message
                   rv = new DBusMap(entries.toArray(new Object[0][]));
                   break;
                default:
+                  // TODO: handle 0-size arrays
                   ofssave = ofs[0];
                   end = ofs[1]+size;
                   Vector<Object> contents = new Vector<Object>();
+                  Debug.print(ofs[1]+" < "+end);
                   while (ofs[1] < end) {
                      ofs[0] = ofssave;
                      contents.add(extractone(sigb, buf, ofs));
+                     Debug.print(ofs[1]+" < "+end);
                   }
                   rv = contents;
             }
@@ -816,20 +879,22 @@ public class Message
          case ArgumentType.OBJECT_PATH:
             length = (int) demarshallint(buf, ofs[1], 4);
             ofs[1] += 4;
-            rv = new ObjectPath(new String(buf, ofs[1], length), getSource());
+            rv = new ObjectPath(getSource(), new String(buf, ofs[1], length));
+            Debug.print(Debug.DEBUG, "Created object path: "+rv);
             ofs[1] += length + 1;
             break;
          case ArgumentType.SIGNATURE:
             length = (buf[ofs[1]++] & 0xFF);
-            Vector<Type> types = new Vector<Type>();
+            /* TODO: put this somewhere else Vector<Type> types = new Vector<Type>();
             Marshalling.getJavaType(new String(buf, ofs[1], (int)length), types, -1);
-            rv = types.toArray(new Type[0]);
+            rv = types.toArray(new Type[0]);*/
+            rv = new String(buf, ofs[1], (int)length);
             ofs[1] += length + 1;
             break;
          default: 
             throw new UnknownTypeCodeException(sigb[ofs[0]]);
       }
-      Debug.print(Debug.DEBUG, "Extracted: "+rv);
+      Debug.print(Debug.DEBUG, "Extracted: "+rv+" (now at "+ofs[1]+")");
       return rv;
    }
    /** 
@@ -877,7 +942,12 @@ public class Message
    /**
     * Returns the object path of the message.
     */
-   public String getPath() { return  (String) headers.get(HeaderField.PATH); }
+   public String getPath()
+   { 
+      Object o = headers.get(HeaderField.PATH);
+      if (null == o) return null;
+      return o.toString();
+   }
    /**
     * Returns the member name or error name this message represents.
     */
@@ -907,12 +977,22 @@ public class Message
     */
    public long getReplySerial() 
    { 
-      Long l = (Long) headers.get(HeaderField.REPLY_SERIAL); 
+      Number l = (Number) headers.get(HeaderField.REPLY_SERIAL); 
       if (null == l) return 0;
-      return l;
+      return l.longValue();
    }
    /**
-    * Returns the parameters to this message as an Object array.
+    * Parses and returns the parameters to this message as an Object array.
     */
-   public Object[] getParameters() { return args; }
+   public Object[] getParameters() throws DBusException 
+   { 
+      if (null == args && null != body) {
+         String sig = (String) headers.get(HeaderField.SIGNATURE);
+         if (null != sig) {
+            args = extract(sig, body, 0);
+         } else args = new Object[0];
+      }
+      return args; 
+   }
+   protected void setArgs(Object[] args) { this.args = args; }
 }

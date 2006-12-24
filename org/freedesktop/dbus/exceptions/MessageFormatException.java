@@ -8,18 +8,16 @@
 
    Full licence texts are included in the COPYING file with this program.
 */
-package org.freedesktop.dbus;
+package org.freedesktop.dbus.exceptions;
 
-class ObjectPath
+/**
+ * Thrown if a message is formatted incorrectly.
+ */
+@SuppressWarnings("serial")
+public class MessageFormatException extends DBusException implements NonFatalException
 {
-   public String source;
-   public String path;
-//   public DBusConnection conn;
-   public ObjectPath(String source, String path/*, DBusConnection conn*/)
+   public MessageFormatException(String message)
    {
-      this.source = source;
-      this.path = path;
-  //    this.conn = conn;
+      super (message);
    }
-   public String toString() { return path; }
 }

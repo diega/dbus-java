@@ -10,6 +10,8 @@
 */
 package org.freedesktop.dbus;
 
+import cx.ath.matthew.debug.Debug;
+
 /**
  * Provides a Message queue which doesn't allocate objects
  * on insertion/removal. */
@@ -41,15 +43,20 @@ class EfficientQueue
       end = oldmv.length;
    }
    // create a new vector with just the valid keys in and return it
-   public long[] getKeys()
+   public Message[] getKeys()
    {
+      if (start == end) return new Message[0];
       int size;
       if (start < end) size = end-start-1;
       else size = mv.length-(start-end);
-      long[] lv = new long[size];
+      Message[] lv = new Message[size];
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "start: "+start+" end: "+end);
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "System.arraycopy({0..."+mv.length+"},"+start+",{0..."+lv.length+"},0,"+(mv.length-start)+");");
       System.arraycopy(mv,start,lv,0,mv.length-start);
-      if (end != (mv.length-1)) 
+      if (end != (mv.length-1)) {
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "System.arraycopy({0..."+mv.length+"},0,{0..."+lv.length+"},"+(mv.length-start)+","+(end+1)+");");
          System.arraycopy(mv,0,lv,mv.length-start,end+1);
+      }
       return lv;
    }
    private void shrink()

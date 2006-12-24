@@ -14,6 +14,7 @@ import java.lang.reflect.Constructor;
 import java.util.Vector;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.freedesktop.dbus.exceptions.MessageFormatException;
 
 /**
  * Error messages which can be sent over the bus.
@@ -25,6 +26,8 @@ public class Error extends Message
    {
       super(Message.Endian.BIG, Message.MessageType.ERROR, (byte) 0);
 
+      if (null == dest || null == errorName)
+         throw new MessageFormatException("Must specify destination and error name to Errors.");
       headers.put(Message.HeaderField.REPLY_SERIAL,replyserial);
       headers.put(Message.HeaderField.ERROR_NAME,errorName);
       headers.put(Message.HeaderField.DESTINATION,dest);
@@ -36,7 +39,7 @@ public class Error extends Message
       if (null != sig) {
          hargs.add(new Object[] { Message.HeaderField.SIGNATURE, new Object[] { ArgumentType.SIGNATURE_STRING, sig } });
          headers.put(Message.HeaderField.SIGNATURE,sig);
-         this.args = args;
+         setArgs(args);
       }
       
       byte[] blen = new byte[4];
@@ -67,13 +70,14 @@ public class Error extends Message
    /**
     * Turns this into an exception of the correct type
     */
-   public DBusExecutionException getException()
+   public DBusExecutionException getException() 
    {
       try {
          Class<? extends DBusExecutionException> c = createExceptionClass(getName());
          if (null == c || !DBusExecutionException.class.isAssignableFrom(c)) c = DBusExecutionException.class;
          Constructor<? extends DBusExecutionException> con = c.getConstructor(String.class);
          DBusExecutionException ex;
+         Object[] args = getParameters();
          if (null == args || 0 == args.length)
             ex = con.newInstance("");
          else {
@@ -89,6 +93,10 @@ public class Error extends Message
          if (DBusConnection.EXCEPTION_DEBUG && null != e.getCause()) 
             e.getCause().printStackTrace();
          DBusExecutionException ex;
+         Object[] args = null;
+         try {
+            args = getParameters();
+         } catch (Exception ee) {}
          if (null == args || 0 == args.length)
             ex = new DBusExecutionException("");
          else {

@@ -80,7 +80,11 @@ public class MessageReader
          headerlen = header.length-8;
 
       /* Read the variable header */
-      if (null == header) { header = new byte[headerlen+8]; len[2] = 0; }
+      if (null == header) {
+         header = new byte[headerlen+8]; 
+         System.arraycopy(tbuf, 0, header, 0, 4);
+         len[2] = 0; 
+      }
       if (len[2] < headerlen) {
          rv = in.read(header, 8+len[2], headerlen-len[2]);
          if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
@@ -122,7 +126,31 @@ public class MessageReader
          default:
             throw new MessageTypeException("Message type "+type+" unsupported");
       }
-      m.populate(buf, header, body);
+      if (DBusConnection.DBUS_JAVA_DEBUG && Debug.debug) {
+         Debug.print(Debug.VERBOSE, Hexdump.format(buf));
+         Debug.print(Debug.VERBOSE, Hexdump.format(tbuf));
+         Debug.print(Debug.VERBOSE, Hexdump.format(header));
+         Debug.print(Debug.VERBOSE, Hexdump.format(body));
+      }
+      try {
+         m.populate(buf, header, body);
+      } catch (DBusException DBe) {
+         if (DBusConnection.EXCEPTION_DEBUG)
+            DBe.printStackTrace();
+         buf = null;
+         tbuf = null;
+         body = null;
+         header = null;
+         throw DBe;
+      } catch (RuntimeException Re) {
+         if (DBusConnection.EXCEPTION_DEBUG)
+            Re.printStackTrace();
+         buf = null;
+         tbuf = null;
+         body = null;
+         header = null;
+         throw Re;
+      }
       if (DBusConnection.DBUS_JAVA_DEBUG && Debug.debug) {
          Debug.print(Debug.INFO, "=> "+m);
       }

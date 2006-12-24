@@ -12,14 +12,19 @@ package org.freedesktop.dbus;
 
 import java.util.Vector;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.MessageFormatException;
+import cx.ath.matthew.debug.Debug;
+import cx.ath.matthew.utils.Hexdump;
 
 public class MethodCall extends Message
 {
    MethodCall() { }
    public MethodCall(String dest, String path, String iface, String member, byte flags, String sig, Object... args) throws DBusException
    {
-      super(Message.Endian.BIG, Message.MessageType.METHOD_CALL, flags);
+      super(Message.Endian.LITTLE, Message.MessageType.METHOD_CALL, flags);
 
+      if (null == dest || null == member || null == path)
+         throw new MessageFormatException("Must specify destination, path and function name to MethodCalls.");
       headers.put(Message.HeaderField.PATH,path);
       headers.put(Message.HeaderField.DESTINATION,dest);
       headers.put(Message.HeaderField.MEMBER,member);
@@ -37,9 +42,10 @@ public class MethodCall extends Message
       hargs.add(new Object[] { Message.HeaderField.MEMBER, new Object[] { ArgumentType. STRING_STRING, member } });
 
       if (null != sig) {
+         if (Debug.debug) Debug.print(Debug.DEBUG, "Appending arguments with signature: "+sig);
          hargs.add(new Object[] { Message.HeaderField.SIGNATURE, new Object[] { ArgumentType.SIGNATURE_STRING, sig } });
          headers.put(Message.HeaderField.SIGNATURE,sig);
-         this.args = args;
+         setArgs(args);
       }
 
       byte[] blen = new byte[4];
@@ -49,7 +55,9 @@ public class MethodCall extends Message
 
       long c = bytecounter;
       if (null != sig) append(sig, args);
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Appended body, type: "+sig+" start: "+c+" end: "+bytecounter+" size: "+(bytecounter-c));
       marshallint(bytecounter-c, blen, 0, 4);
+      if (Debug.debug) Debug.print("marshalled size ("+blen+"): "+Hexdump.format(blen));
    }
    static long REPLY_WAIT_TIMEOUT = 20000;
    Message reply = null;
@@ -59,6 +67,8 @@ public class MethodCall extends Message
    }
    public synchronized Message getReply()
    {
+      System.err.println("getReply()");
+      System.err.flush();
       if (null != reply) return reply;
       try {
          wait(REPLY_WAIT_TIMEOUT);
@@ -67,6 +77,8 @@ public class MethodCall extends Message
    }
    protected synchronized void setReply(Message reply)
    {
+      System.err.println("setReply()");
+      System.err.flush();
       this.reply = reply;
       notifyAll();
    }

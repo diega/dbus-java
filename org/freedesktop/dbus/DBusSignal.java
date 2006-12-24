@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.MessageFormatException;
 
 public class DBusSignal extends Message
 {
@@ -26,6 +27,8 @@ public class DBusSignal extends Message
    {
       super(Message.Endian.BIG, Message.MessageType.SIGNAL, (byte) 0);
 
+      if (null == path || null == member || null == iface)
+         throw new MessageFormatException("Must specify object path, interface and signal name to Signals.");
       headers.put(Message.HeaderField.PATH,path);
       headers.put(Message.HeaderField.MEMBER,member);
       headers.put(Message.HeaderField.INTERFACE,iface);
@@ -38,7 +41,7 @@ public class DBusSignal extends Message
       if (null != sig) {
          hargs.add(new Object[] { Message.HeaderField.SIGNATURE, new Object[] { ArgumentType.SIGNATURE_STRING, sig } });
          headers.put(Message.HeaderField.SIGNATURE,sig);
-         this.args = args;
+         setArgs(args);
       }
 
       byte[] blen = new byte[4];
@@ -72,6 +75,7 @@ public class DBusSignal extends Message
    }
    DBusSignal createReal() throws DBusException
    {
+      if (null == c) return this;
       Type[] types = typeCache.get(c);
       Constructor con = conCache.get(c);
       if (null == types) {
@@ -90,6 +94,7 @@ public class DBusSignal extends Message
 
       try {
          DBusSignal s;
+         Object[] args = getParameters();
          if (null == args) s = (DBusSignal) con.newInstance(getPath());
          else {
             Object[] params = new Object[args.length + 1];
@@ -159,7 +164,7 @@ public class DBusSignal extends Message
             sig = Marshalling.getDBusType(types);
             hargs.add(new Object[] { Message.HeaderField.SIGNATURE, new Object[] { ArgumentType.SIGNATURE_STRING, sig } });
             headers.put(Message.HeaderField.SIGNATURE,sig);
-            this.args = args;
+            setArgs(args);
          } catch (Exception e) {
             throw new DBusException("Failed to add signal parameters: "+e.getMessage());
          }
@@ -171,7 +176,7 @@ public class DBusSignal extends Message
       pad((byte)8);
 
       long c = bytecounter;
-      if (null != this.args) append(sig, args);
+      if (0 < args.length) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
    }
 }

@@ -65,7 +65,7 @@ public class DBusConnection
             try {
                Error err = new Error(
                      "org.freedesktop.DBus.Local" , "org.freedesktop.DBus.Local.Disconnected", 0, "s", new Object[] { "Disconnected" });
-               synchronized (pendingCalls) {
+               if (null != pendingCalls) synchronized (pendingCalls) {
                   long[] set = pendingCalls.getKeys();
                   for (long l: set) if (-1 != l) {
                      MethodCall m = pendingCalls.remove(l);
@@ -122,31 +122,32 @@ public class DBusConnection
                      if (EXCEPTION_DEBUG)
                         e.printStackTrace();            
                   }
+                  disconnect();
                } catch (Exception e) { 
                   if (EXCEPTION_DEBUG)
                      e.printStackTrace();            
                }
 
                // write to the wire
-               synchronized (outgoing) {
+               if (null != outgoing) synchronized (outgoing) {
                   if (!outgoing.isEmpty())
                      m = outgoing.remove(); }
                while (null != m) {
                   sendMessage(m);
                   m = null;
-                  synchronized (outgoing) {
+                  if (null != outgoing) synchronized (outgoing) {
                      if (!outgoing.isEmpty())
                         m = outgoing.remove(); }
                }
             }
-            synchronized (outgoing) {
+            if (null != outgoing) synchronized (outgoing) {
                if (!outgoing.isEmpty())
                   m = outgoing.remove(); 
             }
             while (null != m) {
                sendMessage(m);
                m = null;
-               synchronized (outgoing) {
+               if (null != outgoing) synchronized (outgoing) {
                   if (!outgoing.isEmpty())
                      m = outgoing.remove(); }
             }
@@ -743,6 +744,7 @@ public class DBusConnection
     */
    public void sendSignal(DBusSignal signal)
    {
+      if (null == outgoing) return;
       synchronized (outgoing) {
          outgoing.add(signal); }
    }
@@ -941,14 +943,43 @@ public class DBusConnection
       synchronized (conn) {
          synchronized (_reflock) {
             if (0 == --_refcount) {
+               // Set all pending messages to have an error.
+               try {
+                  Error err = new Error(
+                        "org.freedesktop.DBus.Local" , "org.freedesktop.DBus.Local.Disconnected", 0, "s", new Object[] { "Disconnected" });
+                  synchronized (pendingCalls) {
+                     long[] set = pendingCalls.getKeys();
+                     for (long l: set) if (-1 != l) {
+                        MethodCall m = pendingCalls.remove(l);
+                        if (null != m)
+                           m.setReply(err);
+                     }
+                     pendingCalls = null; 
+                  }
+                  synchronized (outgoing) {
+                     for (Message m: outgoing.getKeys())
+                        if (m instanceof MethodCall)
+                           ((MethodCall) m).setReply(err);
+                     outgoing = null;
+                  }
+                  synchronized (pendingErrors) {
+                     pendingErrors.add(err);
+                  }
+               } catch (DBusException DBe) {}
+
+               // run all pending tasks.
                while (runnables.size() > 0)
                   synchronized (runnables) {
                      runnables.notifyAll();
                   }
+
+               // stop the main thread
                _run = false;
                try {
                   synchronized (thread) { thread.wait(); }
                } catch (InterruptedException Ie) {}
+
+               // disconnect from the trasport layer
                try {
                   transport.disconnect();
                } catch (IOException IOe) {
@@ -956,10 +987,14 @@ public class DBusConnection
                      IOe.printStackTrace();            
                }
                conn.remove(addr);
+
+               // stop all the workers
                synchronized(workers) {
                   for (_workerthread t: workers)
                      t.halt();
                }
+
+               // make sure none are blocking on the runnables queue still
                synchronized (runnables) {
                   runnables.notifyAll();
                }
@@ -1014,7 +1049,7 @@ public class DBusConnection
       }
    }
    
-   private void handleMessage(final MethodCall m) 
+   private void handleMessage(final MethodCall m) throws DBusException
    {
       // get the method signature
       Object[] params = m.getParameters();
@@ -1041,7 +1076,7 @@ public class DBusConnection
 
          if (null == eo) {
             try {
-               synchronized (outgoing) {
+               if (null != outgoing) synchronized (outgoing) {
                   outgoing.add(new Error(m, new DBus.Error.UnknownObject(m.getPath()+" is not an object provided by this process."))); }
             } catch (DBusException DBe) {}
             return;
@@ -1049,7 +1084,7 @@ public class DBusConnection
          meth = eo.methods.get(new MethodTuple(m.getName(), m.getSig()));
          if (null == meth) {
             try {
-               synchronized (outgoing) {
+               if (null != outgoing) synchronized (outgoing) {
                   outgoing.add(new Error(m, new DBus.Error.UnknownMethod("The method `"+m.getInterface()+"."+m.getName()+"' does not exist on this object."))); }
             } catch (DBusException DBe) {}
             return;
@@ -1070,7 +1105,7 @@ public class DBusConnection
          { 
             try {
                Type[] ts = me.getGenericParameterTypes();
-               m.args = Marshalling.deSerializeParameters(m.args, ts, conn);
+               m.setArgs(Marshalling.deSerializeParameters(m.getParameters(), ts, conn));
             } catch (Exception e) {
                if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                try {
@@ -1087,7 +1122,7 @@ public class DBusConnection
                }
                Object result;
                try {
-                  result = me.invoke(ob, m.args);
+                  result = me.invoke(ob, m.getParameters());
                } catch (InvocationTargetException ITe) {
                   if (DBusConnection.EXCEPTION_DEBUG) ITe.getCause().printStackTrace();
                   throw ITe.getCause();
@@ -1127,7 +1162,7 @@ public class DBusConnection
          }
       });
    }
-   @SuppressWarnings("unchecked")
+   @SuppressWarnings({"unchecked","deprecation"})
    private void handleMessage(final DBusSignal s)
    {
       Vector<DBusSigHandler> v = new Vector<DBusSigHandler>();
@@ -1149,6 +1184,7 @@ public class DBusConnection
             {
                try {
                   DBusSignal rs;
+                  Debug.print(DBusConnection.class, Debug.VERBOSE, "s has type "+s.getClass());
                   if (s instanceof DBusSignal.internalsig || s.getClass().equals(DBusSignal.class))
                      rs = s.createReal();
                   else
@@ -1168,6 +1204,7 @@ public class DBusConnection
    private void handleMessage(final Error err)
    {
       MethodCall m = null;
+      if (null == pendingCalls) return;
       synchronized (pendingCalls) {
          if (pendingCalls.contains(err.getReplySerial()))
             m = pendingCalls.remove(err.getReplySerial());
@@ -1181,6 +1218,7 @@ public class DBusConnection
    private void handleMessage(final MethodReturn mr)
    {
       MethodCall m = null;
+      if (null == pendingCalls) return;
       synchronized (pendingCalls) {
          if (pendingCalls.contains(mr.getReplySerial()))
             m = pendingCalls.remove(mr.getReplySerial());
@@ -1190,7 +1228,7 @@ public class DBusConnection
          mr.setCall(m);
       } else
          try {
-            synchronized (outgoing) {
+            if (null != outgoing) synchronized (outgoing) {
                outgoing.add(new Error(mr, new DBusExecutionException("Spurious reply. No message with the given serial id was awaiting a reply."))); 
             }
          } catch (DBusException DBe) {}
@@ -1201,7 +1239,9 @@ public class DBusConnection
          transport.mout.writeMessage(m);
          if (m instanceof MethodCall) {
             if (0 == (m.getFlags() & Message.Flags.NO_REPLY_EXPECTED))
-               synchronized (pendingCalls) {
+               if (null == pendingCalls) 
+                  ((MethodCall) m).setReply(new Error("org.freedesktop.DBus.Local", "org.freedesktop.DBus.Local.Disconnected", 0, "s", new Object[] { "Disconnected" }));
+               else synchronized (pendingCalls) {
                   pendingCalls.put(m.getSerial(),(MethodCall) m);
                }
          }
@@ -1213,6 +1253,7 @@ public class DBusConnection
             } catch (DBusException DBe) {}
          else if (m instanceof MethodCall)
             try {
+               Debug.print(Debug.INFO, "Setting reply to "+m+" as an error");
                ((MethodCall)m).setReply(new Error(m, new DBusExecutionException("Message Failed to Send: "+e.getMessage())));
             } catch (DBusException DBe) {}
          else if (m instanceof MethodReturn)

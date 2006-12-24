@@ -38,7 +38,7 @@ MANPREFIX?=$(PREFIX)/share/man/man1
 JAVAUNIXLIBDIR?=/usr/lib/jni
 # Installation directory of the java-unix jars
 JAVAUNIXJARDIR?=/usr/share/java
-DEBUG=enable
+DEBUG=disable
 
 # Version numbering
 VERSION = 1.13
