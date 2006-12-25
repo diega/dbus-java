@@ -312,6 +312,12 @@ public class Marshalling
                case 'g':
                   rv.add(Type[].class);
                   break;
+               case '{':
+                  rv.add(Map.Entry.class);
+                  contained = new Vector<Type>();
+                  c = getJavaType(dbus.substring(i+1), contained, 2);
+                  i+=c+1;
+                  break;
                default:
                   throw new DBusException("Failed to parse DBus type signature: "+dbus+" ("+dbus.charAt(i)+")");
             }

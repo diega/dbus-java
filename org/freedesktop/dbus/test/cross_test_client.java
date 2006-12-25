@@ -40,6 +40,8 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.types.DBusListType;
 import org.freedesktop.dbus.types.DBusMapType;
 
+import cx.ath.matthew.debug.Debug;
+
 public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHandler<DBus.Binding.TestSignals.Triggered>
 {
    private DBusConnection conn;
@@ -141,10 +143,13 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
                fail(iface.getName()+"."+method, msg);
          }
       } catch (DBusExecutionException DBEe) {
+         DBEe.printStackTrace();
          fail(iface.getName()+"."+method, "Error occurred during execution: "+DBEe.getClass().getName()+" "+DBEe.getMessage());
       } catch (InvocationTargetException ITe) {
+         ITe.printStackTrace();
          fail(iface.getName()+"."+method, "Error occurred during execution: "+ITe.getCause().getClass().getName()+" "+ITe.getCause().getMessage());
       } catch (Exception e) {
+         e.printStackTrace();
          fail(iface.getName()+"."+method, "Error occurred during execution: "+e.getClass().getName()+" "+e.getMessage());
       }
    }
@@ -235,6 +240,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
             fail("org.freedesktop.DBus.Binding.Tests.Primitize", "Wrong Return Value; expected "+collapseArray(vs)+" got "+collapseArray(res));
 
       } catch (Exception e) {
+         if (Debug.debug) Debug.print(e);
          fail("org.freedesktop.DBus.Binding.Tests.Primitize", "Exception occurred during test: ("+e.getClass().getName()+") "+e.getMessage());
       }
    }
@@ -246,12 +252,16 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
 
       try { if (intro.Introspect().startsWith("<!DOCTYPE")) pass("org.freedesktop.DBus.Introspectable.Introspect");
             else fail("org.freedesktop.DBus.Introspectable.Introspect", "Didn't get valid xml data back when introspecting /Test");
-      } catch (DBusExecutionException DBEe) { fail("org.freedesktop.DBus.Introspectable.Introspect", "Got exception during introspection on /Test ("+DBEe.getClass().getName()+"): "+DBEe.getMessage());
+      } catch (DBusExecutionException DBEe) {
+         if (Debug.debug) Debug.print(DBEe);
+         fail("org.freedesktop.DBus.Introspectable.Introspect", "Got exception during introspection on /Test ("+DBEe.getClass().getName()+"): "+DBEe.getMessage());
       }
 
       try { if (rootintro.Introspect().startsWith("<!DOCTYPE")) pass("org.freedesktop.DBus.Introspectable.Introspect");
             else fail("org.freedesktop.DBus.Introspectable.Introspect", "Didn't get valid xml data back when introspecting /");
-      } catch (DBusExecutionException DBEe) { fail("org.freedesktop.DBus.Introspectable.Introspect", "Got exception during introspection on / ("+DBEe.getClass().getName()+"): "+DBEe.getMessage());
+      } catch (DBusExecutionException DBEe) { 
+         if (Debug.debug) Debug.print(DBEe);
+         fail("org.freedesktop.DBus.Introspectable.Introspect", "Got exception during introspection on / ("+DBEe.getClass().getName()+"): "+DBEe.getMessage());
       }
 
       test(DBus.Binding.Tests.class, tests, "Identity", new Variant<Integer>(new Integer(1)), new Variant<Integer>(new Integer(1))); 
@@ -406,6 +416,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       try {
          ctc.conn.sendSignal(new DBus.Binding.TestSignals.Trigger("/Test", new UInt16(15), 12.5));
       } catch (DBusException DBe) {
+         if (Debug.debug) Debug.print(DBe);
          throw new DBusExecutionException(DBe.getMessage());
       }
          

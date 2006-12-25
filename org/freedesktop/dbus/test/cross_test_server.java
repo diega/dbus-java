@@ -305,10 +305,6 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
    {
       done.add("org.freedesktop.DBus.Binding.Tests.Exit");
       notdone.remove("org.freedesktop.DBus.Binding.Tests.Exit");
-      for (String s: done)
-         System.out.println(s+" ok");
-      for (String s: notdone)
-         System.out.println(s+" untested");
       run = false;
       synchronized (this) {
          notifyAll();
@@ -340,6 +336,10 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
             } catch (InterruptedException Ie) {}
          }
       }
+      for (String s: cts.done)
+         System.out.println(s+" ok");
+      for (String s: cts.notdone)
+         System.out.println(s+" untested");
       conn.disconnect();
       System.exit(0);
    } catch (DBusException DBe) {

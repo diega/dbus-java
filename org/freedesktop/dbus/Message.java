@@ -565,10 +565,14 @@ public class Message
                      case ArgumentType.INT16:
                      case ArgumentType.INT32:
                      case ArgumentType.INT64:
-                     case ArgumentType.BOOLEAN:
                         primbuf = new byte[len*algn];
                         for (int j = 0, k = 0; j < len; j++, k += algn)
                            marshallint(Array.getLong(data, j), primbuf, k, algn);
+                        break;
+                     case ArgumentType.BOOLEAN:
+                        primbuf = new byte[len*algn];
+                        for (int j = 0, k = 0; j < len; j++, k += algn)
+                           marshallint(Array.getBoolean(data, j)?1:0, primbuf, k, algn);
                         break;
                      case ArgumentType.DOUBLE:
                         primbuf = new byte[len*algn];
@@ -599,6 +603,15 @@ public class Message
                   int diff = i;
                   for (Map.Entry<Object,Object> o: ((Map<Object,Object>) data).entrySet())
                      diff = appendone(sigb, i, o);
+                  if (i == diff) {
+                     // advance the type parser even on 0-size arrays.
+                     Vector<Type> temp = new Vector<Type>();
+                     byte[] temp2 = new byte[sigb.length-diff];
+                     System.arraycopy(sigb, diff, temp2, 0, temp2.length);
+                     String temp3 = new String(temp2);
+                     int temp4 = Marshalling.getJavaType(temp3, temp, 1);
+                     diff += temp4;
+                  }
                   i = diff;
                } else {
                   Object[] contents = (Object[]) data;
@@ -727,8 +740,10 @@ public class Message
       if (Debug.debug) Debug.print(Debug.VERBOSE, "Appending sig: "+sig+" data: "+Arrays.deepToString(data));
       byte[] sigb = sig.getBytes();
       int j = 0;
-      for (int i = 0; i < sigb.length; i++)
+      for (int i = 0; i < sigb.length; i++) {
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "Appending item: "+i+" "+((char)sigb[i])+" "+j);
          i = appendone(sigb, i, data[j++]);
+      }
    }
    /**
     * Align a counter to the given type.
@@ -861,6 +876,16 @@ public class Message
                         Double.longBitsToDouble(demarshallint(buf, ofs[1], algn));
                   break;
                case ArgumentType.DICT_ENTRY1:
+                  if (0 == size) {
+                     // advance the type parser even on 0-size arrays.
+                     Vector<Type> temp = new Vector<Type>();
+                     byte[] temp2 = new byte[sigb.length-ofs[0]];
+                     System.arraycopy(sigb, ofs[0], temp2, 0, temp2.length);
+                     String temp3 = new String(temp2);
+                     int temp4 = Marshalling.getJavaType(temp3, temp, 1);
+                     ofs[0] += temp4;
+                     if (Debug.debug) Debug.print(Debug.VERBOSE, "Aligned type: "+temp3+" "+temp4+" "+ofs[0]);
+                  }
                   int ofssave = ofs[0];
                   long end = ofs[1]+size;
                   Vector<Object[]> entries = new Vector<Object[]>();
@@ -871,7 +896,16 @@ public class Message
                   rv = new DBusMap(entries.toArray(new Object[0][]));
                   break;
                default:
-                  // TODO: handle 0-size arrays
+                  if (0 == size) {
+                     // advance the type parser even on 0-size arrays.
+                     Vector<Type> temp = new Vector<Type>();
+                     byte[] temp2 = new byte[sigb.length-ofs[0]];
+                     System.arraycopy(sigb, ofs[0], temp2, 0, temp2.length);
+                     String temp3 = new String(temp2);
+                     int temp4 = Marshalling.getJavaType(temp3, temp, 1);
+                     ofs[0] += temp4;
+                     if (Debug.debug) Debug.print(Debug.VERBOSE, "Aligned type: "+temp3+" "+temp4+" "+ofs[0]);
+                  }
                   ofssave = ofs[0];
                   end = ofs[1]+size;
                   Vector<Object> contents = new Vector<Object>();
@@ -927,9 +961,6 @@ public class Message
             break;
          case ArgumentType.SIGNATURE:
             length = (buf[ofs[1]++] & 0xFF);
-            /* TODO: put this somewhere else Vector<Type> types = new Vector<Type>();
-            Marshalling.getJavaType(new String(buf, ofs[1], (int)length), types, -1);
-            rv = types.toArray(new Type[0]);*/
             rv = new String(buf, ofs[1], (int)length);
             ofs[1] += length + 1;
             break;

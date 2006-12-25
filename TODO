@@ -1,5 +1,6 @@
  * support Enums as UInt32s
- * use native java backend
+ * document debugging
+ * document API changes
  * allow 'virtual' object handlers, so that all object paths under a certain hierarchy are handled by the same object
  * fix dbus-viewer to recurse on paths
  * extend dbus-viewer to make calls

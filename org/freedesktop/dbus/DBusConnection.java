@@ -963,6 +963,8 @@ public class DBusConnection
                      for (Message m: outgoing.getKeys())
                         if (m instanceof MethodCall)
                            ((MethodCall) m).setReply(err);
+                        else 
+                           sendMessage(m);
                      outgoing = null;
                   }
                   synchronized (pendingErrors) {
