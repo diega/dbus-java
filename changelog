@@ -1,3 +1,8 @@
+Version 2.0:
+	
+	* Remove libdbus-1 dependency and talk the wire protocol directly
+	* TODO: put more here
+
 Version 1.13:
 
 	* add AccessDenied signal
