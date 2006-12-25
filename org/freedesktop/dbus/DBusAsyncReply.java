@@ -19,6 +19,8 @@ import org.freedesktop.DBus.Error.NoReply;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
+import cx.ath.matthew.debug.Debug;
+
 /**
  * A handle to an asynchronous method call.
  */
@@ -62,7 +64,7 @@ public class DBusAsyncReply<ReturnType>
             } catch (DBusExecutionException DBEe) {
                error = DBEe;
             } catch (DBusException DBe) {
-               if (DBusConnection.EXCEPTION_DEBUG) DBe.printStackTrace();
+               if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
                error = new DBusExecutionException(DBe.getMessage());
             }
          }

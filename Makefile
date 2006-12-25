@@ -41,8 +41,8 @@ JAVAUNIXJARDIR?=/usr/share/java
 DEBUG=disable
 
 # Version numbering
-VERSION = 1.13
-RELEASEVERSION = 1.12
+VERSION = 2.0
+RELEASEVERSION = 2.0
 
 all: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar bin/ListDBus bin/CreateInterface bin/DBusViewer
 

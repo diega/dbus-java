@@ -26,7 +26,7 @@ public class MessageWriter
    }
    public void writeMessage(Message m) throws IOException
    {
-      if (DBusConnection.DBUS_JAVA_DEBUG && Debug.debug) {
+      if (Debug.debug) {
          Debug.print(Debug.INFO, "<= "+m);
       }
       for (byte[] buf: m.getWireData()) {

@@ -18,6 +18,8 @@ import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 
+import cx.ath.matthew.debug.Debug;
+
 class ArrayFrob
 {
    static Hashtable<Class, Class> primitiveToWrapper = new Hashtable<Class, Class>();
@@ -150,7 +152,7 @@ class ArrayFrob
             return type((Object[]) o, c.getComponentType());
       
       } catch (Exception e) {
-         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
          throw new IllegalArgumentException(e);
       }
 

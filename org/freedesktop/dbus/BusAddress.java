@@ -11,6 +11,7 @@
 package org.freedesktop.dbus;
 import java.util.Map;
 import java.util.HashMap;
+import cx.ath.matthew.debug.Debug;
 
 public class BusAddress
 {
@@ -18,14 +19,17 @@ public class BusAddress
    private Map<String,String> parameters;
    public BusAddress(String address)
    {
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Parsing bus address: "+address);
       String[] ss = address.split(":", 2);
       type = ss[0];
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Transport type: "+type);
       String[] ps = ss[1].split(",");
       parameters = new HashMap<String,String>();
       for (String p: ps) {
          String[] kv = p.split("=", 2);
          parameters.put(kv[0], kv[1]);
       }
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Transport options: "+parameters);
    }
    public String getType() { return type; }
    public String getParameter(String key) { return parameters.get(key); }

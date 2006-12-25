@@ -16,6 +16,8 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.exceptions.MessageFormatException;
 
+import cx.ath.matthew.debug.Debug;
+
 /**
  * Error messages which can be sent over the bus.
  */
@@ -89,9 +91,9 @@ public class Error extends Message
          ex.setType(getName());
          return ex;
       } catch (Exception e) {
-         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
-         if (DBusConnection.EXCEPTION_DEBUG && null != e.getCause()) 
-            e.getCause().printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug && null != e.getCause()) 
+            Debug.print(Debug.ERR, e.getCause());
          DBusExecutionException ex;
          Object[] args = null;
          try {

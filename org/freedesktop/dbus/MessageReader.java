@@ -126,7 +126,7 @@ public class MessageReader
          default:
             throw new MessageTypeException("Message type "+type+" unsupported");
       }
-      if (DBusConnection.DBUS_JAVA_DEBUG && Debug.debug) {
+      if (Debug.debug) {
          Debug.print(Debug.VERBOSE, Hexdump.format(buf));
          Debug.print(Debug.VERBOSE, Hexdump.format(tbuf));
          Debug.print(Debug.VERBOSE, Hexdump.format(header));
@@ -135,23 +135,21 @@ public class MessageReader
       try {
          m.populate(buf, header, body);
       } catch (DBusException DBe) {
-         if (DBusConnection.EXCEPTION_DEBUG)
-            DBe.printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
          buf = null;
          tbuf = null;
          body = null;
          header = null;
          throw DBe;
       } catch (RuntimeException Re) {
-         if (DBusConnection.EXCEPTION_DEBUG)
-            Re.printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, Re);
          buf = null;
          tbuf = null;
          body = null;
          header = null;
          throw Re;
       }
-      if (DBusConnection.DBUS_JAVA_DEBUG && Debug.debug) {
+      if (Debug.debug) {
          Debug.print(Debug.INFO, "=> "+m);
       }
       buf = null;

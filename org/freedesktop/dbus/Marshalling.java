@@ -116,7 +116,7 @@ public class Marshalling
                if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
                out[level].append(s[0]);
             } catch (ArrayIndexOutOfBoundsException AIOOBe) {
-               if (DBusConnection.EXCEPTION_DEBUG) AIOOBe.printStackTrace();
+               if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, AIOOBe);
                throw new DBusException("Map must have 2 parameters");
             }
             out[level].append('}');
@@ -317,7 +317,7 @@ public class Marshalling
             }
          return i;
       } catch (IndexOutOfBoundsException IOOBe) {
-         if (DBusConnection.EXCEPTION_DEBUG) IOOBe.printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOOBe);
          throw new DBusException("Failed to parse DBus type signature: "+dbus);
       }
    }
@@ -495,7 +495,7 @@ public class Marshalling
                      System.arraycopy(parameters, i + newtypes.length, compress, i+1, parameters.length - i - newtypes.length);
                      parameters = compress;
                   } catch (ArrayIndexOutOfBoundsException AIOOBe) {
-                     if (DBusConnection.EXCEPTION_DEBUG) AIOOBe.printStackTrace();
+                     if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, AIOOBe);
                      throw new DBusException("Not enough elements to create custom object from serialized data ("+(parameters.length-i)+" < "+(newtypes.length)+")");
                   }
                }

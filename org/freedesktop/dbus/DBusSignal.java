@@ -129,7 +129,7 @@ public class DBusSignal extends Message
          s.bytecounter = wiredata.length;
          return s;
       } catch (Exception e) { 
-         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
          throw new DBusException(e.getMessage());
       }
    }
@@ -187,8 +187,7 @@ public class DBusSignal extends Message
             headers.put(Message.HeaderField.SIGNATURE,sig);
             setArgs(args);
          } catch (Exception e) {
-            if (DBusConnection.EXCEPTION_DEBUG) 
-               e.printStackTrace();
+            if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
             throw new DBusException("Failed to add signal parameters: "+e.getMessage());
          }
       }

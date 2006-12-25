@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import java.text.Collator;
+
 import org.freedesktop.dbus.DBusAsyncReply;
 import org.freedesktop.dbus.DBusCallInfo;
 import org.freedesktop.dbus.DBusConnection;
@@ -139,7 +141,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    }
    public String getName()
    {
-      return "This Is A Name!!";
+      return "This Is A UTF-8 Name: س !!";
    }
    public boolean check()
    {
@@ -429,7 +431,10 @@ public class test
       /** Call the remote object and get a response. */
       String rname = tri.getName();
       System.out.println("Got Remote Name: "+rname);
-      if (!"This Is A Name!!".equals(rname))
+      Collator col = Collator.getInstance();
+      col.setDecomposition(Collator.FULL_DECOMPOSITION);
+      col.setStrength(Collator.PRIMARY);
+      if (0 != col.compare("This Is A UTF-8 Name: ﺱ !!", rname))
          fail("getName return value incorrect");
       System.out.println("sending it to sleep");
       tri.waitawhile();
@@ -560,7 +565,7 @@ public class test
       
       System.out.print("testing recursion...");
       
-      if (!"This Is A Name!!".equals(tri2.recursionTest())) fail("recursion test failed");
+      if (0 != col.compare("This Is A UTF-8 Name: ﺱ !!",tri2.recursionTest())) fail("recursion test failed");
       
       System.out.println("done");
 

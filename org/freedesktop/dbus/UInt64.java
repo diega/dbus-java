@@ -22,11 +22,6 @@ import java.math.BigInteger;
 @SuppressWarnings("serial")
 public class UInt64 extends Number implements Comparable<UInt64>
 {
-   /** Maximum allowed value (when accessed as a long) 
-    * @deprecated You should explicitly compare MAX_LONG_VALUE or MAX_BIG_VALUE
-    * depending which you mean. */
-   @Deprecated()
-   public static final long MAX_VALUE = Long.MAX_VALUE;
    /** Maximum allowed value (when accessed as a long) */
    public static final long MAX_LONG_VALUE = Long.MAX_VALUE;
    /** Maximum allowed value (when accessed as a BigInteger) */

@@ -14,6 +14,8 @@ import java.lang.reflect.Type;
 import java.util.Vector;
 import org.freedesktop.dbus.exceptions.DBusException;
 
+import cx.ath.matthew.debug.Debug;
+
 /**
  * A Wrapper class for Variant values. 
  * A method on DBus can send or receive a Variant. 
@@ -40,7 +42,7 @@ public class Variant<T>
          throw new IllegalArgumentException("Can't wrap a multi-valued type in a Variant ("+type+")");
          this.sig = ss[0];
       } catch (DBusException DBe) {
-         if (DBusConnection.EXCEPTION_DEBUG) DBe.printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
          throw new IllegalArgumentException("Can't wrap "+o.getClass()+" in an unqualified Variant ("+DBe.getMessage()+")");
       }
       this.o = o;
@@ -61,7 +63,7 @@ public class Variant<T>
          throw new IllegalArgumentException("Can't wrap a multi-valued type in a Variant ("+type+")");
          this.sig = ss[0];
       } catch (DBusException DBe) {
-         if (DBusConnection.EXCEPTION_DEBUG) DBe.printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
          throw new IllegalArgumentException("Can't wrap a "+type+" in a Variant ("+DBe.getMessage()+")");
       }
       this.o = o;
@@ -83,7 +85,7 @@ public class Variant<T>
             throw new IllegalArgumentException("Can't wrap multiple or no types in a Variant ("+sig+")");
          this.type = ts.get(0);
       } catch (DBusException DBe) {
-         if (DBusConnection.EXCEPTION_DEBUG) DBe.printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
          throw new IllegalArgumentException("Can't wrap a "+sig+" in a Variant ("+DBe.getMessage()+")");
       }
       this.o = o;

@@ -46,16 +46,16 @@ class EfficientQueue
    public Message[] getKeys()
    {
       if (start == end) return new Message[0];
-      int size;
-      if (start < end) size = end-start-1;
-      else size = mv.length-(start-end);
-      Message[] lv = new Message[size];
-      if (Debug.debug) Debug.print(Debug.VERBOSE, "start: "+start+" end: "+end);
-      if (Debug.debug) Debug.print(Debug.VERBOSE, "System.arraycopy({0..."+mv.length+"},"+start+",{0..."+lv.length+"},0,"+(mv.length-start)+");");
-      System.arraycopy(mv,start,lv,0,mv.length-start);
-      if (end != (mv.length-1)) {
-         if (Debug.debug) Debug.print(Debug.VERBOSE, "System.arraycopy({0..."+mv.length+"},0,{0..."+lv.length+"},"+(mv.length-start)+","+(end+1)+");");
-         System.arraycopy(mv,0,lv,mv.length-start,end+1);
+      Message[] lv;
+      if (start < end) {
+         int size = end-start;
+         lv = new Message[size];
+         System.arraycopy(mv, start, lv, 0, size);
+      } else {
+         int size = mv.length-start+end;
+         lv = new Message[size];
+         System.arraycopy(mv, start, lv, 0, mv.length-start);
+         System.arraycopy(mv, 0, lv, mv.length-start, end);
       }
       return lv;
    }

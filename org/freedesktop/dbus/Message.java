@@ -12,6 +12,7 @@ package org.freedesktop.dbus;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -407,8 +408,7 @@ public class Message
       try { 
          args = getParameters();
       } catch (DBusException DBe) {
-         if (DBusConnection.EXCEPTION_DEBUG)
-            DBe.printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
       }
       if (null == args || 0 == args.length)
          sb.append('}');
@@ -509,9 +509,16 @@ public class Message
                // Strings are marshalled as a UInt32 with the length,
                // followed by the String, followed by a null byte.
                String payload = data.toString();
-               if (Debug.debug) Debug.print(Debug.VERBOSE, "Appending String of length "+payload.length());
-               appendint(payload.length(), 4);
-               appendBytes(payload.getBytes());
+               byte[] payloadbytes = null;
+               try {
+                  payloadbytes = payload.getBytes("UTF-8");
+               } catch (UnsupportedEncodingException UEe) {
+                  if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(UEe);
+                  throw new DBusException("System does not support UTF-8 encoding");
+               }
+               if (Debug.debug) Debug.print(Debug.VERBOSE, "Appending String of length "+payloadbytes.length);
+               appendint(payloadbytes.length, 4);
+               appendBytes(payloadbytes);
                appendBytes(padding[1]);
                //pad(ArgumentType.STRING);? do we need this?
                break;
@@ -650,7 +657,7 @@ public class Message
          }
          return i;
       } catch (ClassCastException CCe) {
-         if (DBusConnection.EXCEPTION_DEBUG) CCe.printStackTrace();
+         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, CCe);
          throw new MarshallingException("Trying to marshall to unconvertable type (from "+data.getClass().getName()+" to "+sigb[sigofs]+")");
       }
    }
@@ -904,7 +911,12 @@ public class Message
          case ArgumentType.STRING:
             length = (int) demarshallint(buf, ofs[1], 4);
             ofs[1] += 4;
-            rv = new String(buf, ofs[1], length);
+            try {
+               rv = new String(buf, ofs[1], length, "UTF-8");
+            } catch (UnsupportedEncodingException UEe) {
+               if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(UEe);
+               throw new DBusException("System does not support UTF-8 encoding");
+            }
             ofs[1] += length + 1;
             break;
          case ArgumentType.OBJECT_PATH:

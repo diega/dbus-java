@@ -67,6 +67,7 @@ public class Transport
    }
    public void connect(BusAddress address) throws IOException
    {
+      if (Debug.debug) Debug.print(Debug.INFO, "Connecting to "+address);
       this.address = address;
       OutputStream out = null;
       InputStream in = null;

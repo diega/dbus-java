@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -116,18 +117,15 @@ public class DBusConnection
                      m = null;
                   }
                } catch (IOException IOe) { 
-                  if (EXCEPTION_DEBUG)
-                     IOe.printStackTrace();            
+                  if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);            
                   try {
                      handleMessage(new org.freedesktop.DBus.Local.Disconnected("/"));
                   } catch (Exception e) {
-                     if (EXCEPTION_DEBUG)
-                        e.printStackTrace();            
+                     if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);            
                   }
                   disconnect();
                } catch (Exception e) { 
-                  if (EXCEPTION_DEBUG)
-                     e.printStackTrace();            
+                  if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);            
                }
 
                // write to the wire
@@ -248,13 +246,13 @@ public class DBusConnection
    private String addr;
    static final Pattern dollar_pattern = Pattern.compile("[$]");
    public static final boolean EXCEPTION_DEBUG;
-   public static final boolean DBUS_JAVA_DEBUG;
    static {
       EXCEPTION_DEBUG = (null != System.getenv("DBUS_JAVA_EXCEPTION_DEBUG"));
-      DBUS_JAVA_DEBUG = (null != System.getenv("DBUS_JAVA_DEBUG"));
-      if (DBUS_JAVA_DEBUG) Debug.print("Debugging enabled");
-      if (EXCEPTION_DEBUG) Debug.print("Debugging of internal exceptions enabled");
-      if (Debug.debug && DBUS_JAVA_DEBUG) {
+      if (EXCEPTION_DEBUG) {
+         Debug.print("Debugging of internal exceptions enabled");
+         Debug.setThrowableTraces(true);
+      }
+      if (Debug.debug) {
          File f = new File("debug.conf");
          if (f.exists()) {
             Debug.print("Loading debug config file: "+f);
@@ -262,8 +260,11 @@ public class DBusConnection
                Debug.loadConfig(f);
             } catch (IOException IOe) {}
          } else {
+            Properties p = new Properties();
+            p.setProperty("ALL", "INFO");
             Debug.print("debug config file "+f+" does not exist, not loading.");
          }
+         Debug.setHexDump(true);
       }
    }
 
@@ -352,8 +353,7 @@ public class DBusConnection
       try {
          transport = new Transport(addr);
       } catch (IOException IOe) {
-         if (EXCEPTION_DEBUG)
-            IOe.printStackTrace();            
+         if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);            
          throw new DBusException("Failed to connect to bus "+IOe.getMessage());
       }
 
@@ -371,7 +371,7 @@ public class DBusConnection
       try {
          busnames.add(_dbus.Hello());
       } catch (DBusExecutionException DBEe) {
-         if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
+         if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBEe);
          throw new DBusException(DBEe.getMessage());
       }
    }
@@ -457,7 +457,7 @@ public class DBusConnection
          importedObjects.put(newi, ro);
          return newi;
       } catch (Exception e) {
-         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+         if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
          throw new DBusException("Failed to create proxy object for "+path+" exported by "+source+". Reason: "+e.getMessage());
       }
    }
@@ -484,21 +484,6 @@ public class DBusConnection
    }
 
    /** 
-    * Register a bus name.
-    * Register the well known name that this should respond to on the Bus.
-    * This function is deprecated in favour of requestBusName.
-    * @param busname The name to respond to. MUST be in dot-notation like "org.freedesktop.local"
-    * @throws DBusException If the register name failed, or our name already exists on the bus.
-    *  or if busname is incorrectly formatted.
-    * @see #requestBusName
-    * @deprecated
-    */
-   @Deprecated()
-   public void registerService(String busname) throws DBusException
-   {
-      requestBusName(busname);
-   }
-   /** 
     * Request a bus name.
     * Request the well known name that this should respond to on the Bus.
     * @param busname The name to respond to. MUST be in dot-notation like "org.freedesktop.local"
@@ -516,7 +501,7 @@ public class DBusConnection
                   new UInt32(DBus.DBUS_NAME_FLAG_REPLACE_EXISTING |
                      DBus.DBUS_NAME_FLAG_DO_NOT_QUEUE));
          } catch (DBusExecutionException DBEe) {
-            if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
+            if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBEe);
             throw new DBusException(DBEe.getMessage());
          }
          switch (rv.intValue()) {
@@ -843,7 +828,7 @@ public class DBusConnection
                try {
                   _dbus.RemoveMatch(rule.toString());
                } catch (DBusExecutionException DBEe) {
-                  if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
+                  if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBEe);
                   throw new DBusException(DBEe.getMessage());
                }
             }
@@ -923,7 +908,7 @@ public class DBusConnection
       try {
          _dbus.AddMatch(rule.toString());
       } catch (DBusExecutionException DBEe) {
-         if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
+         if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBEe);
          throw new DBusException(DBEe.getMessage());
       }
       SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember(), rule.getObject(), rule.getSource());
@@ -1001,8 +986,7 @@ public class DBusConnection
                try {
                   transport.disconnect();
                } catch (IOException IOe) {
-                  if (EXCEPTION_DEBUG)
-                     IOe.printStackTrace();            
+                  if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);            
                }
                conn.remove(addr);
 
@@ -1059,17 +1043,17 @@ public class DBusConnection
             me = ro.iface.getMethod(m, types);
          return (DBusAsyncReply) RemoteInvocationHandler.executeRemoteMethod(ro, me, this, true, parameters);
       } catch (DBusExecutionException DBEe) {
-         if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
+         if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBEe);
          throw DBEe;
       } catch (Exception e) {
-         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+         if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
          throw new DBusExecutionException(e.getMessage());
       }
    }
    
    private void handleMessage(final MethodCall m) throws DBusException
    {
-      if (Debug.debug) Debug.print("Handling incoming method call: "+m);
+      if (Debug.debug) Debug.print(Debug.ERR, "Handling incoming method call: "+m);
       // get the method signature
       Object[] params = m.getParameters();
 
@@ -1127,7 +1111,7 @@ public class DBusConnection
                m.setArgs(Marshalling.deSerializeParameters(m.getParameters(), ts, conn));
                if (Debug.debug) Debug.print(Debug.DEBUG, "Deserialised "+Arrays.deepToString(m.getParameters())+" to types "+Arrays.deepToString(ts));
             } catch (Exception e) {
-               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+               if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
                try {
                   synchronized (outqueue) {
                      outqueue.add(new Error(m, new DBus.Error.UnknownMethod("Failure in de-serializing message ("+e+")"))); 
@@ -1144,7 +1128,7 @@ public class DBusConnection
                try {
                   result = me.invoke(ob, m.getParameters());
                } catch (InvocationTargetException ITe) {
-                  if (DBusConnection.EXCEPTION_DEBUG) ITe.getCause().printStackTrace();
+                  if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, ITe.getCause());
                   throw ITe.getCause();
                }
                synchronized (infomap) {
@@ -1167,14 +1151,14 @@ public class DBusConnection
                   }
                }
             } catch (DBusExecutionException DBEe) {
-               if (DBusConnection.EXCEPTION_DEBUG) DBEe.printStackTrace();
+               if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBEe);
                try {
                   synchronized (outqueue) {
                      outqueue.add(new Error(m, DBEe)); 
                   }
                } catch (DBusException DBe) {}
             } catch (Throwable e) {
-               if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+               if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
                try { 
                   synchronized (outqueue) {
                      outqueue.add(new Error(m, new DBusExecutionException("Error Executing Method "+m.getInterface()+"."+m.getName()+": "+e.getMessage()))); 
@@ -1187,7 +1171,7 @@ public class DBusConnection
    @SuppressWarnings({"unchecked","deprecation"})
    private void handleMessage(final DBusSignal s)
    {
-      if (Debug.debug) Debug.print("Handling incoming signal: "+s);
+      if (Debug.debug) Debug.print(Debug.ERR, "Handling incoming signal: "+s);
       Vector<DBusSigHandler> v = new Vector<DBusSigHandler>();
       synchronized(handledSignals) {
          Vector<DBusSigHandler> t;
@@ -1214,7 +1198,7 @@ public class DBusConnection
                      rs = s;
                   h.handle(rs); 
                } catch (DBusException DBe) {
-                  if (DBusConnection.EXCEPTION_DEBUG) DBe.printStackTrace();
+                  if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
                   try {
                      synchronized (outqueue) {
                         outqueue.add(new Error(s, new DBusExecutionException("Error handling signal "+s.getInterface()+"."+s.getName()+": "+DBe.getMessage()))); 
@@ -1226,7 +1210,7 @@ public class DBusConnection
    }
    private void handleMessage(final Error err)
    {
-      if (Debug.debug) Debug.print("Handling incoming error: "+err);
+      if (Debug.debug) Debug.print(Debug.ERR, "Handling incoming error: "+err);
       MethodCall m = null;
       if (null == pendingCalls) return;
       synchronized (pendingCalls) {
@@ -1241,7 +1225,7 @@ public class DBusConnection
    }
    private void handleMessage(final MethodReturn mr)
    {
-      if (Debug.debug) Debug.print("Handling incoming method return: "+mr);
+      if (Debug.debug) Debug.print(Debug.ERR, "Handling incoming method return: "+mr);
       MethodCall m = null;
       if (null == pendingCalls) return;
       synchronized (pendingCalls) {
@@ -1275,7 +1259,7 @@ public class DBusConnection
                }
          }
       } catch (Exception e) {
-         if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
+         if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
          if (m instanceof MethodCall && e instanceof DBusExecutionException) 
             try {
                ((MethodCall)m).setReply(new Error(m, e));
@@ -1289,11 +1273,9 @@ public class DBusConnection
             try {
                transport.mout.writeMessage(new Error(m, e));
             } catch(IOException IOe) {
-               if (EXCEPTION_DEBUG)
-                  IOe.printStackTrace();            
+               if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);            
             } catch(DBusException IOe) {
-               if (EXCEPTION_DEBUG)
-                  e.printStackTrace();            
+               if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);            
             }
       }
    }
