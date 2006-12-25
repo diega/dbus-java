@@ -46,16 +46,16 @@ public class Transport
          long uid = uns.getUid();
          String Uid = Hexdump.toHex((""+uid).getBytes()).replaceAll(" ","");
          out.write(("AUTH EXTERNAL "+Uid+"\r\n").getBytes());
-         Debug.print("AUTH EXTERNAL "+Uid+"\r\n");
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "AUTH EXTERNAL "+Uid+"\r\n");
       } else {
          out.write(("AUTH DBUS_COOKIE_SHA1\r\n").getBytes());
       }
       String s = r.readLine();
-      Debug.print(s);
+      if (Debug.debug) Debug.print(Debug.VERBOSE, s);
       String[] reply=s.split(" ");
       if (!"OK".equals(reply[0])) return false;
       if (null == address.getParameter("guid") || reply[1].equals(address.getParameter("guid"))) {
-         Debug.print("BEGIN\r\n");
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "BEGIN\r\n");
          out.write("BEGIN\r\n".getBytes());
          return true;
       } 

@@ -101,6 +101,7 @@ public class DBusConnection
                   // this blocks on outgoing being non-empty or a message being available.
                   m = readIncoming(TIMEOUT, outgoing);
                   if (m != null) {
+                     if (Debug.debug) Debug.print(Debug.VERBOSE, "Got Incoming Message: "+m);
                      synchronized (this) { notifyAll(); }
 
                      if (m instanceof DBusSignal)
@@ -1068,6 +1069,7 @@ public class DBusConnection
    
    private void handleMessage(final MethodCall m) throws DBusException
    {
+      if (Debug.debug) Debug.print("Handling incoming method call: "+m);
       // get the method signature
       Object[] params = m.getParameters();
 
@@ -1185,6 +1187,7 @@ public class DBusConnection
    @SuppressWarnings({"unchecked","deprecation"})
    private void handleMessage(final DBusSignal s)
    {
+      if (Debug.debug) Debug.print("Handling incoming signal: "+s);
       Vector<DBusSigHandler> v = new Vector<DBusSigHandler>();
       synchronized(handledSignals) {
          Vector<DBusSigHandler> t;
@@ -1223,6 +1226,7 @@ public class DBusConnection
    }
    private void handleMessage(final Error err)
    {
+      if (Debug.debug) Debug.print("Handling incoming error: "+err);
       MethodCall m = null;
       if (null == pendingCalls) return;
       synchronized (pendingCalls) {
@@ -1237,6 +1241,7 @@ public class DBusConnection
    }
    private void handleMessage(final MethodReturn mr)
    {
+      if (Debug.debug) Debug.print("Handling incoming method return: "+mr);
       MethodCall m = null;
       if (null == pendingCalls) return;
       synchronized (pendingCalls) {
@@ -1277,7 +1282,7 @@ public class DBusConnection
             } catch (DBusException DBe) {}
          else if (m instanceof MethodCall)
             try {
-               Debug.print(Debug.INFO, "Setting reply to "+m+" as an error");
+               if (Debug.debug) Debug.print(Debug.INFO, "Setting reply to "+m+" as an error");
                ((MethodCall)m).setReply(new Error(m, new DBusExecutionException("Message Failed to Send: "+e.getMessage())));
             } catch (DBusException DBe) {}
          else if (m instanceof MethodReturn)

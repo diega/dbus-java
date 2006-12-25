@@ -67,6 +67,7 @@ public class MethodCall extends Message
    }
    public synchronized Message getReply()
    {
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Blocking on "+this);
       if (null != reply) return reply;
       try {
          wait(REPLY_WAIT_TIMEOUT);
@@ -75,6 +76,7 @@ public class MethodCall extends Message
    }
    protected synchronized void setReply(Message reply)
    {
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Setting reply to "+this+" to "+reply);
       this.reply = reply;
       notifyAll();
    }

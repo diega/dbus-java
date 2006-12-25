@@ -10,6 +10,8 @@
 */
 package org.freedesktop.dbus;
 
+import java.util.regex.Pattern;
+
 /**
  * Keeps track of the exported objects for introspection data */
 class ObjectTree 
@@ -37,6 +39,7 @@ class ObjectTree
    {
       root = new TreeNode("");
    }
+   public static final Pattern slashpattern = Pattern.compile("/");
 
    private TreeNode recursiveFind(TreeNode current, String path)
    {
@@ -68,7 +71,7 @@ class ObjectTree
    }
    private TreeNode recursiveAdd(TreeNode current, String path, DBusInterface object, String data)
    {
-      String[] elements = path.split("/", 2);
+      String[] elements = slashpattern.split(path, 2);
       // this is us or a parent node
       if (path.startsWith(current.name)) {
          // this is us

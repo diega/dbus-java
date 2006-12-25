@@ -31,7 +31,8 @@ public class MessageWriter
       }
       for (byte[] buf: m.getWireData()) {
          if (null == buf) break;
-         Debug.print(Debug.VERBOSE, "("+buf+"):"+ Hexdump.format(buf));
+         if (Debug.debug)
+            Debug.print(Debug.VERBOSE, "("+buf+"):"+ Hexdump.format(buf));
          out.write(buf);
       }
       out.flush();

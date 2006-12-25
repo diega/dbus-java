@@ -207,9 +207,9 @@ public class Message
       bufferuse = 3;
       serial = ((Number) extract(Message.ArgumentType.UINT32_STRING, msg, 8)[0]).longValue();
       bytecounter = msg.length+headers.length+body.length;
-      Debug.print(Debug.VERBOSE, headers);
+      if (Debug.debug) Debug.print(Debug.VERBOSE, headers);
       Object[] hs = extract("a(yv)", headers, 0);
-      Debug.print(Debug.VERBOSE, Arrays.deepToString(hs));
+      if (Debug.debug) Debug.print(Debug.VERBOSE, Arrays.deepToString(hs));
       for (Object o: (Vector<Object>) hs[0]) {
          this.headers.put((Byte) ((Object[])o)[0], ((Variant<Object>)((Object[])o)[1]).getValue());
       }
@@ -238,7 +238,7 @@ public class Message
          preallocated -= buf.length;
       } else {
          if (bufferuse == wiredata.length) {
-            Debug.print(Debug.VERBOSE, "Resizing "+bufferuse);
+            if (Debug.debug) Debug.print(Debug.VERBOSE, "Resizing "+bufferuse);
             byte[][] temp = new byte[wiredata.length+BUFFERINCREMENT][];
             System.arraycopy(wiredata, 0, temp, 0, wiredata.length);
             wiredata = temp;
@@ -257,7 +257,7 @@ public class Message
          preallocated--;
       } else {
          if (bufferuse == wiredata.length) {
-            Debug.print(Debug.VERBOSE, "Resizing "+bufferuse);
+            if (Debug.debug) Debug.print(Debug.VERBOSE, "Resizing "+bufferuse);
             byte[][] temp = new byte[wiredata.length+BUFFERINCREMENT][];
             System.arraycopy(wiredata, 0, temp, 0, wiredata.length);
             wiredata = temp;
@@ -460,8 +460,8 @@ public class Message
    {
       try {
          int i = sigofs;
-         Debug.print((int) Debug.VERBOSE, (Object) bytecounter);
-         Debug.print(Debug.VERBOSE, "Appending type: "+((char)sigb[i])+" value: "+data);
+         if (Debug.debug) Debug.print((int) Debug.VERBOSE, (Object) bytecounter);
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "Appending type: "+((char)sigb[i])+" value: "+data);
 
          // pad to the alignment of this type.
          pad(sigb[i]);
@@ -600,7 +600,7 @@ public class Message
                      diff = appendone(sigb, i, o);
                   i = diff;
                }
-               Debug.print(Debug.VERBOSE, "start: "+c+" end: "+bytecounter+" length: "+(bytecounter-c));
+               if (Debug.debug) Debug.print(Debug.VERBOSE, "start: "+c+" end: "+bytecounter+" length: "+(bytecounter-c));
                marshallint(bytecounter-c, alen, 0, 4);
                break;
             case ArgumentType.STRUCT1:
@@ -659,9 +659,9 @@ public class Message
     */
    public void pad(byte type)
    {
-      Debug.print(Debug.VERBOSE, "padding for "+(char)type);
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "padding for "+(char)type);
       int a = getAlignment(type);
-      Debug.print(Debug.VERBOSE, preallocated+" "+paofs+" "+bytecounter+" "+a);
+      if (Debug.debug) Debug.print(Debug.VERBOSE, preallocated+" "+paofs+" "+bytecounter+" "+a);
       int b = (int) ((bytecounter-preallocated)%a);
       if (0 == b) return;
       a = (a-b);
@@ -670,7 +670,7 @@ public class Message
          preallocated -= a;
       } else
          appendBytes(padding[a]);
-      Debug.print(Debug.VERBOSE, preallocated+" "+paofs+" "+bytecounter+" "+a);
+      if (Debug.debug) Debug.print(Debug.VERBOSE, preallocated+" "+paofs+" "+bytecounter+" "+a);
    }
    /**
     * Return the alignment for a given type.
@@ -731,7 +731,7 @@ public class Message
     */
    public int align(int current, byte type)
    {
-      Debug.print(Debug.VERBOSE, "aligning to "+(char)type);
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "aligning to "+(char)type);
       int a = getAlignment(type);
       if (0 == (current%a)) return current;
       return current+(a-(current%a));
@@ -748,7 +748,7 @@ public class Message
     */
    private Object extractone(byte[] sigb, byte[] buf, int[] ofs, boolean contained) throws DBusException
    {
-      Debug.print(Debug.VERBOSE, "Extracting type: "+((char)sigb[ofs[0]])+" from offset "+ofs[1]);
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Extracting type: "+((char)sigb[ofs[0]])+" from offset "+ofs[1]);
       Object rv = null;
       ofs[1] = align(ofs[1], sigb[ofs[0]]);
       switch (sigb[ofs[0]]) {
@@ -807,7 +807,7 @@ public class Message
             break;
          case ArgumentType.ARRAY:
             long size = demarshallint(buf, ofs[1], 4);
-            Debug.print(Debug.VERBOSE, "Reading array of size: "+size);
+            if (Debug.debug) Debug.print(Debug.VERBOSE, "Reading array of size: "+size);
             ofs[1] += 4;
             byte algn = (byte) getAlignment(sigb[++ofs[0]]);
             ofs[1] = align(ofs[1], sigb[ofs[0]]);
@@ -924,7 +924,7 @@ public class Message
          default: 
             throw new UnknownTypeCodeException(sigb[ofs[0]]);
       }
-      Debug.print(Debug.VERBOSE, "Extracted: "+rv+" (now at "+ofs[1]+")");
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Extracted: "+rv+" (now at "+ofs[1]+")");
       return rv;
    }
    /** 
@@ -949,7 +949,7 @@ public class Message
     */
    public Object[] extract(String sig, byte[] buf, int[] ofs) throws DBusException
    {
-      Debug.print(Debug.VERBOSE, "extract("+sig+",#"+buf.length+", {"+ofs[0]+","+ofs[1]+"}");
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "extract("+sig+",#"+buf.length+", {"+ofs[0]+","+ofs[1]+"}");
       Vector<Object> rv = new Vector<Object>();
       byte[] sigb = sig.getBytes();
       for (int[] i = ofs; i[0] < sigb.length; i[0]++) {
