@@ -40,7 +40,7 @@ public class profile
    public static final int SIGNAL_OUTER = 100;
    public static final int PING_INNER = 100;
    public static final int PING_OUTER = 100;
-   public static final int BYTES = 5000000;
+   public static final int BYTES = 2000000;
    public static final int INTROSPECTION_OUTER = 100;
    public static final int INTROSPECTION_INNER = 10;
    public static final int STRUCT_OUTER = 100;

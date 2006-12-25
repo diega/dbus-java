@@ -34,6 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import java.util.regex.Pattern;
@@ -526,6 +527,22 @@ public class DBusConnection
          }
          this.busnames.add(busname);
       }
+   }
+   /**
+    * Returns the unique name of this connection.
+    */
+   public String getUniqueName()
+   {
+      return busnames.get(0);
+   }
+   /**
+    * Returns all the names owned by this connection.
+    */
+   public String[] getNames()
+   {
+      Set<String> names = new TreeSet<String>();
+      names.addAll(busnames);
+      return names.toArray(new String[0]);
    }
    /** 
     * Export an object so that its methods can be called on DBus.
@@ -1106,6 +1123,7 @@ public class DBusConnection
             try {
                Type[] ts = me.getGenericParameterTypes();
                m.setArgs(Marshalling.deSerializeParameters(m.getParameters(), ts, conn));
+               if (Debug.debug) Debug.print(Debug.DEBUG, "Deserialised "+Arrays.deepToString(m.getParameters())+" to types "+Arrays.deepToString(ts));
             } catch (Exception e) {
                if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
                try {
@@ -1138,7 +1156,9 @@ public class DBusConnection
                      StringBuffer sb = new StringBuffer();
                      for (String s: Marshalling.getDBusType(me. getGenericReturnType()))
                         sb.append(s);
-                     reply = new MethodReturn(m, sb.toString(),result);
+                     Object[] nr = Marshalling.convertParameters(new Object[] { result }, new Type[] {me.getGenericReturnType()}, conn);
+                     
+                     reply = new MethodReturn(m, sb.toString(),nr);
                   }
                   synchronized (outqueue) {
                      outqueue.add(reply);
@@ -1179,14 +1199,14 @@ public class DBusConnection
       }
       if (0 == v.size()) return;
       final EfficientQueue outqueue = outgoing;
+      final DBusConnection conn = this;
       for (final DBusSigHandler h: v)
          addRunnable(new Runnable() { public void run() {
             {
                try {
                   DBusSignal rs;
-                  Debug.print(DBusConnection.class, Debug.VERBOSE, "s has type "+s.getClass());
                   if (s instanceof DBusSignal.internalsig || s.getClass().equals(DBusSignal.class))
-                     rs = s.createReal();
+                     rs = s.createReal(conn);
                   else
                      rs = s;
                   h.handle(rs); 
@@ -1236,7 +1256,11 @@ public class DBusConnection
    private void sendMessage(Message m)
    {
       try {
+         if (m instanceof DBusSignal) 
+            ((DBusSignal) m).appendbody(this);
+
          transport.mout.writeMessage(m);
+         
          if (m instanceof MethodCall) {
             if (0 == (m.getFlags() & Message.Flags.NO_REPLY_EXPECTED))
                if (null == pendingCalls) 

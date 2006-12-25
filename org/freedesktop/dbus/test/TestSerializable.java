@@ -40,7 +40,7 @@ public class TestSerializable<A> implements DBusSerializable
    }
    public Object[] serialize() throws DBusException
    {
-      return Marshalling.convertParameters(new Object[] { a, b, c }, new Type[] { TestSerializable.class });
+      return new Object[] { a, b, c };
    }
    public int getInt() { return a; }
    public String getString() { return b; }

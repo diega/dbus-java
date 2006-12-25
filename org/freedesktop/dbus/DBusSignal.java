@@ -13,6 +13,7 @@ package org.freedesktop.dbus;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
@@ -46,7 +47,7 @@ public class DBusSignal extends Message
          setArgs(args);
       }
 
-      byte[] blen = new byte[4];
+      blen = new byte[4];
       appendBytes(blen);
       append("ua(yv)", ++serial, hargs.toArray());
       pad((byte)8);
@@ -54,6 +55,7 @@ public class DBusSignal extends Message
       long c = bytecounter;
       if (null != sig) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
+      bodydone = true;
    }
    static class internalsig extends DBusSignal
    {
@@ -65,6 +67,8 @@ public class DBusSignal extends Message
    private static Map<Class, Type[]> typeCache = new HashMap<Class, Type[]>();
    private static Map<Class, Constructor> conCache = new HashMap<Class, Constructor>();
    private Class<? extends DBusSignal> c;
+   private boolean bodydone = false;
+   private byte[] blen;
    
    static DBusSignal createSignal(Class<? extends DBusSignal> c, String source, String objectpath, String sig, long serial, Object... parameters) throws DBusException
    {
@@ -87,7 +91,7 @@ public class DBusSignal extends Message
       } while (null == c && name.matches(".*\\..*"));
       return c;
    }
-   DBusSignal createReal() throws DBusException
+   DBusSignal createReal(DBusConnection conn) throws DBusException
    {
       if (null == c) 
          c = createSignalClass(getInterface()+"$"+getName());
@@ -110,13 +114,14 @@ public class DBusSignal extends Message
 
       try {
          DBusSignal s;
-         Object[] args = getParameters();
+         Object[] args = Marshalling.deSerializeParameters(getParameters(), types, conn);
          if (null == args) s = (DBusSignal) con.newInstance(getPath());
          else {
             Object[] params = new Object[args.length + 1];
             params[0] = getPath();
             System.arraycopy(args, 0, params, 1, args.length);
 
+            if (Debug.debug) Debug.print(Debug.DEBUG, "Creating signal of type "+c+" with parameters "+Arrays.deepToString(params));
             s = (DBusSignal) con.newInstance(params);
          }
          s.headers = headers;
@@ -182,17 +187,29 @@ public class DBusSignal extends Message
             headers.put(Message.HeaderField.SIGNATURE,sig);
             setArgs(args);
          } catch (Exception e) {
+            if (DBusConnection.EXCEPTION_DEBUG) 
+               e.printStackTrace();
             throw new DBusException("Failed to add signal parameters: "+e.getMessage());
          }
       }
 
-      byte[] blen = new byte[4];
+      blen = new byte[4];
       appendBytes(blen);
       append("ua(yv)", ++serial, hargs.toArray());
       pad((byte)8);
+   }
+   void appendbody(DBusConnection conn) throws DBusException
+   {
+      if (bodydone) return;
+
+      Type[] types = typeCache.get(getClass());
+      Object[] args = Marshalling.convertParameters(getParameters(), types, conn);
+      setArgs(args);
+      String sig = getSig();
 
       long c = bytecounter;
       if (0 < args.length) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
+      bodydone = true;
    }
 }

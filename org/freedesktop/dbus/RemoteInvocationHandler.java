@@ -80,6 +80,7 @@ class RemoteInvocationHandler implements InvocationHandler
       String sig = null;
       if (ts.length > 0) try {
          sig = Marshalling.getDBusType(ts);
+         args = Marshalling.convertParameters(args, ts, conn);
       } catch (DBusException DBe) {
          throw new DBusExecutionException("Failed to construct D-Bus type: "+DBe.getMessage());
       }

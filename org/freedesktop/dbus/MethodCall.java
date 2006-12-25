@@ -67,8 +67,6 @@ public class MethodCall extends Message
    }
    public synchronized Message getReply()
    {
-      System.err.println("getReply()");
-      System.err.flush();
       if (null != reply) return reply;
       try {
          wait(REPLY_WAIT_TIMEOUT);
@@ -77,8 +75,6 @@ public class MethodCall extends Message
    }
    protected synchronized void setReply(Message reply)
    {
-      System.err.println("setReply()");
-      System.err.flush();
       this.reply = reply;
       notifyAll();
    }

@@ -496,7 +496,7 @@ public class test
       /** Call the remote object and get a response. */
       TestTuple<String,List<Integer>,Boolean> rv = tri2.show(234);
       System.out.println("Show returned: "+rv);
-      if (!":1.1".equals(rv.a) ||
+      if (!conn.getUniqueName().equals(rv.a) ||
             1 != rv.b.size() ||
             1953 != rv.b.get(0) ||
             true != rv.c.booleanValue())

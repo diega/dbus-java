@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 
 import org.freedesktop.dbus.exceptions.DBusException;
 
@@ -36,13 +37,10 @@ abstract class Container
    private String sig = null;
    private Object[] parameters = null;
    public Container() {}
-   private void setup(Type[] types) throws DBusException
+   private void setup()
    {
       Field[] fs = getClass().getDeclaredFields();
       Object[] args = new Object[fs.length];
-      Type[] ts = types;
-      if (null == ts) ts = getTypeCache(getClass());
-      if (null == ts) ts = new Type[fs.length];
 
       int diff = 0;
       for (Field f : fs) {
@@ -51,60 +49,30 @@ abstract class Container
             diff++;
             continue;
          }
-         if (null == ts[p.value()])
-            ts[p.value()] = f.getGenericType();
          try {
-            args[p.value()] = Marshalling.convertParameters(
-                  new Object[] { f.get(this) },
-                  new Type[] { ts[p.value()] })[0];
-         } catch (Exception e) {
-            if (DBusConnection.EXCEPTION_DEBUG) e.printStackTrace();
-            throw new DBusException(e.getMessage());
-         }
+            args[p.value()] = f.get(this);
+         } catch (IllegalAccessException IAe) {}
       }
          
-      sig = "";
-      for (Type t: ts)
-         if (null != t)
-            for (String s: Marshalling.getDBusType(t))
-               sig += s;
-
       this.parameters = new Object[args.length - diff];
-      for (int i = 0; i < parameters.length; i++)
-         parameters[i] = args[i];
+      System.arraycopy(args, 0, parameters, 0, parameters.length);
    }
    /**
     * Returns the struct contents in order.
     * @throws DBusException If there is  a problem doing this.
     */
-   public final Object[] getParameters() throws DBusException
+   public final Object[] getParameters()
    {
       if (null != parameters) return parameters;
-      setup(null);
+      setup();
       return parameters;
-   }
-   final Object[] getParameters(Type[] ts) throws DBusException
-   {
-      if (null != parameters) return parameters;
-      setup(ts);
-      return parameters;
-   }
-   /**
-    * Returns the DBus signatures of the struct contents.
-    * @throws DBusException If there is  a problem doing this.
-    */
-   public final String getSig() throws DBusException
-   {
-      if (null != sig) return sig;
-      setup(null);
-      return sig;
    }
    /** Returns this struct as a string. */
    public final String toString()
    {
       String s = getClass().getName()+"<";
       if (null == parameters)
-         return s+"not setup>";
+         setup();
       if (0 == parameters.length) 
          return s+">";
       for (Object o: parameters)
@@ -113,18 +81,12 @@ abstract class Container
    }
    public final boolean equals(Object other)
    {
-      try {
-         if (other instanceof Container)  {
-            Container that = (Container) other;
-            if (this.getClass().equals(that.getClass()))
-               return Arrays.equals(this.getParameters(), that.getParameters());
-            else return false;
-         }
+      if (other instanceof Container)  {
+         Container that = (Container) other;
+         if (this.getClass().equals(that.getClass()))
+            return Arrays.equals(this.getParameters(), that.getParameters());
          else return false;
-      } catch (DBusException DBe) {
-         if (DBusConnection.EXCEPTION_DEBUG)
-            DBe.printStackTrace();
-         return false;
       }
+      else return false;
    }
 }

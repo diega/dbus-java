@@ -29,6 +29,8 @@ import org.freedesktop.dbus.types.DBusListType;
 import org.freedesktop.dbus.types.DBusMapType;
 import org.freedesktop.dbus.types.DBusStructType;
 
+import cx.ath.matthew.debug.Debug;
+
 /**
  * Contains static methods for marshalling values.
  */
@@ -86,6 +88,7 @@ public class Marshalling
       if (out.length <= level) {
          StringBuffer[] newout = new StringBuffer[out.length];
          System.arraycopy(out, 0, newout, 0, out.length);
+         out = newout;
       }
       if (null == out[level]) out[level] = new StringBuffer();
       else out[level].delete(0, out.length);      
@@ -135,6 +138,14 @@ public class Marshalling
          }
          else if (DBusInterface.class.isAssignableFrom((Class) p.getRawType())) {
             out[level].append('o');
+         }
+         else if (Tuple.class.isAssignableFrom((Class) p.getRawType())) {
+            Type[] ts = p.getActualTypeArguments();
+            Vector<String> vs = new Vector<String>();
+            for (Type t: ts)
+               for (String s: recursiveGetDBusType(t, false, level+1))
+                  vs.add(s);
+            return (String[]) vs.toArray(new String[0]);
          }
          else
             throw new DBusException("Exporting non-exportable parameterized type "+c);
@@ -318,10 +329,11 @@ public class Marshalling
     * @throws DBusException Thrown if there is an error in converting the objects.
     */
    @SuppressWarnings("unchecked")
-   public static Object[] convertParameters(Object[] parameters, Type[] types) throws DBusException
+   public static Object[] convertParameters(Object[] parameters, Type[] types, DBusConnection conn) throws DBusException
    {
       if (null == parameters) return null;
       for (int i = 0; i < parameters.length; i++) {
+         if (Debug.debug) Debug.print(Debug.VERBOSE,"Converting "+i+" from "+parameters[i]+" to "+types[i]);
          if (null == parameters[i]) continue;
 
          if (parameters[i] instanceof DBusSerializable) {
@@ -333,11 +345,35 @@ public class Marshalling
                   System.arraycopy(newtypes, 0, expand, i, newtypes.length); 
                   System.arraycopy(types, i+1, expand, i+newtypes.length, types.length-i-1); 
                   types = expand;
+                  Object[] newparams = ((DBusSerializable) parameters[i]).serialize();
+                  Object[] exparams = new Object[parameters.length + newparams.length - 1];
+                  System.arraycopy(parameters, 0, exparams, 0, i);
+                  System.arraycopy(newparams, 0, exparams, i, newparams.length);
+                  System.arraycopy(parameters, i+1, exparams, i+newparams.length, parameters.length-i-1);
+                  parameters = exparams;
                }
+            i--;
+         } else if (parameters[i] instanceof Tuple) {
+            Type[] newtypes = ((ParameterizedType) types[i]).getActualTypeArguments();
+            Type[] expand = new Type[types.length + newtypes.length - 1];
+            System.arraycopy(types, 0, expand, 0, i);
+            System.arraycopy(newtypes, 0, expand, i, newtypes.length);
+            System.arraycopy(types, i+1, expand, i+newtypes.length, types. length-i-1);
+            types = expand;
+            Object[] newparams = ((Tuple) parameters[i]).getParameters();
+            Object[] exparams = new Object[parameters.length + newparams.length - 1];
+            System.arraycopy(parameters, 0, exparams, 0, i);
+            System.arraycopy(newparams, 0, exparams, i, newparams.length);
+            System.arraycopy(parameters, i+1, exparams, i+newparams.length, parameters.length-i-1);
+            parameters = exparams;
+            if (Debug.debug) Debug.print(Debug.VERBOSE, "New params: "+Arrays.deepToString(parameters)+" new types: "+Arrays.deepToString(types));
+            i--;
          } else if (types[i] instanceof TypeVariable &&
                !(parameters[i] instanceof Variant)) 
             // its an unwrapped variant, wrap it
             parameters[i] = new Variant<Object>(parameters[i]);
+         else if (parameters[i] instanceof DBusInterface)
+            parameters[i] = conn.getExportedObject((DBusInterface) parameters[i]);
       }
       return parameters;
    }
@@ -351,6 +387,16 @@ public class Marshalling
       if (type instanceof TypeVariable 
             && parameter instanceof Variant) {
          parameter = ((Variant)parameter).getValue();
+      }
+
+      // Turn a signature into a Type[]
+      if (type instanceof Class
+            && ((Class) type).isArray()
+            && ((Class) type).getComponentType().equals(Type.class)
+            && parameter instanceof String) {
+         Vector<Type> rv = new Vector<Type>();
+         getJavaType((String) parameter, rv, -1);
+         parameter = rv.toArray(new Type[0]);
       }
 
       // its an object path, get/create the proxy
@@ -367,6 +413,7 @@ public class Marshalling
       if (parameter instanceof Object[] && 
             type instanceof Class &&
             Struct.class.isAssignableFrom((Class) type)) {
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "Creating Struct "+type+" from "+parameter);
          Type[] ts = Container.getTypeCache(type);
          if (null == ts) {
             Field[] fs = ((Class) type).getDeclaredFields();
@@ -428,31 +475,32 @@ public class Marshalling
    {
       if (null == parameters) return null;
       for (int i = 0; i < parameters.length; i++) {
-      if (null == parameters[i]) continue;
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing "+i+" from "+parameters[i]+" to "+types[i]);
+         if (null == parameters[i]) continue;
 
-      if (types[i] instanceof Class &&
-            DBusSerializable.class.isAssignableFrom((Class) types[i])) {
-         for (Method m: ((Class) types[i]).getDeclaredMethods()) 
-            if (m.getName().equals("deserialize")) {
-               Type[] newtypes = m.getGenericParameterTypes();
-               try {
-                  Object[] sub = new Object[newtypes.length];
-                  System.arraycopy(parameters, i, sub, 0, newtypes.length); 
-                  sub = deSerializeParameters(sub, newtypes, conn);
-                  DBusSerializable sz = (DBusSerializable) ((Class) types[i]).newInstance();
-                  m.invoke(sz, sub);
-                  Object[] compress = new Object[parameters.length - newtypes.length + 1];
-                  System.arraycopy(parameters, 0, compress, 0, i);
-                  compress[i] = sz;
-                  System.arraycopy(parameters, i + newtypes.length, compress, i+1, parameters.length - i - newtypes.length);
-                  parameters = compress;
-               } catch (ArrayIndexOutOfBoundsException AIOOBe) {
-                  if (DBusConnection.EXCEPTION_DEBUG) AIOOBe.printStackTrace();
-                  throw new DBusException("Not enough elements to create custom object from serialized data ("+(parameters.length-i)+" < "+(newtypes.length)+")");
+         if (types[i] instanceof Class &&
+               DBusSerializable.class.isAssignableFrom((Class) types[i])) {
+            for (Method m: ((Class) types[i]).getDeclaredMethods()) 
+               if (m.getName().equals("deserialize")) {
+                  Type[] newtypes = m.getGenericParameterTypes();
+                  try {
+                     Object[] sub = new Object[newtypes.length];
+                     System.arraycopy(parameters, i, sub, 0, newtypes.length); 
+                     sub = deSerializeParameters(sub, newtypes, conn);
+                     DBusSerializable sz = (DBusSerializable) ((Class) types[i]).newInstance();
+                     m.invoke(sz, sub);
+                     Object[] compress = new Object[parameters.length - newtypes.length + 1];
+                     System.arraycopy(parameters, 0, compress, 0, i);
+                     compress[i] = sz;
+                     System.arraycopy(parameters, i + newtypes.length, compress, i+1, parameters.length - i - newtypes.length);
+                     parameters = compress;
+                  } catch (ArrayIndexOutOfBoundsException AIOOBe) {
+                     if (DBusConnection.EXCEPTION_DEBUG) AIOOBe.printStackTrace();
+                     throw new DBusException("Not enough elements to create custom object from serialized data ("+(parameters.length-i)+" < "+(newtypes.length)+")");
+                  }
                }
-            }
-      } else
-         parameters[i] = deSerializeParameter(parameters[i], types[i], conn);
+         } else
+            parameters[i] = deSerializeParameter(parameters[i], types[i], conn);
       }
       return parameters;
    }

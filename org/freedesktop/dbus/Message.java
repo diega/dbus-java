@@ -336,7 +336,7 @@ public class Message
     */
    public void marshallint(long l, byte[] buf, int ofs, int width)
    { 
-      if (big) marshallintBig(l, buf, 0,width); else marshallintLittle(l, buf, 0,width); 
+      if (big) marshallintBig(l, buf, ofs, width); else marshallintLittle(l, buf, ofs, width); 
       if (Debug.debug) Debug.print(Debug.VERBOSE, "Marshalled int "+l+" to "+Hexdump.toHex(buf,ofs,width));
    }
    /**
@@ -414,7 +414,24 @@ public class Message
          sb.append('}');
       else {
          for (Object o: args) {
-            sb.append(o.toString());
+            if (o instanceof Object[])
+               sb.append(Arrays.deepToString((Object[]) o));
+            else if (o instanceof byte[])
+               sb.append(Arrays.toString((byte[]) o));
+            else if (o instanceof int[])
+               sb.append(Arrays.toString((int[]) o));
+            else if (o instanceof short[])
+               sb.append(Arrays.toString((short[]) o));
+            else if (o instanceof long[])
+               sb.append(Arrays.toString((long[]) o));
+            else if (o instanceof boolean[])
+               sb.append(Arrays.toString((boolean[]) o));
+            else if (o instanceof double[])
+               sb.append(Arrays.toString((double[]) o));
+            else if (o instanceof float[])
+               sb.append(Arrays.toString((float[]) o));
+            else
+               sb.append(o.toString());
             sb.append(',');
             sb.append(' ');
          }
@@ -726,9 +743,10 @@ public class Message
     * @param ofs An array of two ints, the offset into the signature buffer 
     *            and the offset into the data buffer. These values will be
     *            updated to the start of the next value ofter demarshalling.
+    * @param contained converts nested arrays to Lists
     * @return The demarshalled value.
     */
-   private Object extractone(byte[] sigb, byte[] buf, int[] ofs) throws DBusException
+   private Object extractone(byte[] sigb, byte[] buf, int[] ofs, boolean contained) throws DBusException
    {
       Debug.print(Debug.VERBOSE, "Extracting type: "+((char)sigb[ofs[0]])+" from offset "+ofs[1]);
       Object rv = null;
@@ -802,45 +820,38 @@ public class Message
                   rv = new byte[length];
                   System.arraycopy(buf, ofs[1], rv, 0, length);
                   ofs[1] += size;
-                  ofs[0]++;
                   break;
                case ArgumentType.INT16:
                   rv = new short[length];
                   for (int j = 0; j < length; j++, ofs[1] += algn) 
                      ((short[]) rv)[j] = (short) demarshallint(buf, ofs[1], algn);
-                  ofs[0]++;
                   break;
                case ArgumentType.INT32:
                   rv = new int[length];
                   for (int j = 0; j < length; j++, ofs[1] += algn) 
                      ((int[]) rv)[j] = (int) demarshallint(buf, ofs[1], algn);
-                  ofs[0]++;
                   break;
                case ArgumentType.INT64:
                   rv = new long[length];
                   for (int j = 0; j < length; j++, ofs[1] += algn) 
                      ((long[]) rv)[j] = (long) demarshallint(buf, ofs[1], algn);
-                  ofs[0]++;
                   break;
                case ArgumentType.BOOLEAN:
                   rv = new boolean[length];
                   for (int j = 0; j < length; j++, ofs[1] += algn) 
                      ((boolean[]) rv)[j] = (1 == demarshallint(buf, ofs[1], algn));
-                  ofs[0]++;
                   break;
                case ArgumentType.FLOAT:
                   rv = new float[length];
                   for (int j = 0; j < length; j++, ofs[1] += algn) 
                      ((float[]) rv)[j] =
                         Float.intBitsToFloat((int)demarshallint(buf, ofs[1], algn));
-                  ofs[0]++;
                   break;
                case ArgumentType.DOUBLE:
                   rv = new double[length];
                   for (int j = 0; j < length; j++, ofs[1] += algn) 
                      ((double[]) rv)[j] =
                         Double.longBitsToDouble(demarshallint(buf, ofs[1], algn));
-                  ofs[0]++;
                   break;
                case ArgumentType.DICT_ENTRY1:
                   int ofssave = ofs[0];
@@ -848,7 +859,7 @@ public class Message
                   Vector<Object[]> entries = new Vector<Object[]>();
                   while (ofs[1] < end) {
                      ofs[0] = ofssave;
-                     entries.add((Object[]) extractone(sigb, buf, ofs));
+                     entries.add((Object[]) extractone(sigb, buf, ofs, true));
                   }
                   rv = new DBusMap(entries.toArray(new Object[0][]));
                   break;
@@ -859,25 +870,27 @@ public class Message
                   Vector<Object> contents = new Vector<Object>();
                   while (ofs[1] < end) {
                      ofs[0] = ofssave;
-                     contents.add(extractone(sigb, buf, ofs));
+                     contents.add(extractone(sigb, buf, ofs, true));
                   }
                   rv = contents;
             }
+            if (contained && !(rv instanceof List) && !(rv instanceof Map))
+               rv = ArrayFrob.listify(rv);
             break;
          case ArgumentType.STRUCT1:
             Vector<Object> contents = new Vector<Object>();
             while (sigb[++ofs[0]] != ArgumentType.STRUCT2)
-               contents.add(extractone(sigb, buf, ofs));
+               contents.add(extractone(sigb, buf, ofs, true));
             ofs[0]++;
             rv = contents.toArray();
             break;
          case ArgumentType.DICT_ENTRY1:
             Object[] decontents = new Object[2];
-            if (Debug.debug) Debug.print(Debug.VERBOSE, "Extracting Dict Entry ("+Hexdump.toAscii(sigb,ofs[0],sigb.length-ofs[0])+") from: "+Hexdump.toHex(buf,ofs[1],sigb.length-ofs[1]));
+            if (Debug.debug) Debug.print(Debug.VERBOSE, "Extracting Dict Entry ("+Hexdump.toAscii(sigb,ofs[0],sigb.length-ofs[0])+") from: "+Hexdump.toHex(buf,ofs[1],buf.length-ofs[1]));
             ofs[0]++;
-            decontents[0] = extractone(sigb, buf, ofs);
+            decontents[0] = extractone(sigb, buf, ofs, true);
             ofs[0]++;
-            decontents[1] = extractone(sigb, buf, ofs);
+            decontents[1] = extractone(sigb, buf, ofs, true);
             ofs[0]++;
             rv = decontents;
             break;
@@ -940,7 +953,7 @@ public class Message
       Vector<Object> rv = new Vector<Object>();
       byte[] sigb = sig.getBytes();
       for (int[] i = ofs; i[0] < sigb.length; i[0]++) {
-         rv.add(extractone(sigb, buf, i));
+         rv.add(extractone(sigb, buf, i, false));
       }
       return rv.toArray();
    }

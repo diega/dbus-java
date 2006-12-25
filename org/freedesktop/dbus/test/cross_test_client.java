@@ -198,12 +198,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
             for (int i = 0; i < os.length; i++)
                vs.addAll(PrimitizeRecurse(os[i], ts[1]));
          } else if (Struct.class.isAssignableFrom(c)) {
-            Object[] os;
-            try {
-               os = ((Struct) a).getParameters();
-            } catch (DBusException DBe) {
-               throw new DBusExecutionException(DBe.getMessage());
-            }
+            Object[] os = ((Struct) a).getParameters();
             Type[] ts = ((ParameterizedType) t).getActualTypeArguments();
             for (int i = 0; i < os.length; i++)
                vs.addAll(PrimitizeRecurse(os[i], ts[i]));
