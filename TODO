@@ -1,4 +1,3 @@
- * support Enums as UInt32s
  * document debugging
  * document API changes
  * document build and dependencies
@@ -6,6 +5,9 @@
  * autolaunch
  * dbus-sha-1 auth
  * test tcp
+ * write a bus daemon
+ * peer2peer
+ * test on windbus
  * allow 'virtual' object handlers, so that all object paths under a certain hierarchy are handled by the same object
  * fix dbus-viewer to recurse on paths
  * extend dbus-viewer to make calls
@@ -13,6 +15,7 @@
    objects should not return ObjectUnknown if the path has an existant
    child node, but should if not (for introspection) It should return
    UnknownInterface or Method
+ * support Enums as UInt32s
  * make it work with free VM/Compilers:
    make CFLAGS="`pkg-config --cflags dbus-1` -I/opt/java-generics/include" CLASSPATH=/opt/java-generics/share/classpath/glibj.zip:. LD_LIBRARY_PATH=/opt/java-generics/lib/classpath/ JAVAC="ecj -1.5" JAVA_HOME=/opt/java-generics/ JCFLAGS="-cp classes -bootclasspath /opt/java-generics/share/classpath/glibj.zip" JAVA=jamvm  check
    after installing eclipse eclipse-ecj jamvm and compiling classpath-generics with prefix=/opt/java-generics
