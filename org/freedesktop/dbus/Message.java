@@ -348,7 +348,7 @@ public class Message
     * @param ofs The offset to marshall to.
     * @param width The byte-width of the int.
     */
-   private void marshallintBig(long l, byte[] buf, int ofs, int width) 
+   public static void marshallintBig(long l, byte[] buf, int ofs, int width) 
    {
       for (int i = (width-1); i >= 0; i--) {
          buf[i+ofs] = (byte) (l & 0xFF);
@@ -362,7 +362,7 @@ public class Message
     * @param ofs The offset to demarshall to.
     * @param width The byte-width of the int.
     */
-   private void marshallintLittle(long l, byte[] buf, int ofs, int width) 
+   public static void marshallintLittle(long l, byte[] buf, int ofs, int width) 
    {
       for (int i = 0; i < width; i++) {
          buf[i+ofs] = (byte) (l & 0xFF);

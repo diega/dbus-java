@@ -23,6 +23,7 @@ Version 2.0:
 	* Support float ('f') type with tests
 	* Degrade floats to doubles when DBUS_JAVA_FLOATS is not set
 	* add DBus.Peer interface to standard introspection data
+	* Document peer to peer and low level.
 
 Version 1.13:
 

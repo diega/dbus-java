@@ -11,6 +11,8 @@
 package org.freedesktop.dbus;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -18,6 +20,8 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.Collator;
 import java.util.Random;
 import cx.ath.matthew.unix.UnixSocket;
@@ -49,15 +53,91 @@ public class Transport
    {
       connect(new BusAddress(address));
    }
+   private String findCookie(String context, String ID) throws IOException
+   {
+      String homedir = System.getProperty("user.home");
+      File f = new File(homedir+"/.dbus-keyrings/"+context);
+      BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+      String s = null;
+      String cookie = null;
+      while (null != (s = r.readLine())) {
+         String[] line = s.split(" ");
+         if (line[0].equals(ID)) {
+            cookie = line[2];
+            break;
+         }
+      }
+      return cookie;
+   }
+   /**
+    * Takes the string, encodes it as hex and then turns it into a string again.
+    * No, I don't know why either.
+    */
+   private String stupidlyEncode(String data)
+   {
+      return Hexdump.toHex(data.getBytes()).replaceAll(" ","");
+   }
+   private String stupidlyEncode(byte[] data)
+   {
+      return Hexdump.toHex(data).replaceAll(" ","");
+   }
+   private byte getNibble(char c)
+   {
+      switch (c) {
+         case '0':
+         case '1':
+         case '2':
+         case '3':
+         case '4':
+         case '5':
+         case '6':
+         case '7':
+         case '8':
+         case '9':
+            return (byte) (c-'0');
+         case 'A':
+         case 'B':
+         case 'C':
+         case 'D':
+         case 'E':
+         case 'F':
+            return (byte) (c-'A'+10);
+         case 'a':
+         case 'b':
+         case 'c':
+         case 'd':
+         case 'e':
+         case 'f':
+            return (byte) (c-'a'+10);
+         default:
+            return 0;
+      }
+   }
+   private String stupidlyDecode(String data)
+   {
+      char[] cs = new char[data.length()];
+      char[] res = new char[cs.length/2];
+      data.getChars(0, data.length(), cs, 0);
+      for (int i = 0, j = 0; j < res.length; i += 2, j++) {
+         int b = 0;
+         b |= getNibble(cs[i])<<4;
+         b |= getNibble(cs[i+1]);
+         res[j] = (char) b;
+      }
+      return new String(res);
+   }
    private boolean auth(BusAddress address, OutputStream out, InputStream in) throws IOException
    {
       out.write(new byte[] { 0 });
       BufferedReader r = new BufferedReader(new InputStreamReader(in));
+      UnixSystem uns = new UnixSystem();
+      long uid = uns.getUid();
+      String Uid = stupidlyEncode(""+uid);
+      Collator col = Collator.getInstance();
+      col.setDecomposition(Collator.FULL_DECOMPOSITION);
+      col.setStrength(Collator.PRIMARY);
       if ("unix".equals(address.getType())) {
          if (null == address.getParameter("listen")) {
-            UnixSystem uns = new UnixSystem();
-            long uid = uns.getUid();
-            String Uid = Hexdump.toHex((""+uid).getBytes()).replaceAll(" ","");
             out.write(("AUTH EXTERNAL "+Uid+"\r\n").getBytes());
             if (Debug.debug) Debug.print(Debug.VERBOSE, "AUTH EXTERNAL "+Uid+"\r\n");
          } else {
@@ -68,22 +148,46 @@ public class Transport
             out.write(("OK "+guid+"\r\n").getBytes());
             if (Debug.debug) Debug.print(Debug.VERBOSE, "OK "+guid);
             s = r.readLine();
-            if (Debug.debug) Debug.print(Debug.VERBOSE, "reading"+s);
+            if (Debug.debug) Debug.print(Debug.VERBOSE, "reading "+s);
             if ("BEGIN".equals(s)) return true;
          }
       } else {
-         out.write(("AUTH DBUS_COOKIE_SHA1\r\n").getBytes());
+         out.write(("AUTH DBUS_COOKIE_SHA1 "+Uid+"\r\n").getBytes());
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "AUTH DBUS_COOKIE_SHA1 "+Uid+"\r\n");
+         String s = r.readLine();
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "reading: "+s);
+         String[] reply=s.split(" ");
+         if (0 != col.compare("DATA", reply[0])) return false;
+         s = stupidlyDecode(reply[1]);
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "decoded: "+s);
+         reply=s.split(" ");
+         if (3 != reply.length) return false;
+         String context = reply[0];
+         String ID = reply[1];
+         String serverchallenge = reply[2];
+         MessageDigest md = null;
+         try {
+            md = MessageDigest.getInstance("SHA");
+         } catch (NoSuchAlgorithmException NSAe) {
+            if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, NSAe);
+            return false; 
+         }
+         byte[] buf = new byte[8];
+         Message.marshallintBig(System.currentTimeMillis(), buf, 0, 8);
+         String clientchallenge = stupidlyEncode(md.digest(buf));
+         md.reset();
+         String cookie = findCookie(context, ID);
+         if (null == cookie) return false;
+         String response = serverchallenge+":"+clientchallenge+":"+cookie;
+         response = stupidlyEncode(md.digest(response.getBytes("UTF-8")));
+
+         out.write(("DATA "+stupidlyEncode(clientchallenge+" "+response)+"\r\n").getBytes());
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "DATA "+stupidlyEncode(clientchallenge+" "+response));
       }
       String s = r.readLine();
       if (Debug.debug) Debug.print(Debug.VERBOSE, s);
       String[] reply=s.split(" ");
-      Collator col = Collator.getInstance();
-      col.setDecomposition(Collator.FULL_DECOMPOSITION);
-      col.setStrength(Collator.PRIMARY);
-      if (0 != col.compare("OK", reply[0])) {
-         if (Debug.debug) Debug.print(Debug.VERBOSE, "reply[0] = `"+reply[0]+"'");
-         return false;
-      }
+      if (0 != col.compare("OK", reply[0])) return false;
       if (null == address.getParameter("guid") || (reply.length > 1 && reply[1].equals(address.getParameter("guid")))) {
          if (Debug.debug) Debug.print(Debug.VERBOSE, "BEGIN\r\n");
          out.write("BEGIN\r\n".getBytes());
@@ -138,8 +242,7 @@ public class Transport
          in = s.getInputStream();
          out = s.getOutputStream();
       } else {
-         System.err.println("unknown address type");
-         System.exit(1);
+         throw new IOException("unknown address type "+address.getType());
       }
       
       if (!auth(address, out, in)) {
