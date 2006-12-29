@@ -52,7 +52,7 @@ public class DirectConnection extends AbstractConnection
     */
    public static String createDynamicSession()
    {
-      String address = "unix:listen=true";
+      String address = "unix:";
       String path = "/tmp/dbus-XXXXXXXXXX";
       Random r = new Random();
       do {
@@ -62,7 +62,7 @@ public class DirectConnection extends AbstractConnection
          path = path.replaceAll("..........$", sb.toString());
          if (Debug.debug) Debug.print(Debug.VERBOSE, "Trying path "+path);
       } while ((new File(path)).exists());
-      address += ",abstract="+path;
+      address += "abstract="+path;
       address += ",guid="+Transport.genGUID();
       if (Debug.debug) Debug.print("Created Session address: "+address);
       return address;

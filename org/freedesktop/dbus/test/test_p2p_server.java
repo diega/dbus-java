@@ -62,10 +62,10 @@ public class test_p2p_server implements TestRemoteInterface
    {
       String address = DirectConnection.createDynamicSession();
       PrintWriter w = new PrintWriter(new FileOutputStream("address"));
-      w.println(address.replaceAll("listen=true,",""));
+      w.println(address);
       w.flush();
       w.close();
-      DirectConnection dc = new DirectConnection(address);
+      DirectConnection dc = new DirectConnection(address+",listen=true");
       System.out.println("Connected");
       dc.exportObject("/Test", new test_p2p_server());
    }      

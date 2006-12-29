@@ -60,7 +60,7 @@ programs on exported objects and all signal handlers are run in new threads.
 Any calls on remote objects may throw {\tt DBusExecutionException}, which is a
 runtime exception and so the compiler will not remind you to handle it.
 
-The Java D-Bus API is also documented in the JavaDoc\footnote{\javadocroot/},
+The Java D-Bus API is also documented in the JavaDoc\footnote{\url{\javadocroot/}},
 D-Bus is described in the
 specification\footnote{http://dbus.freedesktop.org/doc/dbus-specification.html}
 and the API documentation\footnote{http://dbus.freedesktop.org/doc/api/html/}.
@@ -119,7 +119,7 @@ an error message which has a name of the form {\em
 \section{DBusConnection}
 
 The {\tt
-DBusConnection\footnote{\javadocroot/org/freedesktop/dbus/DBusConnection.html}}
+DBusConnection\footnote{\url{\javadocroot/org/freedesktop/dbus/DBusConnection.html}}}
 class provides methods for connecting to the bus, exporting objects,
 sending signals and getting references to remote objects.
 
@@ -183,7 +183,7 @@ Calling a method on a remote object is synchronous, that is the thread will
 block until it has a reply. If you do not want to block you can use an
 asynchronous call. These are called using the {\tt callMethodAsync} function on
 the connection object. This returns a {\tt
-DBusAsyncReply\footnote{\javadocroot/org/freedesktop/dbus/DBusAsyncReply.html}}
+DBusAsyncReply\footnote{\url{\javadocroot/org/freedesktop/dbus/DBusAsyncReply.html}}}
 object which can be used to check for a reply and get the return value. This is demonstrated in figure \ref{fig:async}.
 
 \begin{figure}[htb]
@@ -218,15 +218,15 @@ org/freedesktop/DBus.java} as normal. Any object wanting to export these
 methods would implement {\tt org.freedesktop.DBus}.
 
 Any interfaces which can be exported over D-Bus must extend {\tt
-DBusInterface\footnote{\javadocroot/org/freedesktop/dbus/DBusInterface.html}}.
+DBusInterface\footnote{\url{\javadocroot/org/freedesktop/dbus/DBusInterface.html}}}.
 A class may implement more than one exportable interface, all public methods
 declared in an interface which extend {\tt DBusInterface} will be exported.
 
 A sample interface definition is given in figure~\ref{fig:interface}, and a
 class which implements it in figure~\ref{fig:class}. More complicated
 definitions can be seen in the test
-classes\footnote{\javadocroot/org/freedesktop/dbus/test/TestRemoteInterface2.java
-\javadocroot/org/freedesktop/dbus/test/TestRemoteInterface.java}.
+classes\footnote{\url{\javadocroot/org/freedesktop/dbus/test/TestRemoteInterface2.java}
+\url{\javadocroot/org/freedesktop/dbus/test/TestRemoteInterface.java}}.
 
 All method calls by other programs on objects you export over D-Bus
 are executed in their own thread.
@@ -287,7 +287,7 @@ Signals are also declared as part of an interface. The Java API
 models these as inner classes within an interface. The containing
 interface must extend {\tt DBusInterface}, and the inner classes
 representing the signals must extend {\tt
-DBusSignal\footnote{\javadocroot/org/freedesktop/dbus/DBusSignal.html}}.
+DBusSignal\footnote{\url{\javadocroot/org/freedesktop/dbus/DBusSignal.html}}}.
 The Signal name is derived from the name of this inner class, and
 the interface from its containing interface.
 
@@ -299,7 +299,7 @@ other parameters in order. They must also call the superclass constructor with
 the same parameters.  A full definition of a signal can be seen in
 figure~\ref{fig:signal}. Again, more complicated definitions are available in
 the test
-classes\footnote{\javadocroot/org/freedesktop/dbus/test/TestSignalInterface.html}.
+classes\footnote{\url{\javadocroot/org/freedesktop/dbus/test/TestSignalInterface.html}}.
 
 \begin{figure}[htb]
 \begin{center}
@@ -332,7 +332,7 @@ public interface DBus extends DBusInterface
 
 If you wish to report an error condition in a method call you can throw an
 instance of {\tt
-DBusExecutionException\footnote{\javadocroot/org/freedesktop/dbus/DBusExecutionException.html}}.
+DBusExecutionException\footnote{\url{\javadocroot/org/freedesktop/dbus/DBusExecutionException.html}}}.
 This will be sent back to the caller as an error message, and the error name is
 taken from the class name of the exception. For example, if you wanted to
 report an unknown method you would define an exception as in figure
@@ -396,7 +396,7 @@ try {
 
 To handle incoming signals from other programs on the Bus you must register a
 signal handler. This must implement {\tt
-DBusSigHandler\footnote{\javadocroot/org/freedesktop/dbus/DBusSigHandler.html}}
+DBusSigHandler\footnote{\url{\javadocroot/org/freedesktop/dbus/DBusSigHandler.html}}}
 and provide an implementation for the handle method. An example Signal Handler
 is in figure~\ref{fig:handler}. Signal handlers should be parameterised with
 the signal they are handling. If you want a signal handler to handle multiple
@@ -439,13 +439,36 @@ All of Java's basic types are supported as parameters and return types to method
 
 D-Bus, like C and similar languages, has a notion of unsigned numeric
 types. The library supplies {\tt
-UInt16\footnote{\javadocroot/org/freedesktop/dbus/UInt16.html}}, {\tt
+UInt16\footnote{\url{\javadocroot/org/freedesktop/dbus/UInt16.html}}}, {\tt
 UInt32} and {\tt UInt64} classes to represent these new basic types.
 
 \subsection{Strings}
 
 D-Bus also supports sending Strings. When mentioned below, Strings
 count as a basic type.
+
+\subsubsection{String Comparisons}
+
+There may be some problems with comparing strings received over D-Bus with
+strings generated locally when using the String.equals method. This is due to
+how the Strings are generated from a UTF8 encoding. The recommended way to
+compare strings which have been sent over D-Bus is with the {\tt
+java.text.Collator} class. Figure \ref{fig:collator} demonstrates its use.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+String rname = remote.getName();
+Collator col = Collator.getInstance();
+col.setDecomposition(Collator.FULL_DECOMPOSITION);
+col.setStrength(Collator.PRIMARY);
+if (0 != col.compare("Name", rname))
+   fail("getName return value incorrect");
+\end{verbatim}
+\end{center}
+\caption{Comparing strings with {\tt java.text.Collator}.}
+\label{fig:collator}
+\end{figure}
 
 \subsection{Arrays}
 
@@ -468,7 +491,7 @@ with lists, maps must be fully parameterised. (e.g.
 D-Bus has support for a Variant type. This is similar to declaring that a
 method takes a parameter of type {\tt Object}, in that a Variant may contain
 any other type. Variants can either be declared using the {\tt
-Variant\footnote{\javadocroot/org/freedesktop/dbus/Variant.html}} class, or as
+Variant\footnote{\url{\javadocroot/org/freedesktop/dbus/Variant.html}}} class, or as
 a Type Variable. In the latter case the value is automatically unwrapped and
 passed to the function. Variants in compound types (Arrays, Maps, etc) must be
 declared using the Variant class with the full type passed to the Variant
@@ -487,7 +510,7 @@ D-Bus has a struct type, which is a collection of other types. Java
 does not have an analogue of this other than fields in classes, and
 due to the limitation of Java reflection this is not sufficient. The
 library declares a {\tt
-Struct\footnote{\javadocroot/org/freedesktop/dbus/Struct.html}} class which can be used to create structs.
+Struct\footnote{\url{\javadocroot/org/freedesktop/dbus/Struct.html}}} class which can be used to create structs.
 To define a struct you extend the {\tt Struct} class and define fields for each member of the struct.
 These fields then need to be annotated in the order which they appear in the struct (class fields do not have a defined order). You must also define a single constructor which takes the contents of he struct in order. This is best demonstrated by an example.
 Figure~\ref{fig:struct} shows a Struct definition, and
@@ -559,7 +582,7 @@ on the {\tt Path} object.
 
 D-Bus also allows functions to return multiple values, a concept not supported
 by Java. This has been solved in a fashion similar to the struct, using a {\tt
-Tuple\footnote{\javadocroot/org/freedesktop/dbus/Tuple.html}}
+Tuple\footnote{\url{\javadocroot/org/freedesktop/dbus/Tuple.html}}}
 class. Tuples are defined as generic tuples which can be parameterised for
 different types and just need to be defined of the appropriate length. This can
 be seen in figure~\ref{fig:tuple} and a call in figure~\ref{fig:tuplemethod}.
@@ -698,7 +721,7 @@ implementation allows the creation of serializable objects which can be passed t
 D-Bus functions and will be converted to/from D-Bus types by the library.
 
 To create such a class you must implement the {\tt
-DBusSerializable\footnote{\javadocroot/org/freedesktop/dbus/DBusSerializable.html}}
+DBusSerializable\footnote{\url{\javadocroot/org/freedesktop/dbus/DBusSerializable.html}}}
 class and provide two methods and a zero-argument constructor. The first method
 has the signature {\tt public Object\[\] serialize() throws DBusException} and
 the second must be called {\tt deserialize}, return {\tt null} and take as it's
@@ -772,7 +795,7 @@ are exported by it.  Introspection data can be used to create Java interface
 definitions automatically.
 
 The {\tt
-CreateInterface\footnote{\javadocroot/org/freedesktop/dbus/CreateInterface.html}}
+CreateInterface\footnote{\url{\javadocroot/org/freedesktop/dbus/CreateInterface.html}}}
 class will automatically create Java source files from an XML file
 containing the introspection data, or by querying the remote object
 over D-Bus.  CreateInterface can be called from Java code, or can be run as a
@@ -820,6 +843,146 @@ DBUS\_JAVA\_EXCEPTION\_DEBUG} will cause all exceptions which are handled
 internally to have their stack trace printed when they are handled. This will
 happen unless debugging has been disabled for that class.
 
+\section{Peer to Peer}
+
+It is possible to connect two applications together directly without using a
+bus. D-Bus calls this a peer-to-peer connection.
+
+The Java implementation provides an alternative to the {\tt DBusConnection}
+class, the {\tt
+DirectConnection\footnote{\url{\javadocroot/org/freedesktop/dbus/DirectConnection.html}}}
+class. This allows you to connect two applications together directly without
+the need of a bus.
+
+When using a DirectConnection rather than a DBusConnection most operations are
+the same. The only things which differ are how you connect and the operations
+which depend on a bus. Since peer connections are only one-to-one there is no
+destination or source address to messages. There is also no {\tt
+org.freedesktop.DBus} service running on the bus.
+
+\subsection{Connecting to another application}
+
+To connect with a peer connection one of the two applications must be listening
+on the socket and the other connecting. Both of these use the same method to
+instantiate the {\tt DirectConnection} but with different addresses. To listen
+rather than connect you add the {\em ``listen=true''} parameter to the address.
+Listening and connecting can be seen in figures \ref{fig:p2plisten} and
+\ref{fig:p2pconnect} respectively. Listening will block at creating the
+connection until the other application has connected.
+
+{\tt DirectConnection} also provides a {\tt createDynamicSession} method which
+generates a random abstract unix socket address to use.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+DirectConnection dc = new DirectConnection("unix:path=/tmp/dbus-ABCXYZ,listen=true");
+\end{verbatim}
+\end{center}
+\caption{Listening for a peer connection}
+\label{fig:p2plisten}
+\end{figure}
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+DirectConnection dc = new DirectConnection("unix:path=/tmp/dbus-ABCXYZ");
+\end{verbatim}
+\end{center}
+\caption{Connecting to a peer connection}
+\label{fig:p2pconnect}
+\end{figure}
+
+\subsection{Getting Remote Objects}
+
+Getting a remote object is essentially the same as with a bus connection,
+except that you do not have to specify a bus name, only an object path. There
+is also no {\tt getPeerRemoteObject} method, since there can only be one peer
+on this connection.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+RemoteInterface remote = dc.getRemoteObject("/Path");
+remote.doStuff();
+\end{verbatim}
+\end{center}
+\caption{Getting a remote object on a peer connection}
+\label{fig:p2premote}
+\end{figure}
+
+The rest of the API is the same for peer connections as bus connections,
+ommiting any bus addresses.
+
+\section{Low-level API}
+
+In very rare circumstances it may be neccessary to deal directly with messages
+on the bus, rather than with objects and method calls. This implementation
+gives the programmer access to this low-level API but its use is strongly
+recommended against.
+
+To use the low-level API you use a different set of classes than with the
+normal API.
+
+\subsection{Transport}
+
+The {\tt Transport\footnote{\url{\javadocroot/org/freedesktop/dbus/Transport.html}}}
+class is used to connect to the underlying transport with a bus address and to
+send and receive messages. 
+
+You connect by either creating a {\tt Transport} object with the bus address as
+the parameter, or by calling {\tt connect} with the address later. Addresses
+are represented using the {\tt BusAddress} class.
+
+Messages can be read by calling {\tt transport.min.readMessage()} and written
+by using the {\tt transport.mout.writeMessage(m)} methods.
+
+\subsection{Message}
+
+{\tt Message\footnote{\url{\javadocroot/org/freedesktop/dbus/Message.html}}} is the
+superclass of all the classes representing a message. To send a message you
+need to create a subclass of this object. Possible message types are: {\tt
+MethodCall}, {\tt MethodReturn}, {\tt Error} and {\tt DBusSignal}. Constructors
+for these vary, but they are basically similar to the {\tt MethodCall} class.
+
+All the constructors have variadic parameter lists with the last of the
+parameters being the signature of the message body and the parameters which
+make up the body. If the message has an empty body then the last parameter must
+be null. Reading and writing messages is not thread safe.
+
+When reading a message if a full message has not yet been read from the
+transport the method will return null. Messages are instantiated as the correct
+message type, so {\tt instanceof} will work on the returned object.
+
+Figure \ref{fig:lowlevel} shows how to connect to a bus, send the (required)
+initial `Hello' message and 
+call a method with two parameters.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+BusAddress address = new BusAddress(
+         System.getenv("DBUS_SESSION_BUS_ADDRESS"));
+Transport conn = new Transport(address);
+
+Message m = new MethodCall("org.freedesktop.DBus", "/org/freedesktop/DBus", 
+                           "org.freedesktop. DBus", "Hello", (byte) 0, null);
+conn.mout.writeMessage(m);
+
+m = conn.min.readMessage();
+System.out.println("Response to Hello is: "+m);
+
+m = new MethodCall("org.freedesktop.DBus", "/org/freedesktop/DBus", 
+                   "org.freedesktop.DBus", "RequestName", (byte) 0, 
+                   "su", "org.testname", 0);
+conn.mout.writeMessage(m);
+
+conn.disconnect();
+\end{verbatim}
+\end{center}
+\caption{Low-level usage}
+\label{fig:lowlevel}
+\end{figure}
 
 \section{Examples}
 

@@ -108,6 +108,9 @@ bin/%: %.sh .bin
 testrun: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
 
+low-level-run: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test_low_level
+
 cross-test-server: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_server
 
@@ -131,6 +134,14 @@ profilerun: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 
 viewer: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-viewer-$(VERSION).jar org.freedesktop.dbus.viewer.DBusViewer
+
+low-level: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	( PASS=false; \
+	  dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
+	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
+	  $(MAKE) low-level-run ; \
+	  kill $$(cat pid) )
+
 
 check: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	( PASS=false; \

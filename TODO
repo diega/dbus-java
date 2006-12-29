@@ -1,9 +1,6 @@
- * document string comparisons
- * document peer2peer
- * document low level
- * autolaunch
  * dbus-sha-1 auth
  * test tcp
+ * autolaunch
  * write a bus daemon
  * test on windbus
  * autodetection of float support

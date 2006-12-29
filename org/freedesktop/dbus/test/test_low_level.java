@@ -11,10 +11,6 @@ public class test_low_level
 {
    public static void main(String[] args) throws Exception
    {
-      Message test = new MethodCall(":1.0", "/", "org.foo", "Hiii", (byte) 0, null);
-
-      //System.exit(0);
-
       Debug.setHexDump(true);
       BusAddress address = new BusAddress(System.getenv("DBUS_SESSION_BUS_ADDRESS"));
       Debug.print(address);
@@ -29,12 +25,14 @@ public class test_low_level
       m = conn.min.readMessage();
       Debug.print(m.getClass());
       Debug.print(m);
+      m = conn.min.readMessage();
+      Debug.print(""+m);
       m = new MethodCall("org.freedesktop.DBus", "/", null, "Hello", (byte) 0, null);
       conn.mout.writeMessage(m);
       m = conn.min.readMessage();
       Debug.print(m);
 
-      m = new MethodCall("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "RequestName", (byte) 0, "s", "org.testname");
+      m = new MethodCall("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "RequestName", (byte) 0, "su", "org.testname", 0);
       conn.mout.writeMessage(m);
       m = conn.min.readMessage();
       Debug.print(m);
@@ -42,5 +40,6 @@ public class test_low_level
       conn.mout.writeMessage(m);
       m = conn.min.readMessage();
       Debug.print(m);
+      conn.disconnect();
    }
 }
