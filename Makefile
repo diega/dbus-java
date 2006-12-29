@@ -97,7 +97,7 @@ doc/dbus-java/index.html: dbus-java.tex .doc
 	rm -f doc/dbus-java/*{4ct,4tc,aux,dvi,idv,lg,log,tmp,xref}
 	cp doc/dbus-java/dbus-java.html doc/dbus-java/index.html
 doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
-	$(JAVADOC) -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/  -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java 
+	$(JAVADOC) -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/ -classpath $(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/dbus/{types,exceptions}/*.java
 
 %.1: %.sgml
 	docbook-to-man $< > $@
@@ -113,6 +113,12 @@ cross-test-server: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 
 cross-test-client: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.cross_test_client
+
+peer-server: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test_p2p_server
+
+peer-client: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test_p2p_client
 
 two-part-server: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.two_part_test_server
@@ -144,6 +150,11 @@ internal-cross-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	  sleep 1;\
 	  $(MAKE) -s cross-test-client | tee client.log ;\
 	  kill $$(cat pid) ; )
+
+peer-to-peer-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	( $(MAKE) DBUS_JAVA_FLOATS=true -s peer-server 2>&1 | tee server.log &\
+	  sleep 1;\
+	  $(MAKE) DBUS_JAVA_FLOATS=true -s peer-client 2>&1 | tee client.log )
 
 two-part-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	( dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \

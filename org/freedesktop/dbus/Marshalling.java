@@ -96,9 +96,9 @@ public class Marshalling
       if (basic && !(c instanceof Class))
          throw new DBusException(c+" is not a basic type");
 
-      if (c instanceof TypeVariable) out[level].append('v');
+      if (c instanceof TypeVariable) out[level].append((char) Message.ArgumentType.VARIANT);
       else if (c instanceof GenericArrayType) {
-         out[level].append('a');
+         out[level].append((char) Message.ArgumentType.ARRAY);
          String[] s = recursiveGetDBusType(((GenericArrayType) c).getGenericComponentType(), false, level+1);
          if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
          out[level].append(s[0]);
@@ -116,7 +116,7 @@ public class Marshalling
                if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
                out[level].append(s[0]);
             } catch (ArrayIndexOutOfBoundsException AIOOBe) {
-               if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, AIOOBe);
+               if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, AIOOBe);
                throw new DBusException("Map must have 2 parameters");
             }
             out[level].append('}');
@@ -124,20 +124,20 @@ public class Marshalling
          else if (List.class.isAssignableFrom((Class) p.getRawType())) {
             for (Type t: p.getActualTypeArguments()) {
                if (Type.class.equals(t)) 
-                  out[level].append('g');
+                  out[level].append((char) Message.ArgumentType.SIGNATURE);
                else {
                   String[] s = recursiveGetDBusType(t, false, level+1);
                   if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
-                  out[level].append('a');
+                  out[level].append((char) Message.ArgumentType.ARRAY);
                   out[level].append(s[0]);
                }
             }
          } 
          else if (p.getRawType().equals(Variant.class)) {
-            out[level].append('v');
+            out[level].append((char) Message.ArgumentType.VARIANT);
          }
          else if (DBusInterface.class.isAssignableFrom((Class) p.getRawType())) {
-            out[level].append('o');
+            out[level].append((char) Message.ArgumentType.OBJECT_PATH);
          }
          else if (Tuple.class.isAssignableFrom((Class) p.getRawType())) {
             Type[] ts = p.getActualTypeArguments();
@@ -151,39 +151,43 @@ public class Marshalling
             throw new DBusException("Exporting non-exportable parameterized type "+c);
       }
       
-      else if (c.equals(Byte.class)) out[level].append('y');
-      else if (c.equals(Byte.TYPE)) out[level].append('y');
-      else if (c.equals(Boolean.class)) out[level].append('b');
-      else if (c.equals(Boolean.TYPE)) out[level].append('b');
-      else if (c.equals(Short.class)) out[level].append('n');
-      else if (c.equals(Short.TYPE)) out[level].append('n');
-      else if (c.equals(UInt16.class)) out[level].append('q');
-      else if (c.equals(Integer.class)) out[level].append('i');
-      else if (c.equals(Integer.TYPE)) out[level].append('i');
-      else if (c.equals(UInt32.class)) out[level].append('u');
-      else if (c.equals(Long.class)) out[level].append('x');
-      else if (c.equals(Long.TYPE)) out[level].append('x');
-      else if (c.equals(UInt64.class)) out[level].append('t');
-      else if (c.equals(Double.class)) out[level].append('d');
-      else if (c.equals(Double.TYPE)) out[level].append('d');
-      else if (c.equals(String.class)) out[level].append('s');
-      else if (c.equals(Variant.class)) out[level].append('v');
+      else if (c.equals(Byte.class)) out[level].append((char) Message.ArgumentType.BYTE);
+      else if (c.equals(Byte.TYPE)) out[level].append((char) Message.ArgumentType.BYTE);
+      else if (c.equals(Boolean.class)) out[level].append((char) Message.ArgumentType.BOOLEAN);
+      else if (c.equals(Boolean.TYPE)) out[level].append((char) Message.ArgumentType.BOOLEAN);
+      else if (c.equals(Short.class)) out[level].append((char) Message.ArgumentType.INT16);
+      else if (c.equals(Short.TYPE)) out[level].append((char) Message.ArgumentType.INT16);
+      else if (c.equals(UInt16.class)) out[level].append((char) Message.ArgumentType.UINT16);
+      else if (c.equals(Integer.class)) out[level].append((char) Message.ArgumentType.INT32);
+      else if (c.equals(Integer.TYPE)) out[level].append((char) Message.ArgumentType.INT32);
+      else if (c.equals(UInt32.class)) out[level].append((char) Message.ArgumentType.UINT32);
+      else if (c.equals(Long.class)) out[level].append((char) Message.ArgumentType.INT64);
+      else if (c.equals(Long.TYPE)) out[level].append((char) Message.ArgumentType.INT64);
+      else if (c.equals(UInt64.class)) out[level].append((char) Message.ArgumentType.UINT64);
+      else if (c.equals(Double.class)) out[level].append((char) Message.ArgumentType.DOUBLE);
+      else if (c.equals(Double.TYPE)) out[level].append((char) Message.ArgumentType.DOUBLE);
+      else if (c.equals(Float.class) && AbstractConnection.FLOAT_SUPPORT) out[level].append((char) Message.ArgumentType.FLOAT);
+      else if (c.equals(Float.class)) out[level].append((char) Message.ArgumentType.DOUBLE);
+      else if (c.equals(Float.TYPE) && AbstractConnection.FLOAT_SUPPORT) out[level].append((char) Message.ArgumentType.FLOAT);
+      else if (c.equals(Float.TYPE)) out[level].append((char) Message.ArgumentType.DOUBLE);
+      else if (c.equals(String.class)) out[level].append((char) Message.ArgumentType.STRING);
+      else if (c.equals(Variant.class)) out[level].append((char) Message.ArgumentType.VARIANT);
       else if (c instanceof Class && 
-            DBusInterface.class.isAssignableFrom((Class) c)) out[level].append('o');
+            DBusInterface.class.isAssignableFrom((Class) c)) out[level].append((char) Message.ArgumentType.OBJECT_PATH);
       else if (c instanceof Class && 
-            Path.class.equals((Class) c)) out[level].append('o');
+            Path.class.equals((Class) c)) out[level].append((char) Message.ArgumentType.OBJECT_PATH);
       else if (c instanceof Class && ((Class) c).isArray()) {
          if (Type.class.equals(((Class) c).getComponentType()))
-            out[level].append('g');
+            out[level].append((char) Message.ArgumentType.SIGNATURE);
          else {
-            out[level].append('a');
+            out[level].append((char) Message.ArgumentType.ARRAY);
             String[] s = recursiveGetDBusType(((Class) c).getComponentType(), false, level+1);
             if (s.length != 1) throw new DBusException("Multi-valued array types not permitted");
             out[level].append(s[0]);
          }
       } else if (c instanceof Class && 
             Struct.class.isAssignableFrom((Class) c)) {
-         out[level].append('(');
+         out[level].append((char) Message.ArgumentType.STRUCT1);
          Type[] ts = Container.getTypeCache(c);
          if (null == ts) {
             Field[] fs = ((Class) c).getDeclaredFields();
@@ -230,6 +234,8 @@ public class Marshalling
          throw new DBusException("Exporting non-exportable type "+c);
       }
 
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Converted Java type: "+c+" to D-Bus Type: "+out[level]);
+
       return new String[] { out[level].toString() };
    }
 
@@ -248,11 +254,11 @@ public class Marshalling
          int i = 0;
          for (; i < dbus.length() && (-1 == limit || limit > rv.size()); i++) 
             switch(dbus.charAt(i)) {
-               case '(':
+               case Message.ArgumentType.STRUCT1:
                   int j = i+1;
                   for (int c = 1; c > 0; j++) {
                      if (')' == dbus.charAt(j)) c--;
-                     else if ('(' == dbus.charAt(j)) c++;
+                     else if (Message.ArgumentType.STRUCT1 == dbus.charAt(j)) c++;
                   }
 
                   Vector<Type> contained = new Vector<Type>();
@@ -260,8 +266,8 @@ public class Marshalling
                   rv.add(new DBusStructType(contained.toArray(new Type[0])));
                   i = j;
                   break;                     
-               case 'a':
-                  if ('{' == dbus.charAt(i+1)) {
+               case Message.ArgumentType.ARRAY:
+                  if (Message.ArgumentType.DICT_ENTRY1 == dbus.charAt(i+1)) {
                      contained = new Vector<Type>();
                      c = getJavaType(dbus.substring(i+2), contained, 2);
                      rv.add(new DBusMapType(contained.get(0), contained.get(1)));
@@ -273,46 +279,49 @@ public class Marshalling
                      i += c;
                   }
                   break;
-               case 'v':
+               case Message.ArgumentType.VARIANT:
                   rv.add(Variant.class);
                   break;
-               case 'b':
+               case Message.ArgumentType.BOOLEAN:
                   rv.add(Boolean.class);
                   break;
-               case 'n':
+               case Message.ArgumentType.INT16:
                   rv.add(Short.class);
                   break;
-               case 'y':
+               case Message.ArgumentType.BYTE:
                   rv.add(Byte.class);
                   break;
-               case 'o':
+               case Message.ArgumentType.OBJECT_PATH:
                   rv.add(DBusInterface.class);
                   break;
-               case 'q':
+               case Message.ArgumentType.UINT16:
                   rv.add(UInt16.class);
                   break;
-               case 'i':
+               case Message.ArgumentType.INT32:
                   rv.add(Integer.class);
                   break;
-               case 'u':
+               case Message.ArgumentType.UINT32:
                   rv.add(UInt32.class);
                   break;
-               case 'x':
+               case Message.ArgumentType.INT64:
                   rv.add(Long.class);
                   break;
-               case 't':
+               case Message.ArgumentType.UINT64:
                   rv.add(UInt64.class);
                   break;
-               case 'd':
+               case Message.ArgumentType.DOUBLE:
                   rv.add(Double.class);
                   break;
-               case 's':
+               case Message.ArgumentType.FLOAT:
+                  rv.add(Float.class);
+                  break;
+               case Message.ArgumentType.STRING:
                   rv.add(String.class);
                   break;
-               case 'g':
+               case Message.ArgumentType.SIGNATURE:
                   rv.add(Type[].class);
                   break;
-               case '{':
+               case Message.ArgumentType.DICT_ENTRY1:
                   rv.add(Map.Entry.class);
                   contained = new Vector<Type>();
                   c = getJavaType(dbus.substring(i+1), contained, 2);
@@ -323,7 +332,7 @@ public class Marshalling
             }
          return i;
       } catch (IndexOutOfBoundsException IOOBe) {
-         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOOBe);
+         if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOOBe);
          throw new DBusException("Failed to parse DBus type signature: "+dbus);
       }
    }
@@ -335,7 +344,7 @@ public class Marshalling
     * @throws DBusException Thrown if there is an error in converting the objects.
     */
    @SuppressWarnings("unchecked")
-   public static Object[] convertParameters(Object[] parameters, Type[] types, DBusConnection conn) throws DBusException
+   public static Object[] convertParameters(Object[] parameters, Type[] types, AbstractConnection conn) throws DBusException
    {
       if (null == parameters) return null;
       for (int i = 0; i < parameters.length; i++) {
@@ -384,7 +393,7 @@ public class Marshalling
       return parameters;
    }
    @SuppressWarnings("unchecked")
-   static Object deSerializeParameter(Object parameter, Type type, DBusConnection conn) throws Exception
+   static Object deSerializeParameter(Object parameter, Type type, AbstractConnection conn) throws Exception
    {
       if (null == parameter) 
          return null;
@@ -450,6 +459,11 @@ public class Marshalling
                ts, conn);
       }
 
+      // correct floats if appropriate
+      if (type.equals(Float.class) || type.equals(Float.TYPE)) 
+         if (!(parameter instanceof Float))
+            parameter = ((Number) parameter).floatValue();
+
       // make sure arrays are in the correct format
       if (parameter instanceof Object[] ||
             parameter instanceof List ||
@@ -470,6 +484,14 @@ public class Marshalling
          } else if (type instanceof Class &&
                ((Class) type).isArray()) {
             Class cc = ((Class) type).getComponentType();
+            if ((cc.equals(Float.class) || cc.equals(Float.TYPE))
+                  && (parameter instanceof double[])) {
+               double[] tmp1 = (double[]) parameter;
+               float[] tmp2 = new float[tmp1.length];
+               for (int i = 0; i < tmp1.length; i++)
+                  tmp2[i] = (float) tmp1[i];
+               parameter = tmp2;
+            }
             Object o = Array.newInstance(cc, 0);
             parameter = ArrayFrob.convert(parameter,
                   o.getClass());
@@ -477,7 +499,7 @@ public class Marshalling
       }
       return parameter;
    }
-   static Object[] deSerializeParameters(Object[] parameters, Type[] types, DBusConnection conn) throws Exception
+   static Object[] deSerializeParameters(Object[] parameters, Type[] types, AbstractConnection conn) throws Exception
    {
       if (null == parameters) return null;
       for (int i = 0; i < parameters.length; i++) {
@@ -501,7 +523,7 @@ public class Marshalling
                      System.arraycopy(parameters, i + newtypes.length, compress, i+1, parameters.length - i - newtypes.length);
                      parameters = compress;
                   } catch (ArrayIndexOutOfBoundsException AIOOBe) {
-                     if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, AIOOBe);
+                     if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, AIOOBe);
                      throw new DBusException("Not enough elements to create custom object from serialized data ("+(parameters.length-i)+" < "+(newtypes.length)+")");
                   }
                }

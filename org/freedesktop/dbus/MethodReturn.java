@@ -21,14 +21,15 @@ public class MethodReturn extends Message
    {
       super(Message.Endian.BIG, Message.MessageType.METHOD_RETURN, (byte) 0);
 
-      if (null == dest)
-         throw new MessageFormatException("Must specify destination to Method Returns.");
-      headers.put(Message.HeaderField.DESTINATION,dest);
       headers.put(Message.HeaderField.REPLY_SERIAL,replyserial);
 
       Vector<Object> hargs = new Vector<Object>();
-      hargs.add(new Object[] { Message.HeaderField.DESTINATION, new Object[] { ArgumentType.STRING_STRING, dest } });
       hargs.add(new Object[] { Message.HeaderField.REPLY_SERIAL, new Object[] { ArgumentType.UINT32_STRING, replyserial } });
+
+      if (null != dest) {
+         headers.put(Message.HeaderField.DESTINATION,dest);
+         hargs.add(new Object[] { Message.HeaderField.DESTINATION, new Object[] { ArgumentType.STRING_STRING, dest } });
+      }
 
       if (null != sig) {
          hargs.add(new Object[] { Message.HeaderField.SIGNATURE, new Object[] { ArgumentType.SIGNATURE_STRING, sig } });
@@ -38,7 +39,7 @@ public class MethodReturn extends Message
 
       byte[] blen = new byte[4];
       appendBytes(blen);
-      append("ua(yv)", ++serial, hargs.toArray());
+      append("ua(yv)", serial, hargs.toArray());
       pad((byte)8);
 
       long c = bytecounter;

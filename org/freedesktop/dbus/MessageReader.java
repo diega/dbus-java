@@ -135,14 +135,14 @@ public class MessageReader
       try {
          m.populate(buf, header, body);
       } catch (DBusException DBe) {
-         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
+         if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
          buf = null;
          tbuf = null;
          body = null;
          header = null;
          throw DBe;
       } catch (RuntimeException Re) {
-         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, Re);
+         if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, Re);
          buf = null;
          tbuf = null;
          body = null;

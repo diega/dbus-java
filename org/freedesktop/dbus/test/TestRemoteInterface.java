@@ -43,4 +43,6 @@ public interface TestRemoteInterface extends DBusInterface
    public void sig(Type[] s);
    @Description("Testing object paths as Path objects")
    public void newpathtest(Path p);
+   @Description("Testing the float type")
+   public float testfloat(float[] f);
 }

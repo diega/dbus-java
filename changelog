@@ -16,6 +16,13 @@ Version 2.0:
 		  associated with this connection.
 		* Access to the low-level API added.
 	* Change all documentation to refer to 'implementation' not 'binding'
+	* Add peer 2 peer support with DirectConnection class
+	* add peer to peer test
+	* split some code from DBusConnection into common super-class
+	  AbstractConnection
+	* Support float ('f') type with tests
+	* Degrade floats to doubles when DBUS_JAVA_FLOATS is not set
+	* add DBus.Peer interface to standard introspection data
 
 Version 1.13:
 

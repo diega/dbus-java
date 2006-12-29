@@ -74,7 +74,7 @@ public class DBusSignal extends Message
    {
       String type = "";
       if (null != c.getEnclosingClass())
-         type = DBusConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
+         type = AbstractConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
       DBusSignal s = new internalsig(source, objectpath, type, c.getSimpleName(), sig, parameters, serial);
       s.c = c;
       return s;
@@ -91,7 +91,7 @@ public class DBusSignal extends Message
       } while (null == c && name.matches(".*\\..*"));
       return c;
    }
-   DBusSignal createReal(DBusConnection conn) throws DBusException
+   DBusSignal createReal(AbstractConnection conn) throws DBusException
    {
       if (null == c) 
          c = createSignalClass(getInterface()+"$"+getName());
@@ -129,7 +129,7 @@ public class DBusSignal extends Message
          s.bytecounter = wiredata.length;
          return s;
       } catch (Exception e) { 
-         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
+         if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
          throw new DBusException(e.getMessage());
       }
    }
@@ -144,7 +144,7 @@ public class DBusSignal extends Message
    {
       super(Message.Endian.BIG, Message.MessageType.SIGNAL, (byte) 0);
 
-      if (!objectpath.matches(DBusConnection.OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      if (!objectpath.matches(AbstractConnection.OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
 
       Class tc = getClass();
       String member = tc.getSimpleName();
@@ -155,7 +155,7 @@ public class DBusSignal extends Message
             enc.getName().equals(enc.getSimpleName()))
          throw new DBusException("Signals must be declared as a member of a class implementing DBusInterface which is the member of a package.");
       else
-         iface = DBusConnection.dollar_pattern.matcher(enc.getName()).replaceAll(".");
+         iface = AbstractConnection.dollar_pattern.matcher(enc.getName()).replaceAll(".");
 
       headers.put(Message.HeaderField.PATH,objectpath);
       headers.put(Message.HeaderField.MEMBER,member);
@@ -187,7 +187,7 @@ public class DBusSignal extends Message
             headers.put(Message.HeaderField.SIGNATURE,sig);
             setArgs(args);
          } catch (Exception e) {
-            if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
+            if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
             throw new DBusException("Failed to add signal parameters: "+e.getMessage());
          }
       }
@@ -197,7 +197,7 @@ public class DBusSignal extends Message
       append("ua(yv)", ++serial, hargs.toArray());
       pad((byte)8);
    }
-   void appendbody(DBusConnection conn) throws DBusException
+   void appendbody(AbstractConnection conn) throws DBusException
    {
       if (bodydone) return;
 

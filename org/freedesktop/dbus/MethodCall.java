@@ -23,16 +23,19 @@ public class MethodCall extends Message
    {
       super(Message.Endian.BIG, Message.MessageType.METHOD_CALL, flags);
 
-      if (null == dest || null == member || null == path)
+      if (null == member || null == path)
          throw new MessageFormatException("Must specify destination, path and function name to MethodCalls.");
       headers.put(Message.HeaderField.PATH,path);
-      headers.put(Message.HeaderField.DESTINATION,dest);
       headers.put(Message.HeaderField.MEMBER,member);
 
       Vector<Object> hargs = new Vector<Object>();
 
       hargs.add(new Object[] { Message.HeaderField.PATH, new Object[] { ArgumentType.OBJECT_PATH_STRING, path } });
-      hargs.add(new Object[] { Message.HeaderField.DESTINATION, new Object[] { ArgumentType.STRING_STRING, dest } });
+      
+      if (null != dest) {
+         headers.put(Message.HeaderField.DESTINATION,dest);
+         hargs.add(new Object[] { Message.HeaderField.DESTINATION, new Object[] { ArgumentType.STRING_STRING, dest } });
+      }
       
       if (null != iface) {
          hargs.add(new Object[] { Message.HeaderField.INTERFACE, new Object[] { ArgumentType.STRING_STRING, iface } });

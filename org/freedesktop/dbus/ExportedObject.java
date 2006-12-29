@@ -39,7 +39,7 @@ class ExportedObject
          } catch (InvocationTargetException ITe) {
          } catch (IllegalAccessException IAe) {}
 
-         ans += "  <annotation name=\""+DBusConnection.dollar_pattern.matcher(t.getName()).replaceAll(".")+"\" value=\""+value+"\" />\n";
+         ans += "  <annotation name=\""+AbstractConnection.dollar_pattern.matcher(t.getName()).replaceAll(".")+"\" value=\""+value+"\" />\n";
       }
       return ans;
    }
@@ -56,7 +56,7 @@ class ExportedObject
             // add this class's public methods
             if (c.getName().length() > DBusConnection.MAX_NAME_LENGTH) 
                throw new DBusException("Introspected interface name exceeds 255 characters. Cannot export objects of type "+c.getName()+".");
-            introspectiondata += " <interface name=\""+DBusConnection.dollar_pattern.matcher(c.getName()).replaceAll(".")+"\">\n";
+            introspectiondata += " <interface name=\""+AbstractConnection.dollar_pattern.matcher(c.getName()).replaceAll(".")+"\">\n";
             introspectiondata += getAnnotations(c);
             for (Method meth: c.getDeclaredMethods()) 
                if (Modifier.isPublic(meth.getModifiers())) {
@@ -68,7 +68,7 @@ class ExportedObject
                   for (Class ex: meth.getExceptionTypes())
                      if (DBusExecutionException.class.isAssignableFrom(ex))
                         introspectiondata +=
-                           "   <annotation name=\"org.freedesktop.DBus.Method.Error\" value=\""+DBusConnection.dollar_pattern.matcher(ex.getName()).replaceAll(".")+"\" />\n";
+                           "   <annotation name=\"org.freedesktop.DBus.Method.Error\" value=\""+AbstractConnection.dollar_pattern.matcher(ex.getName()).replaceAll(".")+"\" />\n";
                   for (Type pt: meth.getGenericParameterTypes())
                      for (String s: Marshalling.getDBusType(pt)) {
                         introspectiondata += "   <arg type=\""+s+"\" direction=\"in\"/>\n";
@@ -125,6 +125,11 @@ class ExportedObject
          " <interface name=\"org.freedesktop.DBus.Introspectable\">\n"+
          "  <method name=\"Introspect\">\n"+
          "   <arg type=\"s\" direction=\"out\"/>\n"+
+         "  </method>\n"+
+         " </interface>\n";
+      introspectiondata += 
+         " <interface name=\"org.freedesktop.DBus.Peer\">\n"+
+         "  <method name=\"Ping\">\n"+
          "  </method>\n"+
          " </interface>\n";
    }

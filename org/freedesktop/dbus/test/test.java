@@ -59,6 +59,16 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    {
       this.conn = conn;
    }
+   public float testfloat(float[] f)
+   {
+      if (f.length < 4 ||
+            f[0] != 17.093f ||
+            f[1] != -23f ||
+            f[2] != 0.0f ||
+            f[3] != 31.42f)            
+         test.fail("testfloat got incorrect array");
+      return f[0];
+   }
    public void newpathtest(Path p)
    {
       if (!p.toString().equals("/new/path/test"))
@@ -438,6 +448,9 @@ public class test
          fail("getName return value incorrect");
       System.out.println("sending it to sleep");
       tri.waitawhile();
+      System.out.println("testing floats");
+      if (17.093f != tri.testfloat(new float[] { 17.093f, -23f, 0.0f, 31.42f }))
+         fail("testfloat returned the wrong thing");
       System.out.println("frobnicating");
       List<Long> ls = new Vector<Long>();
       ls.add(2L);

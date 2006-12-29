@@ -1,10 +1,12 @@
- * test floats and make them degrade nicely
+ * document string comparisons
+ * document peer2peer
+ * document low level
  * autolaunch
  * dbus-sha-1 auth
  * test tcp
  * write a bus daemon
- * peer2peer
  * test on windbus
+ * autodetection of float support
  * allow 'virtual' object handlers, so that all object paths under a certain hierarchy are handled by the same object
  * fix dbus-viewer to recurse on paths
  * extend dbus-viewer to make calls

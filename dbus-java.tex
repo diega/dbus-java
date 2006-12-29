@@ -641,11 +641,11 @@ Type$[$~$]$	&	DBUS\_TYPE\_SIGNATURE	\\
 \subsubsection{float}
 
 Currently the D-Bus reference implementation does not support a native
-single-precision floating point type. Along with the C# implementation of the
-protocol, the Java implementation supports this extension to the protocol. When
-communicating with the reference implementation, however, these will all be
-converted to doubles for transmission on the wire. In the case of systems
-supporting this extension, the type code `f' is used for floats.
+single-precision floating point type. Along with the C\# implementation of the
+protocol, the Java implementation supports this extension to the protocol. By
+default, however, the library operates in compatibility mode and converts all
+floats to the double type. To disable compatibility mode export the environment
+variable {\tt DBUS\_JAVA\_FLOATS=true}.
 
 \section{Annotations}
 

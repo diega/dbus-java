@@ -93,4 +93,11 @@ class EfficientQueue
       // check if find succeeds
       return start == end;
    }   
+   public int size()
+   {
+      if (end >= start)
+         return end-start;
+      else
+         return mv.length-start+end;
+   }
 }

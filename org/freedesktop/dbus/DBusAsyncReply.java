@@ -44,8 +44,8 @@ public class DBusAsyncReply<ReturnType>
    private DBusExecutionException error = null;
    private MethodCall mc;
    private Method me;
-   private DBusConnection conn;
-   DBusAsyncReply(MethodCall mc, Method me, DBusConnection conn)
+   private AbstractConnection conn;
+   DBusAsyncReply(MethodCall mc, Method me, AbstractConnection conn)
    {
       this.mc = mc;
       this.me = me;
@@ -64,7 +64,7 @@ public class DBusAsyncReply<ReturnType>
             } catch (DBusExecutionException DBEe) {
                error = DBEe;
             } catch (DBusException DBe) {
-               if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
+               if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
                error = new DBusExecutionException(DBe.getMessage());
             }
          }

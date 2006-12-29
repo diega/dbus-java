@@ -174,6 +174,7 @@ public class Message
       big = (Endian.BIG == endian);
       bytecounter = 0;
       serial = ++globalserial;
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Creating message with serial "+serial);
       this.type = type;
       this.flags = flags;
       preallocate(4);
@@ -408,7 +409,7 @@ public class Message
       try { 
          args = getParameters();
       } catch (DBusException DBe) {
-         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
+         if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
       }
       if (null == args || 0 == args.length)
          sb.append('}');
@@ -473,11 +474,11 @@ public class Message
                appendint(((Boolean) data).booleanValue() ? 1 : 0, 4);
                break;
             case ArgumentType.DOUBLE:
-               long l = Double.doubleToLongBits((Double) data);
+               long l = Double.doubleToLongBits(((Number) data).doubleValue());
                appendint(l, 8);
                break;
             case ArgumentType.FLOAT:
-               int rf = Float.floatToIntBits((Float) data);
+               int rf = Float.floatToIntBits(((Number) data).floatValue());
                appendint(rf, 4);
                break;
             case ArgumentType.UINT32:
@@ -513,7 +514,7 @@ public class Message
                try {
                   payloadbytes = payload.getBytes("UTF-8");
                } catch (UnsupportedEncodingException UEe) {
-                  if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(UEe);
+                  if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(UEe);
                   throw new DBusException("System does not support UTF-8 encoding");
                }
                if (Debug.debug) Debug.print(Debug.VERBOSE, "Appending String of length "+payloadbytes.length);
@@ -576,10 +577,14 @@ public class Message
                         break;
                      case ArgumentType.DOUBLE:
                         primbuf = new byte[len*algn];
-                        for (int j = 0, k = 0; j < len; j++, k += algn)
-                           marshallint(
-                                 Double.doubleToRawLongBits(((double[])data)[j]),
-                                 primbuf, k, algn);
+                        if (data instanceof float[])
+                           for (int j = 0, k = 0; j < len; j++, k += algn)
+                              marshallint(Double.doubleToRawLongBits(((float[])data)[j]),
+                                    primbuf, k, algn);
+                        else
+                           for (int j = 0, k = 0; j < len; j++, k += algn)
+                              marshallint(Double.doubleToRawLongBits(((double[])data)[j]),
+                                    primbuf, k, algn);
                         break;
                      case ArgumentType.FLOAT:
                         primbuf = new byte[len*algn];
@@ -670,7 +675,7 @@ public class Message
          }
          return i;
       } catch (ClassCastException CCe) {
-         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, CCe);
+         if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, CCe);
          throw new MarshallingException("Trying to marshall to unconvertable type (from "+data.getClass().getName()+" to "+sigb[sigofs]+")");
       }
    }
@@ -948,7 +953,7 @@ public class Message
             try {
                rv = new String(buf, ofs[1], length, "UTF-8");
             } catch (UnsupportedEncodingException UEe) {
-               if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(UEe);
+               if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(UEe);
                throw new DBusException("System does not support UTF-8 encoding");
             }
             ofs[1] += length + 1;

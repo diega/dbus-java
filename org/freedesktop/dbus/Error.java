@@ -28,16 +28,20 @@ public class Error extends Message
    {
       super(Message.Endian.BIG, Message.MessageType.ERROR, (byte) 0);
 
-      if (null == dest || null == errorName)
-         throw new MessageFormatException("Must specify destination and error name to Errors.");
+      if (null == errorName)
+         throw new MessageFormatException("Must specify error name to Errors.");
       headers.put(Message.HeaderField.REPLY_SERIAL,replyserial);
       headers.put(Message.HeaderField.ERROR_NAME,errorName);
-      headers.put(Message.HeaderField.DESTINATION,dest);
       
       Vector<Object> hargs = new Vector<Object>();
       hargs.add(new Object[] { Message.HeaderField.ERROR_NAME, new Object[] { ArgumentType.STRING_STRING, errorName } });
-      hargs.add(new Object[] { Message.HeaderField.DESTINATION, new Object[] { ArgumentType.STRING_STRING, dest } });
       hargs.add(new Object[] { Message.HeaderField.REPLY_SERIAL, new Object[] { ArgumentType.UINT32_STRING, replyserial } });
+      
+      if (null != dest) {
+         headers.put(Message.HeaderField.DESTINATION,dest);
+         hargs.add(new Object[] { Message.HeaderField.DESTINATION, new Object[] { ArgumentType.STRING_STRING, dest } });
+      }
+
       if (null != sig) {
          hargs.add(new Object[] { Message.HeaderField.SIGNATURE, new Object[] { ArgumentType.SIGNATURE_STRING, sig } });
          headers.put(Message.HeaderField.SIGNATURE,sig);
@@ -55,7 +59,7 @@ public class Error extends Message
    }
    public Error(Message m, Exception e)  throws DBusException
    {
-      this(m.getSource(), DBusConnection.dollar_pattern.matcher(e.getClass().getName()).replaceAll("."), m.getSerial(), "s", e.getMessage());
+      this(m.getSource(), AbstractConnection.dollar_pattern.matcher(e.getClass().getName()).replaceAll("."), m.getSerial(), "s", e.getMessage());
    }
    @SuppressWarnings("unchecked")
    private static Class<? extends DBusExecutionException> createExceptionClass(String name)
@@ -91,8 +95,8 @@ public class Error extends Message
          ex.setType(getName());
          return ex;
       } catch (Exception e) {
-         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
-         if (DBusConnection.EXCEPTION_DEBUG && Debug.debug && null != e.getCause()) 
+         if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
+         if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug && null != e.getCause()) 
             Debug.print(Debug.ERR, e.getCause());
          DBusExecutionException ex;
          Object[] args = null;
