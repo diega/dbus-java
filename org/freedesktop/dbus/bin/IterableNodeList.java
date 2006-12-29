@@ -1,5 +1,5 @@
 /*
-   D-Bus Java Bindings
+   D-Bus Java Implementation
    Copyright (c) 2005-2006 Matthew Johnson
 
    This program is free software; you can redistribute it and/or modify it

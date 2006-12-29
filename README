@@ -1,12 +1,12 @@
-D-Bus Java Bindings README
---------------------------
+D-Bus Java README
+-----------------
 
 Compilation and installation is described in the INSTALL file.
 
-This will install a shared object file, two jar files, three binaries and some
-documentation in the form of an HTML/PDF guide to writing D-Bus Java programs,
-JavaDoc API for the bindings and man pages for the supplied programs. Read the
-documentation, it's there for a reason.
+This will install two jar files, three binaries and some documentation in the
+form of an HTML/PDF guide to writing D-Bus Java programs, JavaDoc API for the
+library and man pages for the supplied programs. Read the documentation, it's
+there for a reason.
 
 The installed programs are documented in their respective man pages.
 
@@ -22,11 +22,11 @@ DBusViewer is a graphical tool which combines the two tools. It will list the
 names on a bus and allow you to introspect on them and save the result as Java
 interface files. This currently only introspects on the root object, however.
 
-To run a Java program using D-Bus you need to have the libdbus-java jar file in
-your classpath and both the libdbus and libdbus-java shared object files in
-your library path. With the default install paths you may have to do something
-like:
+To run a Java program using D-Bus you need to have the libdbus-java,
+libunix-java and libdebug jar files in your classpath and the libunix-java
+shared library in your library path. With the default install paths you may
+have to do something like:
 
-java -cp /usr/local/share/java/dbus.jar -Djava.library.path=/usr/lib:/usr/local/lib/jni
+java -cp /usr/local/share/java/dbus.jar:/usr/local/share/java/unix.jar:/usr/local/share/java/debug-disable.jar -Djava.library.path=/usr/local/lib/jni
 
-You may also have to export LD_LIBRARY_PATH=/usr/lib:/usr/local/lib/jni
+

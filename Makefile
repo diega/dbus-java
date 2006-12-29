@@ -11,7 +11,6 @@
 # Programs
 JAVAC?=javac
 JAVA?=java
-JAVAH?=javah
 JAVADOC?=javadoc
 JAR?=jar
 MAKE?=make

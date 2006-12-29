@@ -1,7 +1,7 @@
 \documentclass[a4paper,12pt]{article}
 
 %
-% D-Bus Java Bindings
+% D-Bus Java Implementation
 % Copyright (c) 2005-2006 Matthew Johnson
 %
 % This program is free software; you can redistribute it and/or modify it
@@ -47,37 +47,39 @@
 
 \section{Introduction}
 
-This document describes how to use the Java bindings for D-Bus. D-Bus
-is an IPC mechanism which at a low level uses message passing over
-Unix Sockets or IP. D-Bus models its messages as either function
-calls on remote objects, or signals emitted from them.
+This document describes how to use the Java implementation of D-Bus. D-Bus is
+an IPC mechanism which at a low level uses message passing over Unix Sockets or
+IP. D-Bus models its messages as either function calls on remote objects, or
+signals emitted from them.
 
-Java is an object-oriented language and these bindings attempt to
-match the D-Bus IPC model to the Java object model. The bindings also
-make heavy use of threads and exceptions. The programmer should be
-careful to take care of synchronisation issues in their code. All
-method calls by remote programs on exported objects and all signal
-handlers are run in new threads. Any calls on remote objects may
-throw {\tt DBusExecutionException}, which is a runtime exception and
-so the compiler will not remind you to handle it.
+Java is an object-oriented language and this implementation attempts to match
+the D-Bus IPC model to the Java object model. The implementation also make
+heavy use of threads and exceptions. The programmer should be careful to take
+care of synchronisation issues in their code. All method calls by remote
+programs on exported objects and all signal handlers are run in new threads.
+Any calls on remote objects may throw {\tt DBusExecutionException}, which is a
+runtime exception and so the compiler will not remind you to handle it.
 
-The Java bindings API is also documented in the
-JavaDoc\footnote{\javadocroot/}, D-Bus is
-described in the
+The Java D-Bus API is also documented in the JavaDoc\footnote{\javadocroot/},
+D-Bus is described in the
 specification\footnote{http://dbus.freedesktop.org/doc/dbus-specification.html}
-and the API
-documentation\footnote{http://dbus.freedesktop.org/doc/api/html/}.
+and the API documentation\footnote{http://dbus.freedesktop.org/doc/api/html/}.
+
+\subsection{Protocol Implementation}
+
+This library is a native Java implementation of the D-Bus protocol and not
+a wrapper around the C reference implementation. 
 
 \subsection{Dependencies}
 
-These bindings require Java 1.5-compatible VM and compiler (either
-Sun, or ecj+jamvm with classpath-generics newer than 0.19), and D-Bus
-0.62 or newer.
+This library requires Java 1.5-compatible VM and compiler (either Sun, or
+ecj+jamvm with classpath-generics newer than 0.19) and the unix socket, debug
+and hexdump libraries from \url{http://www.matthew.ath.cx/projects/java/}.
 
 \subsection{D-Bus Terminology}
 
 D-Bus has several notions which are exposed to the users of the Java
-bindings.
+implementation.
 
 \subsubsection{Bus Names}
 
@@ -271,6 +273,7 @@ public class DBusImpl implements DBus
       names.add(name);
       return new UInt32(0);
    }
+   public boolean isRemote() { return false; }
 }
 \end{verbatim}
 \end{center}
@@ -304,6 +307,7 @@ classes\footnote{\javadocroot/org/freedesktop/dbus/test/TestSignalInterface.html
 package org.freedesktop;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
+import org.freedesktop.dbus.exceptions.DBusException;
 
 public interface DBus extends DBusInterface
 {
@@ -339,7 +343,7 @@ report an unknown method you would define an exception as in figure
 \begin{center}
 \begin{verbatim}
 package org.freedesktop.DBus.Error;
-import org.freedesktop.dbus.DBusExecutionException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 public class UnknownMethod extends DBusExecutionException
 {
@@ -423,7 +427,7 @@ public class Handler extends DBusSigHandler<DBus.NameAcquired>
 \section{D-Bus Types}
 
 D-Bus supports a number of types in its messages, some which Java
-supports natively, and some which it doesn't. These bindings provide
+supports natively, and some which it doesn't. This library provides
 a way of modelling the extra D-Bus Types in Java. The full list of
 types and what D-Bus type they map to is in table \ref{table:types}.
 
@@ -434,7 +438,7 @@ All of Java's basic types are supported as parameters and return types to method
 \subsubsection{Unsigned Types}
 
 D-Bus, like C and similar languages, has a notion of unsigned numeric
-types. These bindings supply {\tt
+types. The library supplies {\tt
 UInt16\footnote{\javadocroot/org/freedesktop/dbus/UInt16.html}}, {\tt
 UInt32} and {\tt UInt64} classes to represent these new basic types.
 
@@ -449,7 +453,7 @@ You can send arrays of any valid D-Bus Type over D-Bus. These can
 either be declared in Java as arrays (e.g. \verb&Integer[]& or
 \verb&int[]&) or as Lists (e.g. \verb&List<String>&). All lists {\bf
 must} be parameterised with their type in the source (reflection on
-this is used by the bindings to determine their type).
+this is used by the library to determine their type).
 
 \subsection{Maps}
 
@@ -482,7 +486,7 @@ public <T> int hash(T v);
 D-Bus has a struct type, which is a collection of other types. Java
 does not have an analogue of this other than fields in classes, and
 due to the limitation of Java reflection this is not sufficient. The
-bindings declare a {\tt
+library declares a {\tt
 Struct\footnote{\javadocroot/org/freedesktop/dbus/Struct.html}} class which can be used to create structs.
 To define a struct you extend the {\tt Struct} class and define fields for each member of the struct.
 These fields then need to be annotated in the order which they appear in the struct (class fields do not have a defined order). You must also define a single constructor which takes the contents of he struct in order. This is best demonstrated by an example.
@@ -537,8 +541,8 @@ generated from D-Bus introspection data.
 \subsection{Objects}
 
 You can pass references to exportable objects round using their object paths.
-To do this in Java you declare a type of {\tt DBusInterface}. When the bindings
-receive an object path they will automatically convert it into the object you
+To do this in Java you declare a type of {\tt DBusInterface}. When the library
+receive- an object path it will automatically convert it into the object you
 are exporting with that object path. You can pass remote objects back to their
 processes in a similar fashion.
 
@@ -634,6 +638,15 @@ Type$[$~$]$	&	DBUS\_TYPE\_SIGNATURE	\\
 \label{table:types}
 \end{table}
 
+\subsubsection{float}
+
+Currently the D-Bus reference implementation does not support a native
+single-precision floating point type. Along with the C# implementation of the
+protocol, the Java implementation supports this extension to the protocol. When
+communicating with the reference implementation, however, these will all be
+converted to doubles for transmission on the wire. In the case of systems
+supporting this extension, the type code `f' is used for floats.
+
 \section{Annotations}
 
 You can annotate your D-Bus methods as in figure \ref{fig:annotation} to provide hints to other users of your API. Common annotations are listed in table \ref{tab:annotations}.
@@ -681,8 +694,8 @@ org.freedesktop.DBus.Method.Error & This method may throw the listed Exception\\
 
 Some people may want to be able to pass their own objects over D-Bus. Obviously
 only raw D-Bus types can be sent on the message bus itself, but the Java
-bindings allow the creation of serializable objects which can be passed to
-D-Bus functions and will be converted to/from D-Bus types by the bindings.
+implementation allows the creation of serializable objects which can be passed to
+D-Bus functions and will be converted to/from D-Bus types by the library.
 
 To create such a class you must implement the {\tt
 DBusSerializable\footnote{\javadocroot/org/freedesktop/dbus/DBusSerializable.html}}
@@ -707,7 +720,6 @@ import java.util.List;
 import java.util.Vector;
 
 import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusSerializable;
 
 public class TestSerializable implements DBusSerializable
@@ -728,11 +740,9 @@ public class TestSerializable implements DBusSerializable
       this.b = b;
       this.c = new Vector<Integer>(c);
    }
-   public Object[] serialize() throws DBusException
+   public Object[] serialize() 
    {
-      return DBusConnection.convertParameters(
-            new Object[] { a, b, c }, 
-            new Type[] { TestSerializable.class });
+      return new Object[] { a, b, c };
    }
    public int getInt() { return a; }
    public String getString() { return b; }
@@ -753,13 +763,13 @@ public class TestSerializable implements DBusSerializable
 \section{CreateInterface}
 \label{sec:create}
 
-D-Bus provides a method to get introspection data on a remote object,
-which describes the interfaces, methods and signals it provides.
-This introspection data is in XML
+D-Bus provides a method to get introspection data on a remote object, which
+describes the interfaces, methods and signals it provides.  This introspection
+data is in XML
 format\footnote{http://dbus.freedesktop.org/doc/dbus-specification.html\#introspection-format}.
-The Java bindings mechanism automatically provides XML introspection data on all
-objects which are exported by it.  Introspection data can be used to create
-Java interface definitions automatically.
+The library automatically provides XML introspection data on all objects which
+are exported by it.  Introspection data can be used to create Java interface
+definitions automatically.
 
 The {\tt
 CreateInterface\footnote{\javadocroot/org/freedesktop/dbus/CreateInterface.html}}
@@ -782,9 +792,34 @@ correct directory structure will be created.
 
 \section{Debugging}
 
-Since version 1.4 of the bindings there has been a facility to print all the
-messages the bindings are sending or receiving on the bus. To enable this, set
-the {\tt DBUS\_JAVA\_DEBUG} environment variable before running your program.
+It is possible to enable debugging in the library. This will be a lot slower,
+but can print a lot of useful information for debugging your program.
+
+To enable a debug build compile with {\tt DEBUG=enable}. This will then need to be
+enabled at runtime by using the debug jar with debugging enabled (usually
+installed as debug-enable.jar alongside the normal jar).
+
+Running a program which uses this library will print some informative messages.
+More verbose debug information can be got by supplying a custom debug
+configuration file. This should be placed in the file {\tt debug.conf} and has the
+format:
+
+\begin{verbatim}
+classname = LEVEL
+\end{verbatim}
+
+Where {\tt classname} is either the special word {\tt ALL} or a full class name
+like {\tt org.freedesktop.dbus} and {\tt LEVEL} is one of {\tt NONE}, {\tt
+CRIT}, {\tt ERR}, {\tt WARN}, {\tt INFO}, {\tt DEBUG}, {\tt VERBOSE}, {\tt
+YES}, {\tt ALL} or {\tt TRUE}. This will set the debug level for a particular
+class. Any messages from that class at that level or higher will be printed.
+Verbose debugging is extremely verbose.
+
+In addition, setting the environment variable {\tt
+DBUS\_JAVA\_EXCEPTION\_DEBUG} will cause all exceptions which are handled
+internally to have their stack trace printed when they are handled. This will
+happen unless debugging has been disabled for that class.
+
 
 \section{Examples}
 
@@ -817,9 +852,9 @@ public interface Bluemon extends DBusInterface
 \begin{center}
 \begin{verbatim}
 package cx.ath.matthew.bluemon;
-import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
+import org.freedesktop.dbus.exceptions.DBusException;
 public interface ProximitySignal extends DBusInterface
 {
    public static class Connect extends DBusSignal
@@ -881,10 +916,10 @@ public final class Triplet <A,B,C> extends Tuple
 \begin{verbatim}
 package cx.ath.matthew.bluemon;
 import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.UInt32;
+import org.freedesktop.dbus.exceptions.DBusException;
 
 public class Query {
    public static void main(String[] args) {
@@ -934,9 +969,9 @@ public class Query {
 package cx.ath.matthew.bluemon;
 
 import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.DBusException;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.DBusSignal;
+import org.freedesktop.dbus.exceptions.DBusException;
 
 public class Client implements DBusSigHandler
 {

@@ -1,7 +1,21 @@
 Version 2.0:
 	
 	* Remove libdbus-1 dependency and talk the wire protocol directly
-	* TODO: put more here
+	* Add dependency on http://www.matthew.ath.cx/projects/java/ unix, debug
+     and hexdump libraries
+	* API changes:
+		* Exceptions (including DBusException and DBusExecutionException) moved
+	 	  to the org.freedesktop.dbus.exceptions package.
+		* Convert/deserialize and dbus<->java type conversion code moved from
+		  org.freedesktop.dbus.DBusConnection to org.freedesktop.dbus.Marshalling.
+		* Types moved to the org.freedesktop.dbus.types package.
+		* All message metadata methods have been moved to the superclass and
+		  getObjectPath() has been renamed to getPath().
+		* Deprecated method registerService has been removed.
+		* getUniqueName() and getNames() methods added to get the bus names
+		  associated with this connection.
+		* Access to the low-level API added.
+	* Change all documentation to refer to 'implementation' not 'binding'
 
 Version 1.13:
 

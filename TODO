@@ -1,7 +1,4 @@
- * document debugging
- * document API changes
- * document build and dependencies
- * test floats
+ * test floats and make them degrade nicely
  * autolaunch
  * dbus-sha-1 auth
  * test tcp
