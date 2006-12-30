@@ -24,6 +24,7 @@ Version 2.0:
 	* Degrade floats to doubles when DBUS_JAVA_FLOATS is not set
 	* add DBus.Peer interface to standard introspection data
 	* Document peer to peer and low level.
+	* Fix TCP and SHA-1 auth
 
 Version 1.13:
 
