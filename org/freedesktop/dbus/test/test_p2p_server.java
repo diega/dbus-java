@@ -19,6 +19,7 @@ import java.util.Map;
 
 import org.freedesktop.dbus.DirectConnection;
 import org.freedesktop.dbus.Path;
+import org.freedesktop.dbus.Transport;
 import org.freedesktop.dbus.UInt16;
 
 public class test_p2p_server implements TestRemoteInterface
@@ -61,6 +62,7 @@ public class test_p2p_server implements TestRemoteInterface
    public static void main(String[] args) throws Exception
    {
       String address = DirectConnection.createDynamicSession();
+      //String address = "tcp:host=localhost,port=12344,guid="+Transport.genGUID();
       PrintWriter w = new PrintWriter(new FileOutputStream("address"));
       w.println(address);
       w.flush();

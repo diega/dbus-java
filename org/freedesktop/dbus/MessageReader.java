@@ -13,6 +13,7 @@ package org.freedesktop.dbus;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
+import java.net.SocketTimeoutException;
 
 import cx.ath.matthew.debug.Debug;
 import cx.ath.matthew.utils.Hexdump;
@@ -39,7 +40,8 @@ public class MessageReader
       /* Read the 12 byte fixed header, retrying as neccessary */
       if (null == buf) { buf = new byte[12]; len[0] = 0; }
       if (len[0] < 12) {
-         rv = in.read(buf, len[0], 12-len[0]);
+         try { rv = in.read(buf, len[0], 12-len[0]); }
+         catch (SocketTimeoutException STe) { return null; }
          if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
          len[0] += rv;
       }
@@ -61,7 +63,8 @@ public class MessageReader
       /* Read the length of the variable header */
       if (null == tbuf) { tbuf = new byte[4]; len[1] = 0; }
       if (len[1] < 4) {
-         rv = in.read(tbuf, len[1], 4-len[1]);
+         try { rv = in.read(tbuf, len[1], 4-len[1]); }
+         catch (SocketTimeoutException STe) { return null; }
          if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
          len[1] += rv;
       }
@@ -86,7 +89,8 @@ public class MessageReader
          len[2] = 0; 
       }
       if (len[2] < headerlen) {
-         rv = in.read(header, 8+len[2], headerlen-len[2]);
+         try { rv = in.read(header, 8+len[2], headerlen-len[2]); }
+         catch (SocketTimeoutException STe) { return null; }
          if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
          len[2] += rv;
       }
@@ -100,7 +104,8 @@ public class MessageReader
       if (null == body) bodylen = (int) Message.demarshallint(buf, 4, endian, 4);
       if (null == body) { body=new byte[bodylen]; len[3] = 0; }
       if (len[3] < body.length) {
-         rv = in.read(body, len[3], body.length-len[3]);
+         try { rv = in.read(body, len[3], body.length-len[3]); }
+         catch (SocketTimeoutException STe) { return null; }
          if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
          len[3] += rv;
       }
