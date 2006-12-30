@@ -237,6 +237,8 @@ public class Message
    {
       if (null == buf) return;
       if (preallocated > 0) {
+         if (paofs+buf.length > pabuf.length)
+            throw new RuntimeException("Array index out of bounds, paofs="+paofs+", pabuf.length="+pabuf.length+", buf.length="+buf.length);
          System.arraycopy(buf, 0, pabuf, paofs, buf.length);
          paofs += buf.length;
          preallocated -= buf.length;
@@ -744,7 +746,7 @@ public class Message
     */
    public void append(String sig, Object... data) throws DBusException
    {
-      if (Debug.debug) Debug.print(Debug.VERBOSE, "Appending sig: "+sig+" data: "+Arrays.deepToString(data));
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Appending sig: "+sig+" data: "+Arrays.deepToString(data));
       byte[] sigb = sig.getBytes();
       int j = 0;
       for (int i = 0; i < sigb.length; i++) {
@@ -1068,7 +1070,7 @@ public class Message
    { 
       if (null == args && null != body) {
          String sig = (String) headers.get(HeaderField.SIGNATURE);
-         if (null != sig) {
+         if (null != sig && 0 != body.length) {
             args = extract(sig, body, 0);
          } else args = new Object[0];
       }
@@ -1082,8 +1084,9 @@ public class Message
    {
       if (null != body) {
          wiredata = new byte[BUFFERINCREMENT][];
+         bytecounter = 0;
          preallocate(12);
-         append("yyyyuu", big, type, flags, protover, bodylen, serial);
+         append("yyyyuu", big ? Endian.BIG : Endian.LITTLE, type, flags, protover, bodylen, serial);
          headers.put(HeaderField.SENDER, source);
          Object[][] newhead = new Object[headers.size()][];
          int i = 0;
@@ -1091,6 +1094,7 @@ public class Message
             newhead[i] = new Object[2];
             newhead[i][0] = b;
             newhead[i][1] = headers.get(b);
+            i++;
          }
          append("a(yv)", (Object) newhead);
          appendBytes(body);

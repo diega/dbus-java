@@ -197,7 +197,7 @@ public interface DBus extends DBusInterface
       public final String new_owner;
       public NameOwnerChanged(String path, String name, String old_owner, String new_owner) throws DBusException
       {
-         super(path, name, old_owner, new_owner);
+         super(path, new Object[] { name, old_owner, new_owner });
          this.name = name;
          this.old_owner = old_owner;
          this.new_owner = new_owner;

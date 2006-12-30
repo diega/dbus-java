@@ -22,7 +22,9 @@ import org.freedesktop.dbus.MessageWriter;
 import org.freedesktop.dbus.MethodCall;
 import org.freedesktop.dbus.MethodReturn;
 import org.freedesktop.dbus.Transport;
+import org.freedesktop.dbus.exceptions.DBusException;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,6 +66,12 @@ public class DBusDaemon extends Thread
    }
    private void send(Connstruct c, Message m)
    {
+      if (Debug.debug){
+         if (null == c)
+            Debug.print(Debug.DEBUG, "Queing message "+m+" for all connections");
+         else
+            Debug.print(Debug.DEBUG, "Queing message "+m+" for "+c.unique);
+      }
       // send to all connections
       if (null == c) {
          Map<Connstruct, Queue<Message>> local;
@@ -87,6 +95,7 @@ public class DBusDaemon extends Thread
    }
    private void serverHandleMessage(Connstruct c, Message m) throws DBusException
    {
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Handling message "+m+" from "+c.unique);
       if (!(m instanceof MethodCall)) return;
       if ("Hello".equals(m.getName())) {
          synchronized (c) {
@@ -102,21 +111,40 @@ public class DBusDaemon extends Thread
          synchronized (names) {
             names.put(c.unique, c);
          }
-         send(c, new MethodReturn((MethodCall) m, "s", c.unique));
-         send(c, new DBus.NameAcquired("/org/freedesktop/DBus", c.unique));
-         send(null, new DBus.NameOwnerChanged("/org/freedesktop/DBus", c.unique, "", c.unique));
+         if (Debug.debug) Debug.print(Debug.DEBUG, "Client "+c.unique+" registered");
+         send(c, new MethodReturn("org.freedesktop.DBus", (MethodCall) m, "s", c.unique));
+         send(c, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameAcquired", "s", c.unique));
+         send(null, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop. DBus", "NameOwnerChanged", "sss", c.unique, "", c.unique));
       }
       else if ("ListNames".equals(m.getName())) {
          String[] ns;
          synchronized (names) {
             ns = names.keySet().toArray(new String[0]);
          }
-         send(c, new MethodReturn((MethodCall) m, "as", (Object) ns));
+         send(c, new MethodReturn("org.freedesktop.DBus", (MethodCall) m, "as", (Object) ns));
+      } 
+      else if ("AddMatch".equals(m.getName())) {
+         send(c, new MethodReturn("org.freedesktop.DBus", (MethodCall) m, null));
+      }
+      else if ("RemoveMatch".equals(m.getName())) {
+         send(c, new MethodReturn("org.freedesktop.DBus", (MethodCall) m, null));
+      } 
+      else if ("GetNameOwner".equals(m.getName())) {
+         Object[] args = m.getParameters();
+         if (null == args || args.length < 1 || !(args[0] instanceof String)) {
+            send(c,new Error("org.freedesktop.DBus", c.unique, "org.freedesktop.DBus.Error.GeneralError", m.getSerial(), "s", "GetNameOwner arguments invalid"));
+            return;
+         }
+         Connstruct owner = names.get((String) args[0]);
+         if (null == owner) 
+            send(c, new MethodReturn("org.freedesktop.DBus", (MethodCall) m, "s", ""));
+         else
+            send(c, new MethodReturn("org.freedesktop.DBus", (MethodCall) m, "s", owner.unique));
       } 
       else if ("RequestName".equals(m.getName())) {
          Object[] args = m.getParameters();
          if (null == args || args.length < 2 || !(args[0] instanceof String)) {
-            send(c,new Error(c.unique, "org.freedesktop.DBus.Error.GeneralError", m.getSerial(), "s", "RequestName arguments invalid"));
+            send(c,new Error("org.freedesktop.DBus", c.unique, "org.freedesktop.DBus.Error.GeneralError", m.getSerial(), "s", "RequestName arguments invalid"));
             return;
          }
          boolean exists = false;
@@ -125,21 +153,24 @@ public class DBusDaemon extends Thread
                names.put((String) args[0], c);
          }
          if (exists) {
-            send(c, new MethodReturn((MethodCall) m, "u", DBus.DBUS_REQUEST_NAME_REPLY_EXISTS));
+            send(c, new MethodReturn("org.freedesktop.DBus", (MethodCall) m, "u", DBus.DBUS_REQUEST_NAME_REPLY_EXISTS));
             return;
          }
-         send(c, new MethodReturn((MethodCall) m, "s", DBus.DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER));
-         send(c, new DBus.NameAcquired("/org/freedesktop/DBus", (String) args[0]));
-         send(null, new DBus.NameOwnerChanged("/org/freedesktop/DBus", (String) args[0], "", c.unique));
+         send(c, new MethodReturn("org.freedesktop.DBus", (MethodCall) m, "u", DBus.DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER));
+         send(c, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop. DBus", "NameAcquired", "s", (String) args[0]));
+         send(null, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop. DBus", "NameOwnerChanged", "sss", (String) args[0], "", c.unique));
       }
 
       // send an error
       else {
-         send(c,new Error(c.unique, "org.freedesktop.DBus.Error.UnknownMethod", m.getSerial(), "s", "This service does not support the "+m.getName()+" Method"));
+         send(c,new Error("org.freedesktop.DBus", c.unique, "org.freedesktop.DBus.Error.UnknownMethod", m.getSerial(), "s", "This service does not support the "+m.getName()+" Method"));
       }
    }
    private List<Connstruct> findSignalMatches(DBusSignal sig)
    {
+      synchronized (conns) {
+         return (List<Connstruct>) conns.clone();
+      }
    }
    public void run()
    {
@@ -153,37 +184,36 @@ public class DBusDaemon extends Thread
 
             // check if we have a message
             if (null != m) {
-
                // check if they have hello'd
                if (null == c.unique 
                      && (!(m instanceof MethodCall) 
                         || !"org.freedesktop.DBus".equals(m.getDestination())
                         || !"Hello".equals(m.getName()))) {
-                  send(c,new Error(null, "org.freedesktop.DBus.Error.AccessDenied", m.getSerial(), "s", "You must send a Hello message"));
+                  send(c,new Error("org.freedesktop.DBus", null, "org.freedesktop.DBus.Error.AccessDenied", m.getSerial(), "s", "You must send a Hello message"));
                } else {
 
                   try {
-                     m.setSource(c.unique);
+                     if (null != c.unique) m.setSource(c.unique);
                   } catch (DBusException DBe) {
                      if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, DBe);
-                     send(c,new Error(null, "org.freedesktop.DBus.Error.GeneralError", m.getSerial(), "s", "Sending message failed"));
+                     send(c,new Error("org.freedesktop.DBus", null, "org.freedesktop.DBus.Error.GeneralError", m.getSerial(), "s", "Sending message failed"));
                   }
 
                   if ("org.freedesktop.DBus".equals(m.getDestination())) {
                      serverHandleMessage(c, m);
-                  }
-
-                  if (m instanceof DBusSignal) {
-                     List<Connstruct> list = findSignalMatches((DBusSignal) m);
-                     for (Connstruct d: list)
-                        send(d, m);
                   } else {
-                     Connstruct dest = names.get(m.getDestination());
+                     if (m instanceof DBusSignal) {
+                        List<Connstruct> list = findSignalMatches((DBusSignal) m);
+                        for (Connstruct d: list)
+                                           send(d, m);
+                     } else {
+                        Connstruct dest = names.get(m.getDestination());
 
-                     if (null == dest) {
-                        send(c, new Error(null, "org.freedesktop.DBus.Error.ServiceUnknown", m.getSerial(), "s", "The name `"+m.getDestination()+"'does not exist"));
-                     } else
-                        send(dest, m);
+                        if (null == dest) {
+                           send(c, new Error("org.freedesktop.DBus", null, "org.freedesktop.DBus.Error.ServiceUnknown", m.getSerial(), "s", "The name `"+m.getDestination()+"'does not exist"));
+                        } else
+                           send(dest, m);
+                     }
                   }
                }
             }
@@ -191,6 +221,7 @@ public class DBusDaemon extends Thread
             synchronized (queues) {
                q = queues.get(c);
             }
+
             synchronized (q) {
                while (q.size() > 0) {
                   Message tosend = q.poll();
@@ -209,7 +240,9 @@ public class DBusDaemon extends Thread
    }
    private void removeConnection(Connstruct c)
    {
-      c.sock.close();
+      try {
+         c.sock.close();
+      } catch (IOException IOe) {}
       synchronized(conns) {
          conns.remove(c);
       }
@@ -217,19 +250,23 @@ public class DBusDaemon extends Thread
          queues.remove(c);
       }
       synchronized(names) {
+         List<String> toRemove = new Vector<String>();
          for (String name: names.keySet()) 
             if (names.get(name) == c) {
-               names.remove(name);
+               toRemove.add(name);
                try {
-                  send(null, new DBus.NameOwnerChanged("/org/freedesktop/DBus", name, c.unique, ""));
+                  send(null, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameOwnerChanged", "sss", name, c.unique, ""));
                } catch (DBusException DBe) {
                   if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, DBe);
                }
             }
+         for (String name: toRemove)
+            names.remove(name);
       }
    }
    public void addSock(UnixSocket us)
    {
+      if (Debug.debug) Debug.print(Debug.INFO, "New Client");
       Connstruct c = new Connstruct(us);
       synchronized (conns) {
          conns.add(c);
@@ -254,6 +291,7 @@ public class DBusDaemon extends Thread
          else syntax();
 
       String addr = DirectConnection.createDynamicSession();
+      System.out.println(addr);
       BusAddress address = new BusAddress(addr);
       UnixServerSocket uss = new UnixServerSocket(new UnixSocketAddress(address.getParameter("abstract"), true)); 
       DBusDaemon d = new DBusDaemon();

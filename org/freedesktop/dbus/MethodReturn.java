@@ -19,13 +19,22 @@ public class MethodReturn extends Message
    MethodReturn() { }
    public MethodReturn(String dest, long replyserial, String sig, Object... args) throws DBusException
    {
+      this(null, dest, replyserial, sig, args);
+   }
+   public MethodReturn(String source, String dest, long replyserial, String sig, Object... args) throws DBusException
+   {
       super(Message.Endian.BIG, Message.MessageType.METHOD_RETURN, (byte) 0);
 
       headers.put(Message.HeaderField.REPLY_SERIAL,replyserial);
 
       Vector<Object> hargs = new Vector<Object>();
       hargs.add(new Object[] { Message.HeaderField.REPLY_SERIAL, new Object[] { ArgumentType.UINT32_STRING, replyserial } });
-
+      
+      if (null != source) {
+         headers.put(Message.HeaderField.SENDER,source);
+         hargs.add(new Object[] { Message.HeaderField.SENDER, new Object[] { ArgumentType.STRING_STRING, source } });
+      }
+ 
       if (null != dest) {
          headers.put(Message.HeaderField.DESTINATION,dest);
          hargs.add(new Object[] { Message.HeaderField.DESTINATION, new Object[] { ArgumentType.STRING_STRING, dest } });
@@ -48,7 +57,11 @@ public class MethodReturn extends Message
    }
    public MethodReturn(MethodCall mc, String sig, Object... args) throws DBusException
    {
-      this(mc.getSource(), mc.getSerial(), sig, args);
+      this(null, mc, sig, args);
+   }
+   public MethodReturn(String source, MethodCall mc, String sig, Object... args) throws DBusException
+   {
+      this(source, mc.getSource(), mc.getSerial(), sig, args);
       this.call = mc;
    }
    MethodCall call;

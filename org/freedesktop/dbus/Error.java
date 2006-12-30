@@ -26,6 +26,10 @@ public class Error extends Message
    Error() { }
    public Error(String dest, String errorName, long replyserial, String sig, Object... args) throws DBusException
    {
+      this(null, dest, errorName, replyserial, sig, args);
+   }
+   public Error(String source, String dest, String errorName, long replyserial, String sig, Object... args) throws DBusException
+   {
       super(Message.Endian.BIG, Message.MessageType.ERROR, (byte) 0);
 
       if (null == errorName)
@@ -36,7 +40,12 @@ public class Error extends Message
       Vector<Object> hargs = new Vector<Object>();
       hargs.add(new Object[] { Message.HeaderField.ERROR_NAME, new Object[] { ArgumentType.STRING_STRING, errorName } });
       hargs.add(new Object[] { Message.HeaderField.REPLY_SERIAL, new Object[] { ArgumentType.UINT32_STRING, replyserial } });
-      
+            
+      if (null != source) {
+         headers.put(Message.HeaderField.SENDER,source);
+         hargs.add(new Object[] { Message.HeaderField.SENDER, new Object[] { ArgumentType.STRING_STRING, source } });
+      }
+ 
       if (null != dest) {
          headers.put(Message.HeaderField.DESTINATION,dest);
          hargs.add(new Object[] { Message.HeaderField.DESTINATION, new Object[] { ArgumentType.STRING_STRING, dest } });

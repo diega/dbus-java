@@ -38,7 +38,7 @@ public class test_low_level
       conn.mout.writeMessage(m);
       m = conn.min.readMessage();
       Debug.print(m);
-      m = new DBusSignal("/foo", "org.foo", "Foo", null);
+      m = new DBusSignal(null, "/foo", "org.foo", "Foo", null);
       conn.mout.writeMessage(m);
       m = conn.min.readMessage();
       Debug.print(m);

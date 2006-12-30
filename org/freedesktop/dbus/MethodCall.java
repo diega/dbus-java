@@ -21,6 +21,10 @@ public class MethodCall extends Message
    MethodCall() { }
    public MethodCall(String dest, String path, String iface, String member, byte flags, String sig, Object... args) throws DBusException
    {
+      this(null, dest, path, iface, member, flags, sig, args);
+   }
+   public MethodCall(String source, String dest, String path, String iface, String member, byte flags, String sig, Object... args) throws DBusException
+   {
       super(Message.Endian.BIG, Message.MessageType.METHOD_CALL, flags);
 
       if (null == member || null == path)
@@ -31,6 +35,11 @@ public class MethodCall extends Message
       Vector<Object> hargs = new Vector<Object>();
 
       hargs.add(new Object[] { Message.HeaderField.PATH, new Object[] { ArgumentType.OBJECT_PATH_STRING, path } });
+      
+      if (null != source) {
+         headers.put(Message.HeaderField.SENDER,source);
+         hargs.add(new Object[] { Message.HeaderField.SENDER, new Object[] { ArgumentType.STRING_STRING, source } });
+      }
       
       if (null != dest) {
          headers.put(Message.HeaderField.DESTINATION,dest);

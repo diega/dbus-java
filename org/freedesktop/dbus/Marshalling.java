@@ -176,6 +176,8 @@ public class Marshalling
             DBusInterface.class.isAssignableFrom((Class) c)) out[level].append((char) Message.ArgumentType.OBJECT_PATH);
       else if (c instanceof Class && 
             Path.class.equals((Class) c)) out[level].append((char) Message.ArgumentType.OBJECT_PATH);
+      else if (c instanceof Class && 
+            ObjectPath.class.equals((Class) c)) out[level].append((char) Message.ArgumentType.OBJECT_PATH);
       else if (c instanceof Class && ((Class) c).isArray()) {
          if (Type.class.equals(((Class) c).getComponentType()))
             out[level].append((char) Message.ArgumentType.SIGNATURE);

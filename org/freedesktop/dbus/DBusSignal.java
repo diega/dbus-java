@@ -26,7 +26,7 @@ import cx.ath.matthew.debug.Debug;
 public class DBusSignal extends Message
 {
    DBusSignal() { }
-   public DBusSignal(String path, String iface, String member, String sig, Object... args) throws DBusException
+   public DBusSignal(String source, String path, String iface, String member, String sig, Object... args) throws DBusException
    {
       super(Message.Endian.BIG, Message.MessageType.SIGNAL, (byte) 0);
 
@@ -40,7 +40,12 @@ public class DBusSignal extends Message
       hargs.add(new Object[] { Message.HeaderField.PATH, new Object[] { ArgumentType.OBJECT_PATH_STRING, path } });
       hargs.add(new Object[] { Message.HeaderField.INTERFACE, new Object[] { ArgumentType.STRING_STRING, iface } });
       hargs.add(new Object[] { Message.HeaderField.MEMBER, new Object[] { ArgumentType.STRING_STRING, member } });
-
+      
+      if (null != source) {
+         headers.put(Message.HeaderField.SENDER,source);
+         hargs.add(new Object[] { Message.HeaderField.SENDER, new Object[] { ArgumentType.STRING_STRING, source } });
+      }
+ 
       if (null != sig) {
          hargs.add(new Object[] { Message.HeaderField.SIGNATURE, new Object[] { ArgumentType.SIGNATURE_STRING, sig } });
          headers.put(Message.HeaderField.SIGNATURE,sig);
