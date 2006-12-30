@@ -12,7 +12,9 @@ public class test_low_level
    public static void main(String[] args) throws Exception
    {
       Debug.setHexDump(true);
-      BusAddress address = new BusAddress(System.getenv("DBUS_SESSION_BUS_ADDRESS"));
+      String addr = System.getenv("DBUS_SESSION_BUS_ADDRESS");
+      Debug.print(addr);
+      BusAddress address = new BusAddress(addr);
       Debug.print(address);
 
       Transport conn = new Transport(address);

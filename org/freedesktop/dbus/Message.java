@@ -138,6 +138,7 @@ public class Message
    protected byte protover;
    private Object[] args;
    private byte[] body;
+   private long bodylen = 0;
    private int preallocated = 0;
    private int paofs = 0;
    private byte[] pabuf;
@@ -207,6 +208,7 @@ public class Message
       wiredata[2] = body;
       this.body = body;
       bufferuse = 3;
+      bodylen = ((Number) extract(Message.ArgumentType.UINT32_STRING, msg, 4)[0]).longValue();
       serial = ((Number) extract(Message.ArgumentType.UINT32_STRING, msg, 8)[0]).longValue();
       bytecounter = msg.length+headers.length+body.length;
       if (Debug.debug) Debug.print(Debug.VERBOSE, headers);
@@ -1073,4 +1075,25 @@ public class Message
       return args; 
    }
    protected void setArgs(Object[] args) { this.args = args; }
+   /**
+    * Warning, do not use this method unless you really know what you are doing.
+    */
+   public void setSource(String source) throws DBusException
+   {
+      if (null != body) {
+         wiredata = new byte[BUFFERINCREMENT][];
+         preallocate(12);
+         append("yyyyuu", big, type, flags, protover, bodylen, serial);
+         headers.put(HeaderField.SENDER, source);
+         Object[][] newhead = new Object[headers.size()][];
+         int i = 0;
+         for (Byte b: headers.keySet()) {
+            newhead[i] = new Object[2];
+            newhead[i][0] = b;
+            newhead[i][1] = headers.get(b);
+         }
+         append("a(yv)", (Object) newhead);
+         appendBytes(body);
+      }
+   }
 }

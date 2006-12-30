@@ -43,7 +43,7 @@ DEBUG=disable
 VERSION = 2.0
 RELEASEVERSION = 2.0
 
-all: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar bin/ListDBus bin/CreateInterface bin/DBusViewer
+all: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar bin/DBusDaemon bin/ListDBus bin/CreateInterface bin/DBusViewer
 
 clean:
 	rm -rf doc bin classes
@@ -105,6 +105,9 @@ doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
 bin/%: %.sh .bin
 	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%JAVAUNIXJARPATH\%,$(JAVAUNIXJARDIR),;s,\%JAVAUNIXLIBPATH\%,$(JAVAUNIXLIBDIR),' < $< > $@
 
+rundaemon: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.bin.DBusDaemon
+
 testrun: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
 
@@ -135,13 +138,13 @@ profilerun: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 viewer: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-viewer-$(VERSION).jar org.freedesktop.dbus.viewer.DBusViewer
 
-low-level: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	( PASS=false; \
-	  dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
-	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  $(MAKE) low-level-run ; \
-	  kill $$(cat pid) )
+#dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
 
+low-level: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+	( $(MAKE) -s rundaemon >address & \
+	  sleep 1; \
+	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
+	  $(MAKE) low-level-run )
 
 check: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	( PASS=false; \
@@ -186,12 +189,12 @@ profile: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 uninstall: 
 	rm -f $(DESTDIR)$(JARPREFIX)/dbus.jar $(DESTDIR)$(JARPREFIX)/dbus-$(VERSION).jar $(DESTDIR)$(JARPREFIX)/dbus-viewer.jar $(DESTDIR)$(JARPREFIX)/dbus-viewer-$(VERSION).jar
 	rm -rf $(DESTDIR)$(DOCPREFIX)
-	rm -f $(DESTDIR)$(MANPREFIX)/CreateInterface.1 $(DESTDIR)$(MANPREFIX)/ListDBus.1  $(DESTDIR)$(MANPREFIX)/DBusViewer.1
-	rm -f $(DESTDIR)$(BINPREFIX)/CreateInterface $(DESTDIR)$(BINPREFIX)/ListDBus  $(DESTDIR)$(BINPREFIX)/DBusViewer
+	rm -f $(DESTDIR)$(MANPREFIX)/CreateInterface.1 $(DESTDIR)$(MANPREFIX)/ListDBus.1  $(DESTDIR)$(MANPREFIX)/DBusViewer.1 $(DESTDIR)$(MANPREFIX)/DBusDaemon.1
+	rm -f $(DESTDIR)$(BINPREFIX)/CreateInterface $(DESTDIR)$(BINPREFIX)/ListDBus  $(DESTDIR)$(BINPREFIX)/DBusViewer $(DESTDIR)$(BINPREFIX)/DBusDaemon
 
 install: install-bin install-man
 
-install-bin: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar bin/CreateInterface bin/ListDBus bin/DBusViewer 
+install-bin: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar bin/CreateInterface bin/ListDBus bin/DBusViewer bin/DBusDaemon 
 	install -d $(DESTDIR)$(JARPREFIX)
 	install -m 644 libdbus-java-$(VERSION).jar $(DESTDIR)$(JARPREFIX)/dbus-$(VERSION).jar
 	install -m 644 dbus-java-viewer-$(VERSION).jar $(DESTDIR)$(JARPREFIX)/dbus-viewer-$(VERSION).jar
@@ -201,8 +204,9 @@ install-bin: dbus-java-viewer-$(VERSION).jar libdbus-java-$(VERSION).jar bin/Cre
 	install bin/DBusViewer $(DESTDIR)$(BINPREFIX)
 	install bin/CreateInterface $(DESTDIR)$(BINPREFIX)
 	install bin/ListDBus $(DESTDIR)$(BINPREFIX)
+	install bin/DBusDaemon $(DESTDIR)$(BINPREFIX)
 
-install-man: CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COPYING README INSTALL
+install-man: CreateInterface.1 ListDBus.1 DBusDaemon.1 DBusViewer.1 changelog AUTHORS COPYING README INSTALL
 	install -d $(DESTDIR)$(DOCPREFIX)
 	install -m 644 changelog $(DESTDIR)$(DOCPREFIX)
 	install -m 644 COPYING $(DESTDIR)$(DOCPREFIX)
@@ -212,6 +216,7 @@ install-man: CreateInterface.1 ListDBus.1 DBusViewer.1 changelog AUTHORS COPYING
 	install -d $(DESTDIR)$(MANPREFIX)
 	install -m 644 CreateInterface.1 $(DESTDIR)$(MANPREFIX)/CreateInterface.1
 	install -m 644 ListDBus.1 $(DESTDIR)$(MANPREFIX)/ListDBus.1
+	install -m 644 DBusDaemon.1 $(DESTDIR)$(MANPREFIX)/DBusDaemon.1
 	install -m 644 DBusViewer.1 $(DESTDIR)$(MANPREFIX)/DBusViewer.1
 
 install-doc: doc 
@@ -226,7 +231,7 @@ install-doc: doc
 	cp -a doc/api/* $(DESTDIR)$(DOCPREFIX)/api
 
 dist: .dist
-.dist: dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh ListDBus.sh DBusViewer.sh
+.dist: dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml DBusDaemon.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh DBusDaemon.sh ListDBus.sh DBusViewer.sh
 	mkdir -p libdbus-java-$(VERSION)
 	cp -fa $^ libdbus-java-$(VERSION)
 	touch .dist
@@ -242,7 +247,7 @@ libdbus-java-$(VERSION): .dist
 libdbus-java-$(VERSION).tar.gz: .dist
 	tar zcf $@ libdbus-java-$(VERSION)
 	
-libdbus-java-$(RELEASEVERSION).tar.gz: dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh ListDBus.sh DBusViewer.sh
+libdbus-java-$(RELEASEVERSION).tar.gz: dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml DBusDaemon.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh ListDBus.sh DBusViewer.sh DBusDaemon.sh
 	mkdir -p libdbus-java-$(RELEASEVERSION)/
 	cp -fa $^ libdbus-java-$(RELEASEVERSION)/
 	tar zcf $@ libdbus-java-$(RELEASEVERSION)
