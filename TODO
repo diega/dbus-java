@@ -1,6 +1,8 @@
+ * test bus daemon on non-java things
+ * add other bus types support to daemon
+ * check if need to split sending  thread in AbstractConnection and disable non-blocking
  * autolaunch
- * fix bus daemon
- * test on windbus
+ * test on windbus/java daemon on windows
  * autodetection of float support
  * allow 'virtual' object handlers, so that all object paths under a certain hierarchy are handled by the same object
  * fix dbus-viewer to recurse on paths

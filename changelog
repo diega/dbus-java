@@ -27,6 +27,7 @@ Version 2.0:
 	* Fix TCP and SHA-1 auth
 	* fix wrapper scripts with new depends
 	* add a DBusDaemon
+	* Make daemon multithreaded; performance improvements
 
 Version 1.13:
 
