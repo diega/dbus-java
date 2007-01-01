@@ -1084,6 +1084,7 @@ public class Message
    {
       if (null != body) {
          wiredata = new byte[BUFFERINCREMENT][];
+         bufferuse = 0;
          bytecounter = 0;
          preallocate(12);
          append("yyyyuu", big ? Endian.BIG : Endian.LITTLE, type, flags, protover, bodylen, serial);
@@ -1097,6 +1098,7 @@ public class Message
             i++;
          }
          append("a(yv)", (Object) newhead);
+         pad((byte) 8);
          appendBytes(body);
       }
    }

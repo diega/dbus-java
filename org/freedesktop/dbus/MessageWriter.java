@@ -30,9 +30,9 @@ public class MessageWriter
          Debug.print(Debug.INFO, "<= "+m);
       }
       for (byte[] buf: m.getWireData()) {
-         if (null == buf) break;
          if (Debug.debug)
-            Debug.print(Debug.VERBOSE, "("+buf+"):"+ Hexdump.format(buf));
+            Debug.print(Debug.VERBOSE, "("+buf+"):"+ (null==buf? "": Hexdump.format(buf)));
+         if (null == buf) break;
          out.write(buf);
       }
       out.flush();

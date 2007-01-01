@@ -109,7 +109,9 @@ public abstract class AbstractConnection
                      m = outgoing.remove(); }
             }
             synchronized (this) { notifyAll(); }
-         } catch (NotConnected NC) {}
+         } catch (Exception e) {
+            if (Debug.debug && EXCEPTION_DEBUG) Debug.print(Debug.ERR, e);
+         }
       }
    }
    private class _globalhandler implements org.freedesktop.DBus.Peer, org.freedesktop.DBus.Introspectable
@@ -514,7 +516,7 @@ public abstract class AbstractConnection
    
    private void handleMessage(final MethodCall m) throws DBusException
    {
-      if (Debug.debug) Debug.print(Debug.ERR, "Handling incoming method call: "+m);
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Handling incoming method call: "+m);
       // get the method signature
       Object[] params = m.getParameters();
 
@@ -634,7 +636,7 @@ public abstract class AbstractConnection
    @SuppressWarnings({"unchecked","deprecation"})
    private void handleMessage(final DBusSignal s)
    {
-      if (Debug.debug) Debug.print(Debug.ERR, "Handling incoming signal: "+s);
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Handling incoming signal: "+s);
       Vector<DBusSigHandler> v = new Vector<DBusSigHandler>();
       synchronized(handledSignals) {
          Vector<DBusSigHandler> t;
@@ -673,7 +675,7 @@ public abstract class AbstractConnection
    }
    private void handleMessage(final Error err)
    {
-      if (Debug.debug) Debug.print(Debug.ERR, "Handling incoming error: "+err);
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Handling incoming error: "+err);
       MethodCall m = null;
       if (null == pendingCalls) return;
       synchronized (pendingCalls) {
@@ -688,7 +690,7 @@ public abstract class AbstractConnection
    }
    private void handleMessage(final MethodReturn mr)
    {
-      if (Debug.debug) Debug.print(Debug.ERR, "Handling incoming method return: "+mr);
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Handling incoming method return: "+mr);
       MethodCall m = null;
       if (null == pendingCalls) return;
       synchronized (pendingCalls) {

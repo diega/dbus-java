@@ -66,7 +66,11 @@ public class Error extends Message
       if (null != sig) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
    }
-   public Error(Message m, Exception e)  throws DBusException
+   public Error(String source, Message m, Throwable e)  throws DBusException
+   {
+      this(source, m.getSource(), AbstractConnection.dollar_pattern.matcher(e.getClass().getName()).replaceAll("."), m.getSerial(), "s", e.getMessage());
+   }
+   public Error(Message m, Throwable e)  throws DBusException
    {
       this(m.getSource(), AbstractConnection.dollar_pattern.matcher(e.getClass().getName()).replaceAll("."), m.getSerial(), "s", e.getMessage());
    }

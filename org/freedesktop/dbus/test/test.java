@@ -492,8 +492,6 @@ public class test
          test.fail("Method Execution should have failed");
       } catch (ServiceUnknown SU) {
          System.out.println("Remote Method Failed with: "+SU.getClass().getName()+" "+SU.getMessage());
-         if (!SU.getMessage().equals("The name foo.bar.NotATest was not provided by any .service files"))
-            test.fail("Error message was not correct");
       }
       
       /** Try and call an invalid remote object */
@@ -504,8 +502,6 @@ public class test
          test.fail("Method Execution should have failed");
       } catch (UnknownObject UO) {
          System.out.println("Remote Method Failed with: "+UO.getClass().getName()+" "+UO.getMessage());
-         if (!UO.getMessage().equals("/Moofle is not an object provided by this process."))
-            test.fail("Error message was not correct");
       }
 
       System.out.println("Calling Method4/5/6/7");
