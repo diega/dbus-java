@@ -950,9 +950,11 @@ parameters being the signature of the message body and the parameters which
 make up the body. If the message has an empty body then the last parameter must
 be null. Reading and writing messages is not thread safe.
 
-When reading a message if a full message has not yet been read from the
+Messages can be read either in blocking or non-blocking mode. When reading a
+message in non-blocking mode, if a full message has not yet been read from the
 transport the method will return null. Messages are instantiated as the correct
-message type, so {\tt instanceof} will work on the returned object.
+message type, so {\tt instanceof} will work on the returned object. Blocking
+mode can be enabled with an extra parameter to the Transport constructor.
 
 Figure \ref{fig:lowlevel} shows how to connect to a bus, send the (required)
 initial `Hello' message and 
@@ -963,7 +965,7 @@ call a method with two parameters.
 \begin{verbatim}
 BusAddress address = new BusAddress(
          System.getenv("DBUS_SESSION_BUS_ADDRESS"));
-Transport conn = new Transport(address);
+Transport conn = new Transport(address, true);
 
 Message m = new MethodCall("org.freedesktop.DBus", "/org/freedesktop/DBus", 
                            "org.freedesktop. DBus", "Hello", (byte) 0, null);

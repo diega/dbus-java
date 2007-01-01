@@ -28,6 +28,8 @@ Version 2.0:
 	* fix wrapper scripts with new depends
 	* add a DBusDaemon
 	* Make daemon multithreaded; performance improvements
+	* Add sending thread to library, move to blocking IO
+	* Ensure key directory exists when serving cookie auth
 
 Version 1.13:
 

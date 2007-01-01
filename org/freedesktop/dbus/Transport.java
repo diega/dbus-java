@@ -127,9 +127,13 @@ public class Transport
       private void addCookie(String context, String ID, long timestamp, String cookie) throws IOException
       {
          String homedir = System.getProperty("user.home");
+         File keydir = new File(homedir+"/.dbus-keyrings/");
          File cookiefile = new File(homedir+"/.dbus-keyrings/"+context);
          File lock = new File(homedir+"/.dbus-keyrings/"+context+".lock");
          File temp = new File(homedir+"/.dbus-keyrings/"+context+".temp");
+
+         // ensure directory exists
+         if (!keydir.exists()) keydir.mkdirs();
 
          // acquire lock
          long start = System.currentTimeMillis();
