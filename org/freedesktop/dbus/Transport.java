@@ -665,9 +665,17 @@ public class Transport
    }
    public void connect(String address) throws IOException
    {
-      connect(new BusAddress(address));
+      connect(new BusAddress(address), true);
+   }
+   public void connect(String address, boolean blocking) throws IOException
+   {
+      connect(new BusAddress(address), blocking);
    }
    public void connect(BusAddress address) throws IOException
+   {
+      connect(address, true);
+   }
+   public void connect(BusAddress address, boolean blocking) throws IOException
    {
       if (Debug.debug) Debug.print(Debug.INFO, "Connecting to "+address);
       this.address = address;
@@ -710,7 +718,6 @@ public class Transport
             s = new Socket();
             s.connect(new InetSocketAddress(address.getParameter("host"), Integer.parseInt(address.getParameter("port"))));
          }
-         s.setSoTimeout(0);
          in = s.getInputStream();
          out = s.getOutputStream();
       } else {
@@ -722,12 +729,12 @@ public class Transport
          throw new IOException("Failed to auth");
       }
       if (null != us) {
-         if (Debug.debug) Debug.print(Debug.VERBOSE, "Setting non-blocking on UnixSocket");
-         us.setBlocking(false);
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "Setting "+(blocking?"":"non-")+"blocking on UnixSocket");
+         us.setBlocking(blocking);
       }
       if (null != s) {
-         if (Debug.debug) Debug.print(Debug.VERBOSE, "Setting non-blocking on Socket");
-         s.setSoTimeout(1);
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "Setting "+(blocking?"":"non-")+"blocking on Socket");
+         s.setSoTimeout(blocking ? 0 : 1);
       }
       mout = new MessageWriter(out);
       min = new MessageReader(in);

@@ -100,10 +100,7 @@ class RemoteInvocationHandler implements InvocationHandler
          throw new DBusExecutionException("Failed to construct outgoing method call: "+DBe.getMessage());
       }
       if (null == conn.outgoing) throw new NotConnected("Not Connected");
-      synchronized (conn.outgoing) {
-         if (Debug.debug) Debug.print(Debug.VERBOSE, "Adding method call to outgoing queue");
-         conn.outgoing.add(call);
-      }
+      conn.queueOutgoing(call);
 
       if (async) return new DBusAsyncReply(call, m, conn);
 

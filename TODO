@@ -1,4 +1,5 @@
  * test bus daemon on non-java things
+ * mkdir when server in dbus-cookie-sha1 mode
  * add other bus types support to daemon
  * check if need to split sending  thread in AbstractConnection and disable non-blocking
  * autolaunch
