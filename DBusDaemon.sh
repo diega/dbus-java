@@ -1,7 +1,8 @@
 #!/bin/sh --
 
+VERSION=%VERSION%
 JARPATH=%JARPATH%
-JAVAUNIXLIBPATH=%DJAVAUNIXLIBPATH%
-JAVAUNIXJARPATH=%DJAVAUNIXJARPATH%
+JAVAUNIXLIBPATH=%JAVAUNIXLIBPATH%
+JAVAUNIXJARPATH=%JAVAUNIXJARPATH%
 
-java -Djava.library.path=$JAVAUNIXLIBPATH -cp $JAVAUNIXJARPATH/unix.jar:$JAVAUNIXJARPATH/debug-enable.jar:$JAVAUNIXJARPATH/hexdump.jar:$JARPATH/dbus.jar org.freedesktop.dbus.bin.DBusDaemon "$@"
+exec java -DPid=$$ -DVersion=$VERSION -Djava.library.path=$JAVAUNIXLIBPATH -cp $JAVAUNIXJARPATH/unix.jar:$JAVAUNIXJARPATH/debug-enable.jar:$JAVAUNIXJARPATH/hexdump.jar:$JARPATH/dbus.jar org.freedesktop.dbus.bin.DBusDaemon "$@"

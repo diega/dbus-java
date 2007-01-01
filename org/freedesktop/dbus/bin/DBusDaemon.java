@@ -28,10 +28,15 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.exceptions.FatalException;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,15 +57,26 @@ public class DBusDaemon extends Thread
    public static final int QUEUE_POLL_WAIT = 500;
    static class Connstruct
    {
-      public UnixSocket sock;
+      public UnixSocket usock;
+      public Socket tsock;
       public MessageReader min;
       public MessageWriter mout;
       public String unique;
       public Connstruct(UnixSocket sock)
       {
-         this.sock = sock;
+         this.usock = sock;
          min = new MessageReader(sock.getInputStream());
          mout = new MessageWriter(sock.getOutputStream());
+      }
+      public Connstruct(Socket sock) throws IOException
+      {
+         this.tsock = sock;
+         min = new MessageReader(sock.getInputStream());
+         mout = new MessageWriter(sock.getOutputStream());
+      }
+      public String toString()
+      {
+         return null == unique ? ":?-?" : unique;
       }
    }
    static class MagicMap<A, B>
@@ -355,8 +371,8 @@ public class DBusDaemon extends Thread
          while (_run) {
 
             if (Debug.debug) Debug.print(Debug.VERBOSE, "Acquiring lock on outqueue and blocking for data");
-            Message m;
-            Connstruct c;
+            Message m = null;
+            Connstruct c = null;
             // block on outqueue
             synchronized (outqueue) { 
                while (outqueue.size() == 0) try {
@@ -364,7 +380,8 @@ public class DBusDaemon extends Thread
                } catch (InterruptedException Ie) { } 
 
                m = outqueue.head();
-               c = outqueue.remove(m).get();
+               WeakReference<Connstruct> wc = outqueue.remove(m);
+               if (null != wc) c = wc.get();
             }
             if (null != c) {
                if (Debug.debug) Debug.print(Debug.VERBOSE, "<outqueue> Got message "+m+" for "+c.unique);
@@ -565,7 +582,8 @@ public class DBusDaemon extends Thread
       }
       if (exists) {
          try {
-            c.sock.close();
+            if (null != c.usock) c.usock.close();
+            if (null != c.tsock) c.tsock.close();
          } catch (IOException IOe) {}
          synchronized(names) {
             List<String> toRemove = new Vector<String>();
@@ -596,30 +614,103 @@ public class DBusDaemon extends Thread
       r.start();
       if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
    }
+   public void addSock(Socket s) throws IOException
+   {
+      if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
+      if (Debug.debug) Debug.print(Debug.WARN, "New Client");
+      Connstruct c = new Connstruct(s);
+      Reader r = new Reader(c);
+      synchronized (conns) {
+         conns.put(c, r);
+      }
+      r.start();
+      if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
+   }
    public static void syntax()
    {
       System.out.println("Syntax: DBusDaemon [--help] [-h]");
       System.exit(1);
    }
+   public static void version()
+   {
+      System.out.println("D-Bus Java Version: "+System.getProperty("Version"));
+      System.exit(1);
+   }
+   public static void saveFile(String data, String file) throws IOException
+   {
+      PrintWriter w = new PrintWriter(new FileOutputStream(file));
+      w.println(data);
+      w.close();
+   }
    public static void main(String args[]) throws Exception
    {
       if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
-      boolean owners = false;
-      boolean users = false;
+      String addr = null;
+      String pidfile = null;
+      String addrfile = null;
+      boolean printaddress = false;
 
-      for (String a: args) 
-         if ("--help".equals(a)) syntax();
-         else if ("-h".equals(a)) syntax();
-         else syntax();
+      // parse options
+      try {
+         for (int i=0; i < args.length; i++) 
+            if ("--help".equals(args[i]) || "-h".equals(args[i])) 
+               syntax();
+            else if ("--version".equals(args[i]) || "-v".equals(args[i])) 
+               version();
+            else if ("--listen".equals(args[i]) || "-l".equals(args[i]))
+               addr = args[++i];
+            else if ("--pidfile".equals(args[i]) || "-p".equals(args[i]))
+               pidfile = args[++i];
+            else if ("--addressfile".equals(args[i]) || "-a".equals(args[i]))
+               addrfile = args[++i];
+            else if ("--print-address".equals(args[i]) || "-r".equals(args[i]))
+               printaddress = true;
+            else syntax();
+      } catch (ArrayIndexOutOfBoundsException AIOOBe) {
+         syntax();
+      }
 
-      String addr = DirectConnection.createDynamicSession();
-      System.out.println(addr);
+      // generate a random address if none specified
+      if (null == addr) addr = DirectConnection.createDynamicSession();
+
       BusAddress address = new BusAddress(addr);
-      UnixServerSocket uss = new UnixServerSocket(new UnixSocketAddress(address.getParameter("abstract"), true)); 
+      if (null == address.getParameter("guid")) {
+         addr += ",guid="+Transport.genGUID();
+         address = new BusAddress(addr);
+      }
+
+      // print address to stdout
+      if (printaddress) System.out.println(addr);
+
+      // print address to file
+      if (null != addrfile) saveFile(addr, addrfile);
+
+      // print PID to file
+      if (null != pidfile) saveFile(System.getProperty("Pid"), pidfile);
+
+      // start the daemon
+      if (Debug.debug) Debug.print(Debug.WARN, "Binding to "+addr);
+      if ("unix".equals(address.getType()))
+         doUnix(address);
+      else if ("tcp".equals(address.getType()))
+         doTCP(address);
+      else throw new Exception("Unknown address type: "+address.getType());
+      if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
+   }
+   private static void doUnix(BusAddress address) throws IOException
+   {
+      if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
+      UnixServerSocket uss;
+      if (null != address. getParameter("abstract"))
+         uss = new UnixServerSocket(new UnixSocketAddress(address.getParameter("abstract"), true)); 
+      else
+         uss = new UnixServerSocket(new UnixSocketAddress(address.getParameter("path"), false)); 
       DBusDaemon d = new DBusDaemon();
       d.start();
       d.sender.start();
       d.dbus_server.start();
+
+      // accept new connections
       while (d._run) {
          UnixSocket s = uss.accept();
          if ((new Transport.SASL()).auth(Transport.SASL.MODE_SERVER, Transport.SASL.AUTH_EXTERNAL, address.getParameter("guid"), s.getOutputStream(), s.getInputStream())) {
@@ -630,4 +721,25 @@ public class DBusDaemon extends Thread
       }
       if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
    }
+   private static void doTCP(BusAddress address) throws IOException
+   {
+      if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
+      ServerSocket ss = new ServerSocket(Integer.parseInt(address.getParameter("port")),10, InetAddress.getByName(address.getParameter("host"))); 
+      DBusDaemon d = new DBusDaemon();
+      d.start();
+      d.sender.start();
+      d.dbus_server.start();
+
+      // accept new connections
+      while (d._run) {
+         Socket s = ss.accept();
+         if ((new Transport.SASL()).auth(Transport.SASL.MODE_SERVER, Transport.SASL.AUTH_EXTERNAL, address.getParameter("guid"), s.getOutputStream(), s.getInputStream())) {
+            d.addSock(s);
+         } else
+            s.close();
+      }
+      if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
+   }
+
+
 }

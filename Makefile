@@ -46,8 +46,8 @@ RELEASEVERSION = 2.0
 all: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar bin/DBusDaemon bin/ListDBus bin/CreateInterface bin/DBusViewer
 
 clean:
-	rm -rf doc bin classes
-	rm -f *.1 *.o *.so *.h .dist .classes .testclasses .doc *.jar *.log pid address tmp-session-bus *.gz .viewerclasses .bin
+	rm -rf doc bin classes testbin
+	rm -f *.1 *.o *.so *.h .dist .classes .testclasses .doc *.jar *.log pid address tmp-session-bus *.gz .viewerclasses .bin .testbin
 	rm -rf libdbus-$(VERSION)
 	rm -rf libdbus-$(RELEASEVERSION)
 	
@@ -73,6 +73,8 @@ dbus-java-test-$(VERSION).jar: .testclasses
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/test/*.class)
 dbus-java-viewer-$(VERSION).jar: .viewerclasses
 	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/viewer/*.class)
+dbus.jar: libdbus-java-$(VERSION).jar
+	ln -sf $< $@
 	
 jar: libdbus-java-$(VERSION).jar
 doc: doc/dbus-java.dvi doc/dbus-java.ps doc/dbus-java.pdf doc/dbus-java/index.html doc/api/index.html
@@ -83,6 +85,9 @@ doc: doc/dbus-java.dvi doc/dbus-java.ps doc/dbus-java.pdf doc/dbus-java/index.ht
 .bin:
 	mkdir -p bin
 	touch .bin
+.testbin:
+	mkdir -p testbin
+	touch .testbin
 doc/dbus-java.dvi: dbus-java.tex .doc
 	(cd doc; latex ../dbus-java.tex)
 	(cd doc; latex ../dbus-java.tex)
@@ -103,10 +108,11 @@ doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
 	docbook-to-man $< > $@
 	
 bin/%: %.sh .bin
-	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%JAVAUNIXJARPATH\%,$(JAVAUNIXJARDIR),;s,\%JAVAUNIXLIBPATH\%,$(JAVAUNIXLIBDIR),' < $< > $@
+	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%JAVAUNIXJARPATH\%,$(JAVAUNIXJARDIR),;s,\%JAVAUNIXLIBPATH\%,$(JAVAUNIXLIBDIR),;s,\%VERSION\%,$(VERSION),' < $< > $@
 
-rundaemon: libdbus-java-$(VERSION).jar
-	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar org.freedesktop.dbus.bin.DBusDaemon
+testbin/%: %.sh .testbin
+	sed 's,\%JARPATH\%,.,;s,\%JAVAUNIXJARPATH\%,$(JAVAUNIXJARDIR),;s,\%JAVAUNIXLIBPATH\%,$(JAVAUNIXLIBDIR),;s,\%VERSION\%,$(VERSION),' < $< > $@
+	chmod 755 $@
 
 testrun: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	$(JAVA) $(JFLAGS) $(CPFLAG) $(CLASSPATH):$(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar:libdbus-java-$(VERSION).jar:dbus-java-test-$(VERSION).jar org.freedesktop.dbus.test.test
@@ -140,29 +146,32 @@ viewer: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar
 
 #dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
 
-low-level: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	( $(MAKE) -s rundaemon >address & \
+low-level: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDaemon dbus.jar
+	( testbin/DBusDaemon --addressfile address --pidfile pid & \
 	  sleep 1; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  $(MAKE) low-level-run )
+	  $(MAKE) DBUS_JAVA_FLOATS=true low-level-run ;\
+	  kill $$(cat pid))
 
-check: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+check: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDaemon dbus.jar
 	( PASS=false; \
-	  dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
+	  testbin/DBusDaemon --addressfile address --pidfile pid &\
+	  sleep 1; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
 	  dbus-monitor &> monitor.log & \
-	  if $(MAKE) testrun ; then export PASS=true; fi  ; \
+	  if $(MAKE) DBUS_JAVA_FLOATS=true testrun ; then export PASS=true; fi  ; \
 	  kill $$(cat pid) ; \
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
 
 cross-test-compile: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 
-internal-cross-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	( dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
+internal-cross-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDaemon dbus.jar
+	( testbin/DBusDaemon --addressfile address --pidfile pid &\
+	  sleep 1; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  $(MAKE) -s cross-test-server | tee server.log &\
+	  $(MAKE) DBUS_JAVA_FLOATS=true -s cross-test-server | tee server.log &\
 	  sleep 1;\
-	  $(MAKE) -s cross-test-client | tee client.log ;\
+	  $(MAKE) DBUS_JAVA_FLOATS=true -s cross-test-client | tee client.log ;\
 	  kill $$(cat pid) ; )
 
 peer-to-peer-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
@@ -170,19 +179,21 @@ peer-to-peer-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 	  sleep 1;\
 	  $(MAKE) DBUS_JAVA_FLOATS=true -s peer-client 2>&1 | tee client.log )
 
-two-part-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	( dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
+two-part-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDaemon dbus.jar
+	( testbin/DBusDaemon --addressfile address --pidfile pid &\
+	  sleep 1; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  $(MAKE) -s two-part-server | tee server.log &\
+	  $(MAKE) DBUS_JAVA_FLOATS=true -s two-part-server | tee server.log &\
 	  sleep 1;\
-	  $(MAKE) -s two-part-client | tee client.log ;\
+	  $(MAKE) DBUS_JAVA_FLOATS=true -s two-part-client | tee client.log ;\
 	  kill $$(cat pid) ; )
 
-profile: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
+profile: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDaemon dbus.jar
 	( PASS=false; \
-	  dbus-daemon --config-file=tmp-session.conf --print-pid --print-address=5 --fork >pid 5>address ; \
+	  testbin/DBusDaemon --addressfile address --pidfile pid &\
+	  sleep 1; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  if $(MAKE) profilerun ; then export PASS=true; fi  ; \
+	  if $(MAKE) DBUS_JAVA_FLOATS=true profilerun ; then export PASS=true; fi  ; \
 	  kill $$(cat pid) ; \
 	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
 

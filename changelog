@@ -30,6 +30,8 @@ Version 2.0:
 	* Make daemon multithreaded; performance improvements
 	* Add sending thread to library, move to blocking IO
 	* Ensure key directory exists when serving cookie auth
+	* Add TCP support to daemon
+	* Remove dependency on dbus-daemon for tests
 
 Version 1.13:
 

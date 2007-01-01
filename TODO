@@ -1,6 +1,4 @@
  * test bus daemon on non-java things
- * mkdir when server in dbus-cookie-sha1 mode
- * add other bus types support to daemon
  * autolaunch
  * test on windbus/java daemon on windows
  * autodetection of float support
