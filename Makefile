@@ -281,3 +281,12 @@ dbus-java-$(RELEASEVERSION).tar.gz: $(DISTFILES)
 	cp -fa $^ dbus-java-$(RELEASEVERSION)/
 	tar zcf $@ dbus-java-$(RELEASEVERSION)
 
+dbus-java-win-$(VERSION).zip: dbus-java-bin-$(VERSION).jar libdbus-java-$(VERSION).jar win/CreateInterface.bat  win/DBusDaemon.bat  win/DBusViewer.bat  win/ListDBus.bat $(JAVAUNIXJARDIR)/hexdump.jar $(JAVAUNIXJARDIR)/debug-$(DEBUG).jar dbus-java-viewer-$(VERSION).jar
+	mkdir -p dbus-java-win-$(VERSION)
+	cp -fa dbus-java-bin-$(VERSION).jar dbus-java-win-$(VERSION)/dbus-bin.jar
+	cp -fa dbus-java-viewer-$(VERSION).jar dbus-java-win-$(VERSION)/dbus-viewer.jar
+	cp -fa libdbus-java-$(VERSION).jar dbus-java-win-$(VERSION)/dbus.jar
+	cp -fa win/* dbus-java-win-$(VERSION)/
+	cp -faL $(JAVAUNIXJARDIR)/hexdump.jar dbus-java-win-$(VERSION)/
+	cp -faL $(JAVAUNIXJARDIR)/debug-$(DEBUG).jar dbus-java-win-$(VERSION)/
+	zip -r $@ dbus-java-win-$(VERSION)/
