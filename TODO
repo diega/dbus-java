@@ -1,3 +1,5 @@
+ * check recv thread is exiting properly, maybe call in.close()?
+ * add header checks to daemon
  * write DBusDaemon man page && --help text
  * add TERM/etc handler to DBusDaemon
  * autolaunch

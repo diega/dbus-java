@@ -160,6 +160,7 @@ public abstract class AbstractConnection
             }
             if (null != m) 
                sendMessage(m);
+            m = null;
          }
 
          if (Debug.debug) Debug.print(Debug.INFO, "Flushing outbound queue and quitting");
@@ -172,6 +173,8 @@ public abstract class AbstractConnection
             }
             sendMessage(m);
          } while (null != m);
+
+         // close the underlying streams
       }
    }
    /**

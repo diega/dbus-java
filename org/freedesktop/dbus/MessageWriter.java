@@ -29,6 +29,11 @@ public class MessageWriter
       if (Debug.debug) {
          Debug.print(Debug.INFO, "<= "+m);
       }
+      if (null == m) return;
+      if (null == m.getWireData()) {
+         if (Debug.debug) Debug.print(Debug.WARN, "Message "+m+" wire-data was null!");
+         return;
+      }
       for (byte[] buf: m.getWireData()) {
          if (Debug.debug)
             Debug.print(Debug.VERBOSE, "("+buf+"):"+ (null==buf? "": Hexdump.format(buf)));

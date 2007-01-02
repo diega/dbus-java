@@ -20,6 +20,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -34,7 +35,6 @@ import cx.ath.matthew.unix.UnixServerSocket;
 import cx.ath.matthew.unix.UnixSocketAddress;
 import cx.ath.matthew.utils.Hexdump;
 import cx.ath.matthew.debug.Debug;
-import com.sun.security.auth.module.UnixSystem;
 
 public class Transport
 {
@@ -438,9 +438,17 @@ public class Transport
        */
       public boolean auth(int mode, int types, String guid, OutputStream out, InputStream in) throws IOException
       {
-         UnixSystem uns = new UnixSystem();
-         long uid = uns.getUid();
-         String Uid = stupidlyEncode(""+uid);
+         String username = System.getProperty("user.name");
+         String Uid = null;
+         try {
+            Class c = Class.forName("com.sun.security.auth.module.UnixSystem");
+            Method m = c.getMethod("getUid");
+            Object o = c.newInstance();
+            long uid = (Long) m.invoke(o);
+            Uid = stupidlyEncode(""+uid);
+         } catch (Exception e) {
+            Uid = stupidlyEncode(username);
+         }
          Command c;
          int failed = 0;
          int current = 0;
