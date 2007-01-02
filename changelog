@@ -32,6 +32,7 @@ Version 2.0:
 	* Ensure key directory exists when serving cookie auth
 	* Add TCP support to daemon
 	* Remove dependency on dbus-daemon for tests
+	* add --version support for other programs
 
 Version 1.13:
 

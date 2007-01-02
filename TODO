@@ -1,5 +1,4 @@
  * write DBusDaemon man page && --help text
- * add Version to other programs
  * add TERM/etc handler to DBusDaemon
  * autolaunch
  * test on windbus/java daemon on windows

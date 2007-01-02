@@ -21,7 +21,12 @@ public class ListDBus
 {
    public static void syntax()
    {
-      System.out.println("Syntax: ListDBus [--help] [-h] [--owners] [-o] [--uids] [-u] [--session] [-s] [--system] [-y]");
+      System.out.println("Syntax: ListDBus [--version] [-v] [--help] [-h] [--owners] [-o] [--uids] [-u] [--session] [-s] [--system] [-y]");
+      System.exit(1);
+   }
+   public static void version()
+   {
+      System.out.println("Java D-Bus Version "+System.getProperty("Version"));
       System.exit(1);
    }
    public static void main(String args[]) throws Exception
@@ -33,6 +38,8 @@ public class ListDBus
       for (String a: args) 
          if ("--help".equals(a)) syntax();
          else if ("-h".equals(a)) syntax();
+         else if ("--version".equals(a)) version();
+         else if ("-v".equals(a)) version();
          else if ("-u".equals(a)) users = true;
          else if ("--uids".equals(a)) users = true;
          else if ("-o".equals(a)) owners = true;

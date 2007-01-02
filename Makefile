@@ -108,7 +108,7 @@ doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
 	docbook-to-man $< > $@
 	
 bin/%: %.sh .bin
-	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%JAVAUNIXJARPATH\%,$(JAVAUNIXJARDIR),;s,\%JAVAUNIXLIBPATH\%,$(JAVAUNIXLIBDIR),;s,\%VERSION\%,$(VERSION),' < $< > $@
+	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%JAVAUNIXJARPATH\%,$(JAVAUNIXJARDIR),;s,\%JAVAUNIXLIBPATH\%,$(JAVAUNIXLIBDIR),;s,\%VERSION\%,$(VERSION),;s,\%DEBUG\%,$(DEBUG),' < $< > $@
 
 testbin/%: %.sh .testbin
 	sed 's,\%JARPATH\%,.,;s,\%JAVAUNIXJARPATH\%,$(JAVAUNIXJARDIR),;s,\%JAVAUNIXLIBPATH\%,$(JAVAUNIXLIBDIR),;s,\%VERSION\%,$(VERSION),' < $< > $@

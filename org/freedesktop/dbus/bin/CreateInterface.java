@@ -592,7 +592,12 @@ public class CreateInterface
    static void printSyntax(PrintStream o)
    {
       o.println("Syntax: CreateInterface <options> [file | busname object]");
-      o.println("        Options: --no-ignore-builtin --system -y --session -s --create-files -f --help -h");
+      o.println("        Options: --no-ignore-builtin --system -y --session -s --create-files -f --help -h --version -v");
+   }
+   public static void version()
+   {
+      System.out.println("Java D-Bus Version "+System.getProperty("Version"));
+      System.exit(1);
    }
 
    static Config parseParams(String[] args)
@@ -611,6 +616,9 @@ public class CreateInterface
             config.printtree = true;
          else if ("--help".equals(p) || "-h".equals(p)) {
             printSyntax(System.out);
+            System.exit(0);
+         } else if ("--version".equals(p) || "-v".equals(p)) {
+            version();
             System.exit(0);
          } else if (p.startsWith("-")) {
             System.err.println("ERROR: Unknown option: "+p);
