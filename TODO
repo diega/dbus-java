@@ -1,4 +1,3 @@
- * test bus daemon on non-java things
  * autolaunch
  * test on windbus/java daemon on windows
  * autodetection of float support
