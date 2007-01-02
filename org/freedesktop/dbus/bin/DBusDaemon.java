@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Queue;
 import java.util.Vector;
 
@@ -117,7 +118,7 @@ public class DBusDaemon extends Thread
          return q.size();
       }
    }
-   public class DBusServer extends Thread implements DBus
+   public class DBusServer extends Thread implements DBus, DBus.Introspectable, DBus.Peer
    {
       public DBusServer()
       {
@@ -141,14 +142,14 @@ public class DBusDaemon extends Thread
          }
 
          if (Debug.debug) Debug.print(Debug.WARN, "Client "+c.unique+" registered");
-         
+
          try {
             send(c, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameAcquired", "s", c.unique));
-            send(null, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop. DBus", "NameOwnerChanged", "sss", c.unique, "", c.unique));
+            DBusSignal s = new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameOwnerChanged", "sss", c.unique, "", c.unique);
+            send(null, s);
          } catch (DBusException DBe) {
             if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, DBe);
          }
-         
          if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
          return c.unique;
       }
@@ -157,7 +158,8 @@ public class DBusDaemon extends Thread
          if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
          String[] ns;
          synchronized (names) {
-            ns = names.keySet().toArray(new String[0]);
+            Set<String> nss = names.keySet();
+            ns = nss.toArray(new String[0]);
          }
          if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
          return ns;
@@ -215,8 +217,8 @@ public class DBusDaemon extends Thread
             if (Debug.debug) Debug.print(Debug.WARN, "Client "+c.unique+" acquired name "+name);
             rv = DBus.DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER;
             try {
-               send(c, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop. DBus", "NameAcquired", "s", name));
-               send(null, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop. DBus", "NameOwnerChanged", "sss", name, "", c.unique));
+               send(c, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameAcquired", "s", name));
+               send(null, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameOwnerChanged", "sss", name, "", c.unique));
             } catch (DBusException DBe) {
                if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, DBe);
             }
@@ -243,8 +245,8 @@ public class DBusDaemon extends Thread
             if (Debug.debug) Debug.print(Debug.WARN, "Client "+c.unique+" acquired name "+name);
             rv = DBus.DBUS_RELEASE_NAME_REPLY_RELEASED;
             try {
-               send(c, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop. DBus", "NameLost", "s", name));
-               send(null, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop. DBus", "NameOwnerChanged", "sss", name, c.unique, ""));
+               send(c, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameLost", "s", name));
+               send(null, new DBusSignal("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameOwnerChanged", "sss", name, c.unique, ""));
             } catch (DBusException DBe) {
                if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, DBe);
             }
@@ -256,12 +258,18 @@ public class DBusDaemon extends Thread
       public void AddMatch(String matchrule) throws Error.MatchRuleInvalid
       {
          if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "Adding match rule: "+matchrule);
+         synchronized (sigrecips) {
+            if (!sigrecips.contains(c))
+               sigrecips.add(c);
+         }
          if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
          return;
       }
       public void RemoveMatch(String matchrule) throws Error.MatchRuleInvalid
       {
          if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "Removing match rule: "+matchrule);
          if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
          return;
       }
@@ -305,14 +313,14 @@ public class DBusDaemon extends Thread
          Object rv = null;
 
          try {
-            meth = DBus.class.getMethod(m.getName(), cs);
+            meth = DBusServer.class.getMethod(m.getName(), cs);
             try {
-                  this.c = c;
-                  this.m = m;
-                  rv = meth.invoke(dbus_server, args);
-               if (null == rv)
+               this.c = c;
+               this.m = m;
+               rv = meth.invoke(dbus_server, args);
+               if (null == rv) {
                   send(c, new MethodReturn("org.freedesktop.DBus", (MethodCall) m, null), true);
-               else {
+               } else {
                   String sig = Marshalling.getDBusType(meth.getGenericReturnType())[0];
                   send(c, new MethodReturn("org.freedesktop.DBus", (MethodCall) m, sig, rv), true);
                }
@@ -333,6 +341,87 @@ public class DBusDaemon extends Thread
 
          if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
       }
+      public String Introspect()
+      {
+         return "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\"\n"+
+         "\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"+
+         "<node>\n"+
+         "  <interface name=\"org.freedesktop.DBus.Introspectable\">\n"+
+         "    <method name=\"Introspect\">\n"+
+         "      <arg name=\"data\" direction=\"out\" type=\"s\"/>\n"+
+         "    </method>\n"+
+         "  </interface>\n"+
+         "  <interface name=\"org.freedesktop.DBus\">\n"+
+         "    <method name=\"RequestName\">\n"+
+         "      <arg direction=\"in\" type=\"s\"/>\n"+
+         "      <arg direction=\"in\" type=\"u\"/>\n"+
+         "      <arg direction=\"out\" type=\"u\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"ReleaseName\">\n"+
+         "      <arg direction=\"in\" type=\"s\"/>\n"+
+         "      <arg direction=\"out\" type=\"u\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"StartServiceByName\">\n"+
+         "      <arg direction=\"in\" type=\"s\"/>\n"+
+         "      <arg direction=\"in\" type=\"u\"/>\n"+
+         "      <arg direction=\"out\" type=\"u\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"Hello\">\n"+
+         "      <arg direction=\"out\" type=\"s\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"NameHasOwner\">\n"+
+         "      <arg direction=\"in\" type=\"s\"/>\n"+
+         "      <arg direction=\"out\" type=\"b\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"ListNames\">\n"+
+         "      <arg direction=\"out\" type=\"as\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"ListActivatableNames\">\n"+
+         "      <arg direction=\"out\" type=\"as\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"AddMatch\">\n"+
+         "      <arg direction=\"in\" type=\"s\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"RemoveMatch\">\n"+
+         "      <arg direction=\"in\" type=\"s\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"GetNameOwner\">\n"+
+         "      <arg direction=\"in\" type=\"s\"/>\n"+
+         "      <arg direction=\"out\" type=\"s\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"ListQueuedOwners\">\n"+
+         "      <arg direction=\"in\" type=\"s\"/>\n"+
+         "      <arg direction=\"out\" type=\"as\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"GetConnectionUnixUser\">\n"+
+         "      <arg direction=\"in\" type=\"s\"/>\n"+
+         "      <arg direction=\"out\" type=\"u\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"GetConnectionUnixProcessID\">\n"+
+         "      <arg direction=\"in\" type=\"s\"/>\n"+
+         "      <arg direction=\"out\" type=\"u\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"GetConnectionSELinuxSecurityContext\">\n"+
+         "      <arg direction=\"in\" type=\"s\"/>\n"+
+         "      <arg direction=\"out\" type=\"ay\"/>\n"+
+         "    </method>\n"+
+         "    <method name=\"ReloadConfig\">\n"+
+         "    </method>\n"+
+         "    <signal name=\"NameOwnerChanged\">\n"+
+         "      <arg type=\"s\"/>\n"+
+         "      <arg type=\"s\"/>\n"+
+         "      <arg type=\"s\"/>\n"+
+         "    </signal>\n"+
+         "    <signal name=\"NameLost\">\n"+
+         "      <arg type=\"s\"/>\n"+
+         "    </signal>\n"+
+         "    <signal name=\"NameAcquired\">\n"+
+         "      <arg type=\"s\"/>\n"+
+         "    </signal>\n"+
+         "  </interface>\n"+
+         "</node>";
+      }
+      public void Ping() {}
 
       public void run()
       {
@@ -449,6 +538,7 @@ public class DBusDaemon extends Thread
    private MagicMap<Message, WeakReference<Connstruct>> outqueue = new MagicMap<Message, WeakReference<Connstruct>>("out");
    private MagicMap<Message, WeakReference<Connstruct>> inqueue = new MagicMap<Message, WeakReference<Connstruct>>("in");
    private MagicMap<Message, WeakReference<Connstruct>> localqueue = new MagicMap<Message, WeakReference<Connstruct>>("local");
+   private List<Connstruct> sigrecips = new Vector<Connstruct>();
    private boolean _run = true;
    private int next_unique = 0;
    private Object unique_lock = new Object();
@@ -458,6 +548,9 @@ public class DBusDaemon extends Thread
    public DBusDaemon()
    {
       setName("Daemon");
+      synchronized (names) {
+         names.put("org.freedesktop.DBus", null);
+      }
    }
    @SuppressWarnings("unchecked")
    private void send(Connstruct c, Message m)
@@ -501,8 +594,8 @@ public class DBusDaemon extends Thread
    {
       if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
       List<Connstruct> l;
-      synchronized (conns) {
-         l = new Vector<Connstruct>(conns.keySet());
+      synchronized (sigrecips) {
+         l = new Vector<Connstruct>(sigrecips);
       }
       if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
       return l;
@@ -644,7 +737,8 @@ public class DBusDaemon extends Thread
    }
    public static void main(String args[]) throws Exception
    {
-      if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
+      if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.DEBUG, "enter");
+      else if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
       String addr = null;
       String pidfile = null;
       String addrfile = null;
@@ -740,6 +834,4 @@ public class DBusDaemon extends Thread
       }
       if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
    }
-
-
 }

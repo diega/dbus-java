@@ -259,13 +259,24 @@ public class Transport
       public static final int ERROR=3;
       public static final int REJECT=4;
 
-      public Command receive(BufferedReader r) throws IOException
+      public Command receive(InputStream s) throws IOException
       {
-         String s = r.readLine();
-         if (Debug.debug) Debug.print(Debug.VERBOSE, "received: "+s);
-         if (null == r) throw new EOFException();
+         StringBuffer sb = new StringBuffer();
+         top: while (true) {
+            int c = s.read();
+            switch (c) {
+               case 0:
+               case '\r':
+                  continue;
+               case '\n':
+                  break top;
+               default:
+                  sb.append((char) c);
+            }
+         }
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "received: "+sb);
          try {
-            return new Command(s);         
+            return new Command(sb.toString());         
          } catch (Exception e) {
             if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, e);
             return new Command();
@@ -427,7 +438,6 @@ public class Transport
        */
       public boolean auth(int mode, int types, String guid, OutputStream out, InputStream in) throws IOException
       {
-         BufferedReader r = new BufferedReader(new InputStreamReader(in));
          UnixSystem uns = new UnixSystem();
          long uid = uns.getUid();
          String Uid = stupidlyEncode(""+uid);
@@ -447,49 +457,49 @@ public class Transport
                         state = WAIT_DATA;
                         break;
                      case WAIT_DATA:
-                        c = receive(r);
-                        switch (c.getCommand()) {
-                           case COMMAND_DATA:
-                              switch (do_challenge(current, c)) {
-                                 case CONTINUE:
-                                    send(out, COMMAND_DATA, c.getResponse());
-                                    break;
-                                 case OK:
-                                    send(out, COMMAND_DATA, c.getResponse());
-                                    state = WAIT_OK;
-                                    break;
-                                 case ERROR:
-                                    send(out, COMMAND_ERROR, c.getResponse());
-                                    break;
-                              }
-                              break;
-                           case COMMAND_REJECTED:
-                              failed |= current;
-                              int available = c.getMechs() & (~failed);
-                              if (0 != (available & AUTH_EXTERNAL)){
-                                 send(out, COMMAND_AUTH, "EXTERNAL", Uid);
-                                 current = AUTH_EXTERNAL;
-                              } else if (0 != (available & AUTH_SHA)) {
-                                 send(out, COMMAND_AUTH, "DBUS_COOKIE_SHA1", Uid);
-                                 current = AUTH_SHA;
-                              }
-                              else state = FAILED;
-                              break;
-                           case COMMAND_ERROR:
-                              send(out, COMMAND_CANCEL);
-                              state = WAIT_REJECT;
-                              break;
-                           case COMMAND_OK:
-                              send(out, COMMAND_BEGIN);
-                              state = AUTHENTICATED;
-                              break;
-                           default:
-                              send(out, COMMAND_ERROR, "Got invalid command");
-                              break;
-                        }
-                        break;
-                     case WAIT_OK:
-                        c = receive(r);
+                     c = receive(in);
+                     switch (c.getCommand()) {
+                        case COMMAND_DATA:
+                           switch (do_challenge(current, c)) {
+                              case CONTINUE:
+                                 send(out, COMMAND_DATA, c.getResponse());
+                                 break;
+                              case OK:
+                                 send(out, COMMAND_DATA, c.getResponse());
+                                 state = WAIT_OK;
+                                 break;
+                              case ERROR:
+                                 send(out, COMMAND_ERROR, c.getResponse());
+                                 break;
+                           }
+                           break;
+                        case COMMAND_REJECTED:
+                           failed |= current;
+                           int available = c.getMechs() & (~failed);
+                           if (0 != (available & AUTH_EXTERNAL)){
+                              send(out, COMMAND_AUTH, "EXTERNAL", Uid);
+                              current = AUTH_EXTERNAL;
+                           } else if (0 != (available & AUTH_SHA)) {
+                              send(out, COMMAND_AUTH, "DBUS_COOKIE_SHA1", Uid);
+                              current = AUTH_SHA;
+                           }
+                           else state = FAILED;
+                           break;
+                        case COMMAND_ERROR:
+                           send(out, COMMAND_CANCEL);
+                           state = WAIT_REJECT;
+                           break;
+                        case COMMAND_OK:
+                           send(out, COMMAND_BEGIN);
+                           state = AUTHENTICATED;
+                           break;
+                        default:
+                           send(out, COMMAND_ERROR, "Got invalid command");
+                           break;
+                     }
+                     break;
+                  case WAIT_OK:
+                     c = receive(in);
                         switch (c.getCommand()) {
                            case COMMAND_OK:
                               send(out, COMMAND_BEGIN);
@@ -519,7 +529,7 @@ public class Transport
                         }
                         break;
                      case WAIT_REJECT:
-                        c = receive(r);
+                        c = receive(in);
                         switch (c.getCommand()) {
                            case COMMAND_REJECTED:
                               failed |= current;
@@ -551,7 +561,7 @@ public class Transport
                         else state = WAIT_AUTH;
                         break;
                      case WAIT_AUTH:
-                        c = receive(r);
+                        c = receive(in);
                         switch (c.getCommand()) {
                            case COMMAND_AUTH:
                               if (null == c.getData()) {
@@ -587,7 +597,7 @@ public class Transport
                         }
                         break;
                      case WAIT_DATA:
-                        c = receive(r);
+                        c = receive(in);
                         switch (c.getCommand()) {
                            case COMMAND_DATA:
                               switch (do_response(current, Uid, c)) {
@@ -620,7 +630,7 @@ public class Transport
                         }
                         break;
                      case WAIT_BEGIN:
-                        c = receive(r);
+                        c = receive(in);
                         switch (c.getCommand()) {
                            case COMMAND_ERROR:
                            case COMMAND_CANCEL:
