@@ -40,7 +40,7 @@ JAVAUNIXJARDIR?=/usr/share/java
 DEBUG=disable
 
 # Version numbering
-VERSION = 2.0
+VERSION = 2.1
 RELEASEVERSION = 2.0
 
 DISTFILES=dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml DBusDaemon.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh DBusDaemon.sh ListDBus.sh DBusViewer.sh DBusDaemon.bat CreateInterface.bat ListDBus.bat DBusViewer.bat compile.bat
