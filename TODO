@@ -1,4 +1,4 @@
- * check recv thread is exiting properly, maybe call in.close()?
+ * Javadoc
  * add header checks to daemon
  * add TERM/etc handler to DBusDaemon
  * autolaunch

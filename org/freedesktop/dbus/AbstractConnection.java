@@ -57,7 +57,7 @@ public abstract class AbstractConnection
                // read from the wire
                try {
                   // this blocks on outgoing being non-empty or a message being available.
-                  m = readIncoming(TIMEOUT, outgoing);
+                  m = readIncoming();
                   if (m != null) {
                      if (Debug.debug) Debug.print(Debug.VERBOSE, "Got Incoming Message: "+m);
                      synchronized (this) { notifyAll(); }
@@ -178,9 +178,9 @@ public abstract class AbstractConnection
       }
    }
    /**
-    * Timeout in ms on checking the BUS for incoming messages and sending outgoing messages
+    * Timeout in us on checking the BUS for incoming messages and sending outgoing messages
     */
-   private static final int TIMEOUT = 1;
+   protected static final int TIMEOUT = 100000;
    /** Initial size of the pending calls map */
    private static final int PENDING_MAP_INITIAL_SIZE = 10;
    static final String BUSNAME_REGEX = "^[-_a-zA-Z][-_a-zA-Z0-9]*(\\.[-_a-zA-Z][-_a-zA-Z0-9]*)*$";
@@ -773,10 +773,9 @@ public abstract class AbstractConnection
          if (e instanceof IOException) disconnect();
       }
    }
-   private Message readIncoming(int timeoutms, EfficientQueue outgoing) throws DBusException 
+   private Message readIncoming() throws DBusException 
    {
       if (null == transport) throw new NotConnected("No transport present");
-      // TODO do something with timeoutms and outgoing
       Message m = null;
       try {
          m = transport.min.readMessage();

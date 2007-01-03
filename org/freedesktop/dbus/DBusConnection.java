@@ -151,7 +151,7 @@ public class DBusConnection extends AbstractConnection
       }
    
       try {
-         transport = new Transport(addr);
+         transport = new Transport(addr, AbstractConnection.TIMEOUT);
       } catch (IOException IOe) {
          if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);            
          throw new DBusException("Failed to connect to bus "+IOe.getMessage());

@@ -685,19 +685,23 @@ public class Transport
    {
       connect(new BusAddress(address));
    }
+   public Transport(String address, int timeout) throws IOException
+   {
+      connect(new BusAddress(address), timeout);
+   }
    public void connect(String address) throws IOException
    {
-      connect(new BusAddress(address), true);
+      connect(new BusAddress(address), 0);
    }
-   public void connect(String address, boolean blocking) throws IOException
+   public void connect(String address, int timeout) throws IOException
    {
-      connect(new BusAddress(address), blocking);
+      connect(new BusAddress(address), timeout);
    }
    public void connect(BusAddress address) throws IOException
    {
-      connect(address, true);
+      connect(address, 0);
    }
-   public void connect(BusAddress address, boolean blocking) throws IOException
+   public void connect(BusAddress address, int timeout) throws IOException
    {
       if (Debug.debug) Debug.print(Debug.INFO, "Connecting to "+address);
       this.address = address;
@@ -751,12 +755,15 @@ public class Transport
          throw new IOException("Failed to auth");
       }
       if (null != us) {
-         if (Debug.debug) Debug.print(Debug.VERBOSE, "Setting "+(blocking?"":"non-")+"blocking on UnixSocket");
-         us.setBlocking(blocking);
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "Setting timeout to "+timeout+" on Socket");
+         if (timeout == 1)
+            us.setBlocking(false);
+         else
+            us.setSoTimeout(timeout);
       }
       if (null != s) {
-         if (Debug.debug) Debug.print(Debug.VERBOSE, "Setting "+(blocking?"":"non-")+"blocking on Socket");
-         s.setSoTimeout(blocking ? 0 : 1);
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "Setting timeout to "+timeout+" on Socket");
+         s.setSoTimeout(timeout);
       }
       mout = new MessageWriter(out);
       min = new MessageReader(in);
