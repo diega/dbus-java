@@ -53,6 +53,24 @@ have to do something like:
 
 java -cp /usr/local/share/java/dbus.jar:/usr/local/share/java/unix.jar:/usr/local/share/java/debug-disable.jar -Djava.library.path=/usr/local/lib/jni
 
+Windows
+-------
+
+The Java D-Bus implementation can be used under Windows with TCP Sockets. There
+are several windows batch scripts provided to ease use on Windows.
+
+If the library is being compiled in a unix environment (including cygwin) the
+normal Makefile can be used to create batch files under win/ with `make win'.
+These batch files are wrapper scripts to run the included programs (DBusDaemon,
+CreateInterface, ...) under windows. There is also a make target which creates
+a zip file containing all the jars, wrapper scripts and dependency jars.
+
+If you are compiling on windows there is a script, compile.bat, which will
+create all the jars. You may have to alter the variables defined in it
+depending where you have installed the dependencies and your Java compiler.
+The other .bat files are the wrapper scripts which will need variables setting
+appropriately before use.
+
 Debugging
 ---------
 

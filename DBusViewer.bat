@@ -5,6 +5,6 @@ set version=%VERSION%
 set jarpath=%WINJARPATH%
 set javaunixjarpath=%WINUNIXJARPATH%
 
-java -DVersion=%version% -cp %javaunixjarpath%debug-%debug%.jar;%javaunixjarpath%hexdump.jar;%jarpath%dbus.jar;%jarpath%dbus-viewer.jar org.freedesktop.dbus.viewer.DBusViewer %*
+java -DVersion=%version% -cp %javaunixjarpath%debug-%debug%.jar;%javaunixjarpath%hexdump.jar;%jarpath%dbus.jar;%jarpath%dbus-viewer.jar;%jarpath%dbus-bin.jar org.freedesktop.dbus.viewer.DBusViewer %*
 
 endlocal
