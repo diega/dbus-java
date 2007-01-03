@@ -37,6 +37,7 @@ Version 2.0:
 	* Test working on Windows
 	* Add makefile target to build zip file for windows
 	* Add windows compile script
+	* DBusDaemon can generate random TCP ports to listen on
 
 Version 1.13:
 

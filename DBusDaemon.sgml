@@ -62,6 +62,22 @@ manpage.1: manpage.sgml
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
+      <arg><option>--version</option></arg>
+      <arg><option>-v</option></arg>
+      <arg><option>--help</option></arg>
+      <arg><option>-h</option></arg>
+      <arg><option>--print-address</option></arg>
+      <arg><option>-r</option></arg>
+      <arg><option>--unix</option></arg>
+      <arg><option>-u</option></arg>
+      <arg><option>--tcp</option></arg>
+      <arg><option>-t</option></arg>
+      <arg><option>--listen</option> <replaceable>address</replaceable></arg>
+      <arg><option>-l</option> <replaceable>address</replaceable></arg>
+      <arg><option>--addressfile</option> <replaceable>file</replaceable></arg>
+      <arg><option>-a</option> <replaceable>file</replaceable></arg>
+      <arg><option>--pidfile</option> <replaceable>file</replaceable></arg>
+      <arg><option>-p</option> <replaceable>file</replaceable></arg>
 
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -85,6 +101,79 @@ manpage.1: manpage.sgml
     </para>
 
     <variablelist>
+       <varlistentry>
+          <term>
+             <option>-v</option>
+             <option>--version</option>
+          </term>
+          <listitem>
+             <para>Print the version</para>
+          </listitem>
+       </varlistentry>
+       <varlistentry>
+          <term>
+             <option>-h</option>
+             <option>--help</option>
+          </term>
+          <listitem>
+             <para>Print the syntax</para>
+          </listitem>
+       </varlistentry>
+       <varlistentry>
+          <term>
+             <option>-r</option>
+             <option>--print-address</option>
+          </term>
+          <listitem>
+             <para>Print the address</para>
+          </listitem>
+       </varlistentry>
+       <varlistentry>
+          <term>
+             <option>-u</option>
+             <option>--unix</option>
+          </term>
+          <listitem>
+             <para>Generate random Unix Socket address</para>
+          </listitem>
+       </varlistentry>
+       <varlistentry>
+          <term>
+             <option>-t</option>
+             <option>--tcp</option>
+          </term>
+          <listitem>
+             <para>Generate random local TCP address</para>
+          </listitem>
+       </varlistentry>
+       <varlistentry>
+          <term>
+             <option>-l</option> <replaceable>address</replaceable>
+             <option>--listen</option> <replaceable>address</replaceable>
+          </term>
+          <listitem>
+             <para>Listen on the specified address</para>
+          </listitem>
+       </varlistentry>
+       <varlistentry>
+          <term>
+             <option>-a</option> <replaceable>file</replaceable>
+             <option>--addressfile</option> <replaceable>file</replaceable>
+          </term>
+          <listitem>
+             <para>Print address to specified file</para>
+          </listitem>
+       </varlistentry>
+       <varlistentry>
+          <term>
+             <option>-p</option> <replaceable>file</replaceable>
+             <option>--pidfile</option> <replaceable>file</replaceable>
+          </term>
+          <listitem>
+             <para>Print address to specified file</para>
+          </listitem>
+       </varlistentry>
+
     </variablelist>
   </refsect1>
   <refsect1>

@@ -721,7 +721,7 @@ public class DBusDaemon extends Thread
    }
    public static void syntax()
    {
-      System.out.println("Syntax: DBusDaemon [--help] [-h]");
+      System.out.println("Syntax: DBusDaemon [--version] [-v] [--help] [-h] [--listen address] [-l address] [--print-address] [-r] [--pidfile file] [-p file] [--addressfile file] [-a file] [--unix] [-u] [--tcp] [-t] ");
       System.exit(1);
    }
    public static void version()
@@ -743,6 +743,8 @@ public class DBusDaemon extends Thread
       String pidfile = null;
       String addrfile = null;
       boolean printaddress = false;
+      boolean unix = true;
+      boolean tcp = false;
 
       // parse options
       try {
@@ -759,13 +761,20 @@ public class DBusDaemon extends Thread
                addrfile = args[++i];
             else if ("--print-address".equals(args[i]) || "-r".equals(args[i]))
                printaddress = true;
-            else syntax();
+            else if ("--unix".equals(args[i]) || "-u".equals(args[i])) {
+               unix = true;
+               tcp = false;
+            } else if ("--tcp".equals(args[i]) || "-t".equals(args[i])) {
+               tcp = true;
+               unix = false;
+            } else syntax();
       } catch (ArrayIndexOutOfBoundsException AIOOBe) {
          syntax();
       }
 
       // generate a random address if none specified
-      if (null == addr) addr = DirectConnection.createDynamicSession();
+      if (null == addr && unix) addr = DirectConnection.createDynamicSession();
+      else if (null == addr && tcp) addr = DirectConnection.createDynamicTCPSession();
 
       BusAddress address = new BusAddress(addr);
       if (null == address.getParameter("guid")) {

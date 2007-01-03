@@ -13,6 +13,7 @@ package org.freedesktop.dbus;
 import java.lang.reflect.Proxy;
 import java.io.File;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.Random;
 import java.util.Vector;
 
@@ -44,6 +45,29 @@ public class DirectConnection extends AbstractConnection
       }
 
       listen();
+   }
+
+   /**
+    * Creates a bus address for a randomly generated tcp port.
+    * @return a random bus address.
+    */
+   public static String createDynamicTCPSession()
+   {
+      String address = "tcp:host=localhost";
+      int port;
+      try {
+         ServerSocket s = new ServerSocket();
+         s.bind(null);
+         port = s.getLocalPort();
+         s.close();
+      } catch (Exception e) {
+         Random r = new Random();
+         port = 32768 + (Math.abs(r.nextInt()) % 28232);
+      }
+      address += ",port="+port;
+      address += ",guid="+Transport.genGUID();
+      if (Debug.debug) Debug.print("Created Session address: "+address);
+      return address;
    }
 
    /**
