@@ -43,7 +43,7 @@ DEBUG=disable
 VERSION = 2.0
 RELEASEVERSION = 2.0
 
-DISTFILES=dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml DBusDaemon.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh DBusDaemon.sh ListDBus.sh DBusViewer.sh DBusDaemon.bat CreateInterface.bat ListDBus.bat DBusViewer.bat
+DISTFILES=dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml DBusDaemon.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh DBusDaemon.sh ListDBus.sh DBusViewer.sh DBusDaemon.bat CreateInterface.bat ListDBus.bat DBusViewer.bat compile.bat
 
 all: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar bin/DBusDaemon bin/ListDBus bin/CreateInterface bin/DBusViewer dbus-java-bin-$(VERSION).jar
 
@@ -275,6 +275,8 @@ libdbus-java-$(VERSION): .dist
 
 dbus-java-$(VERSION).tar.gz: .dist
 	tar zcf $@ dbus-java-$(VERSION)
+dbus-java-$(VERSION).zip: .dist
+	zip -r $@ dbus-java-$(VERSION)/
 	
 dbus-java-$(RELEASEVERSION).tar.gz: $(DISTFILES) 
 	mkdir -p dbus-java-$(RELEASEVERSION)/
