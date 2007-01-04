@@ -1,6 +1,6 @@
 Version 2.1:
 
-	* make testbin/ with $JAVA
+	* make scripts with $JAVA
 	* fix DBusViewer.sh (Spotted by Luigi Paioro <luigi -at- lambrate -dot-
 			inaf -dot- it>
 
