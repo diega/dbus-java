@@ -190,10 +190,14 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       if (t instanceof ParameterizedType) {
          Class c = (Class) ((ParameterizedType) t).getRawType();
          if (List.class.isAssignableFrom(c)) {
-            Object[] os = ((List) a).toArray();
+            Object os;
+            if (a instanceof List)
+               os = ((List) a).toArray();
+            else 
+               os = a;
             Type[] ts = ((ParameterizedType) t).getActualTypeArguments();
-            for (int i = 0; i < os.length; i++)
-               vs.addAll(PrimitizeRecurse(os[i], ts[0]));
+            for (int i = 0; i < Array.getLength(os); i++)
+               vs.addAll(PrimitizeRecurse(Array.get(os, i), ts[0]));
          } else if (Map.class.isAssignableFrom(c)) {
             Object[] os = ((Map) a).keySet().toArray();
             Object[] ks = ((Map) a).values().toArray();
@@ -212,7 +216,12 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
             vs.addAll(PrimitizeRecurse(((Variant) a).getValue(), ((Variant) a).getType()));
          }
       } else if (Variant.class.isAssignableFrom((Class) t))
-            vs.addAll(PrimitizeRecurse(((Variant) a).getValue(), ((Variant) a).getType()));
+         vs.addAll(PrimitizeRecurse(((Variant) a).getValue(), ((Variant) a).getType()));
+      else if (t instanceof Class && ((Class) t).isArray()) {
+         Type t2 = ((Class) t).getComponentType();
+         for (int i = 0; i < Array.getLength(a); i++)
+            vs.addAll(PrimitizeRecurse(Array.get(a, i), t2));
+      }
       else vs.add(new Variant(a));
 
       return vs;

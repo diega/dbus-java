@@ -1,3 +1,7 @@
+Version 2.2:
+
+	* Fix cross-test to pass.
+
 Version 2.1:
 
 	* make scripts with $JAVA
