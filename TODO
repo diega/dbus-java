@@ -1,7 +1,10 @@
  * Javadoc
+ * don't respond to Introspect/Ping except on the right interface Serkan Kaba <serkan_kaba -at- yahoo -dot- com>
+ * document that we handle Introspect for you 
  * add header checks to daemon
  * add TERM/etc handler to DBusDaemon
  * autolaunch
+ * run a daemon in the same JVM as the application for autolaunch??
  * autodetection of float support
  * allow 'virtual' object handlers, so that all object paths under a certain hierarchy are handled by the same object
  * fix dbus-viewer to recurse on paths
