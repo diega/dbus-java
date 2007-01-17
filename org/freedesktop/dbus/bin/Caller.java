@@ -32,6 +32,7 @@ public class Caller
       Message m = new MethodCall("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "Hello", (byte) 0, null);;
       conn.mout.writeMessage(m);
 
+      if ("".equals(args[2])) args[2] = null;
       if (args.length == 4) 
          m = new MethodCall(args[0], args[1], args[2], args[3], (byte) 0, null);
       else {
