@@ -1,5 +1,9 @@
 Version 2.2:
-	
+
+	* Fix cross-test to pass.
+	* Fix DBusViewer.sh *again* (Spotted by Serkan Kaba <serkan_kaba
+			-at- yahoo -dot- com>)
+	* Add DBusCall
 	* fix CreateInterface to put DBusException in the right package in import
 		statements. Spotted by Steve Crane <Steve -dot- Crane -at- rococosoft
 		-dot- com>
