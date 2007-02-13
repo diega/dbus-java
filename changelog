@@ -1,3 +1,9 @@
+Version 2.2:
+	
+	* fix CreateInterface to put DBusException in the right package in import
+		statements. Spotted by Steve Crane <Steve -dot- Crane -at- rococosoft
+		-dot- com>
+
 Version 2.1:
 
 	* make scripts with $JAVA

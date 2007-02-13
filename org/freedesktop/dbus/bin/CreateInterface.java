@@ -210,7 +210,7 @@ public class CreateInterface
       Vector<String> porder = new Vector<String>();
       char defaultname = 'a';
       imports.add("org.freedesktop.dbus.DBusSignal");
-      imports.add("org.freedesktop.dbus.DBusException");
+      imports.add("org.freedesktop.dbus.exceptions.DBusException");
       String annotations = "";
       for (Node a: new IterableNodeList(signal.getChildNodes())) {
 
