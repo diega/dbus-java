@@ -472,11 +472,12 @@ if (0 != col.compare("Name", rname))
 
 \subsection{Arrays}
 
-You can send arrays of any valid D-Bus Type over D-Bus. These can
-either be declared in Java as arrays (e.g. \verb&Integer[]& or
-\verb&int[]&) or as Lists (e.g. \verb&List<String>&). All lists {\bf
-must} be parameterised with their type in the source (reflection on
-this is used by the library to determine their type).
+You can send arrays of any valid D-Bus Type over D-Bus. These can either be
+declared in Java as arrays (e.g. \verb&Integer[]& or \verb&int[]&) or as Lists
+(e.g. \verb&List<String>&). All lists {\bf must} be parameterised with their
+type in the source (reflection on this is used by the library to determine
+their type). Also note that arrays cannot be used as part of more complex type,
+only Lists (for example \verb&List<List<String>>&).
 
 \subsection{Maps}
 
