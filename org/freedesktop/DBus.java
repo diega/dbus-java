@@ -358,10 +358,23 @@ public interface DBus extends DBusInterface
          @Description("Returns the sum of the values in the input list")
          public UInt32 Sum(byte[] a);
       }
-      public interface TestCallbacks extends DBusInterface
+      public interface TestClient extends DBusInterface
       {
          @Description("when the trigger signal is received, this method should be called on the sending process/object.")
          public void Response(UInt16 a, double b);
+         @Description("Causes a callback")
+         public static class Trigger extends DBusSignal
+         {
+            public final UInt16 a;
+            public final double b;
+            public Trigger(String path, UInt16 a, double b) throws DBusException
+            {
+               super(path, a, b);
+               this.a = a;
+               this.b = b;
+            }
+         }
+
       }
       public interface Tests extends DBusInterface
       {
@@ -434,18 +447,6 @@ public interface DBus extends DBusInterface
             {
                super(path, a);
                this.a = a;
-            }
-         }
-         @Description("Causes a callback")
-         public static class Trigger extends DBusSignal
-         {
-            public final UInt16 a;
-            public final double b;
-            public Trigger(String path, UInt16 a, double b) throws DBusException
-            {
-               super(path, a, b);
-               this.a = a;
-               this.b = b;
             }
          }
       }

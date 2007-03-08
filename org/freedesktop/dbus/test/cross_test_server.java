@@ -32,7 +32,7 @@ import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
-public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.SingleTests, DBusSigHandler<DBus.Binding.TestSignals.Trigger>
+public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.SingleTests, DBusSigHandler<DBus.Binding.TestClient.Trigger>
 {
    private DBusConnection conn;
    boolean run = true;
@@ -69,7 +69,7 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       notdone.add("org.freedesktop.DBus.Binding.Tests.Invert");
       notdone.add("org.freedesktop.DBus.Binding.Tests.Trigger");
       notdone.add("org.freedesktop.DBus.Binding.Tests.Exit");
-      notdone.add("org.freedesktop.DBus.Binding.TestSignals.Trigger");
+      notdone.add("org.freedesktop.DBus.Binding.TestClient.Trigger");
    }
    
    public cross_test_server(DBusConnection conn)
@@ -310,12 +310,12 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
          notifyAll();
       }
    }
-   public void handle(DBus.Binding.TestSignals.Trigger t)
+   public void handle(DBus.Binding.TestClient.Trigger t)
    {
-      done.add("org.freedesktop.DBus.Binding.TestSignals.Trigger");
-      notdone.remove("org.freedesktop.DBus.Binding.TestSignals.Trigger");
+      done.add("org.freedesktop.DBus.Binding.TestClient.Trigger");
+      notdone.remove("org.freedesktop.DBus.Binding.TestClient.Trigger");
       try {
-         DBus.Binding.TestCallbacks cb = (DBus.Binding.TestCallbacks) conn.getRemoteObject(t.getSource(), "/Test", DBus.Binding.TestCallbacks.class);
+         DBus.Binding.TestClient cb = (DBus.Binding.TestClient) conn.getRemoteObject(t.getSource(), "/Test", DBus.Binding.TestClient.class);
          cb.Response(t.a, t.b);
       } catch (DBusException DBe) {
          throw new DBusExecutionException(DBe.getMessage());
@@ -327,7 +327,7 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       DBusConnection conn = DBusConnection.getConnection(DBusConnection.SESSION);
       conn.requestBusName("org.freedesktop.DBus.Binding.TestServer");
       cross_test_server cts = new cross_test_server(conn);
-      conn.addSigHandler(DBus.Binding.TestSignals.Trigger.class, cts);
+      conn.addSigHandler(DBus.Binding.TestClient.Trigger.class, cts);
       conn.exportObject("/Test", cts);
       synchronized (cts) {
          while (cts.run) {

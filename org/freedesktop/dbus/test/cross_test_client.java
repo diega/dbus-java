@@ -42,7 +42,7 @@ import org.freedesktop.dbus.types.DBusMapType;
 
 import cx.ath.matthew.debug.Debug;
 
-public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHandler<DBus.Binding.TestSignals.Triggered>
+public class cross_test_client implements DBus.Binding.TestClient, DBusSigHandler<DBus.Binding.TestSignals.Triggered>
 {
    private DBusConnection conn;
    private static Set<String> passed = new TreeSet<String>();
@@ -54,7 +54,7 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       failed.put("org.freedesktop.DBus.Binding.TestSignals.Triggered", l);
       l = new Vector<String>();
       l.add("Method never called");
-      failed.put("org.freedesktop.DBus.Binding.TestCallbacks.Response", l);
+      failed.put("org.freedesktop.DBus.Binding.TestClient.Response", l);
    }
    public cross_test_client(DBusConnection conn)
    {
@@ -73,11 +73,11 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
    }
    public void Response(UInt16 a, double b)
    {
-      failed.remove("org.freedesktop.DBus.Binding.TestCallbacks.Response");
+      failed.remove("org.freedesktop.DBus.Binding.TestClient.Response");
       if (a.equals(new UInt16(15)) && (b == 12.5))
-         pass("org.freedesktop.DBus.Binding.TestCallbacks.Response");
+         pass("org.freedesktop.DBus.Binding.TestClient.Response");
       else
-         fail("org.freedesktop.DBus.Binding.TestCallbacks.Response", "Incorrect parameters; expected 15, 12.5 got "+a+", "+b);
+         fail("org.freedesktop.DBus.Binding.TestClient.Response", "Incorrect parameters; expected 15, 12.5 got "+a+", "+b);
    }
    public static void pass(String test)
    {
@@ -423,13 +423,13 @@ public class cross_test_client implements DBus.Binding.TestCallbacks, DBusSigHan
       test(DBus.Binding.Tests.class, tests, "Trigger", null, "/Test", new UInt64(21389479283L));
 
       try {
-         ctc.conn.sendSignal(new DBus.Binding.TestSignals.Trigger("/Test", new UInt16(15), 12.5));
+         ctc.conn.sendSignal(new DBus.Binding.TestClient.Trigger("/Test", new UInt16(15), 12.5));
       } catch (DBusException DBe) {
          if (Debug.debug) Debug.print(DBe);
          throw new DBusExecutionException(DBe.getMessage());
       }
          
-      try { Thread.sleep(1000); } catch (InterruptedException Ie) {}
+      try { Thread.sleep(10000); } catch (InterruptedException Ie) {}
 
       test(DBus.Binding.Tests.class, tests, "Exit", null);
    }
