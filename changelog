@@ -8,6 +8,10 @@ Version 2.2:
 		statements. Spotted by Steve Crane <Steve -dot- Crane -at- rococosoft
 		-dot- com>
 	* Update Cross-test to new spec
+	* Change casting and return types for get{Peer,}RemoteObject calls to 
+	  use generics so you don't need explicit casts on return types.
+	  Suggested by Philippe Marschall <philippe -dot- marschall -at- gmail
+	  -dot- com>.
 
 Version 2.1:
 

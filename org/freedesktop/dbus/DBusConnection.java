@@ -272,7 +272,7 @@ public class DBusConnection extends AbstractConnection
       names.addAll(busnames);
       return names.toArray(new String[0]);
    }
-   public DBusInterface getPeerRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type) throws DBusException
+   public <I extends DBusInterface> I getPeerRemoteObject(String busname, String objectpath, Class<I> type) throws DBusException
    {
       return getPeerRemoteObject(busname, objectpath, type, true);
    }
@@ -362,7 +362,7 @@ public class DBusConnection extends AbstractConnection
        * @throws ClassCastException If type is not a sub-type of DBusInterface
        * @throws DBusException If busname or objectpath are incorrectly formatted or type is not in a package.
     */
-   public DBusInterface getPeerRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type, boolean autostart) throws DBusException
+   public <I extends DBusInterface> I getPeerRemoteObject(String busname, String objectpath, Class<I> type, boolean autostart) throws DBusException
    {
       if (null == busname) throw new DBusException("Invalid bus name (null)");
       
@@ -388,7 +388,7 @@ public class DBusConnection extends AbstractConnection
        * @throws ClassCastException If type is not a sub-type of DBusInterface
        * @throws DBusException If busname or objectpath are incorrectly formatted or type is not in a package.
     */
-   public DBusInterface getRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type) throws DBusException
+   public <I extends DBusInterface> I getRemoteObject(String busname, String objectpath, Class<I> type) throws DBusException
    {
       return getRemoteObject(busname, objectpath, type, true);
    }
@@ -410,7 +410,7 @@ public class DBusConnection extends AbstractConnection
        * @throws ClassCastException If type is not a sub-type of DBusInterface
        * @throws DBusException If busname or objectpath are incorrectly formatted or type is not in a package.
     */
-   public DBusInterface getRemoteObject(String busname, String objectpath, Class<? extends DBusInterface> type, boolean autostart) throws DBusException
+   public <I extends DBusInterface> I getRemoteObject(String busname, String objectpath, Class<I> type, boolean autostart) throws DBusException
    {
       if (null == busname) throw new DBusException("Invalid bus name (null)");
       if (null == objectpath) throw new DBusException("Invalid object path (null)");
@@ -431,7 +431,7 @@ public class DBusConnection extends AbstractConnection
          throw new DBusException("DBusInterfaces cannot be declared outside a package");
       
       RemoteObject ro = new RemoteObject(busname, objectpath, type, autostart);
-      DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 
+      I i =  (I) Proxy.newProxyInstance(type.getClassLoader(), 
             new Class[] { type }, new RemoteInvocationHandler(this, ro));
       importedObjects.put(i, ro);
       return i;

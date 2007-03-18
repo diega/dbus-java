@@ -217,7 +217,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    public String recursionTest()
    {
       try {
-         TestRemoteInterface tri = (TestRemoteInterface) conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface.class);
+         TestRemoteInterface tri = conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface.class);
          return tri.getName();
       } catch (DBusException DBe) {
          test.fail("Failed with error: "+DBe);
@@ -381,8 +381,8 @@ public class test
       conn.requestBusName("foo.bar.Test");
       
       /** This gets a remote object matching our bus name and exported object path. */
-      Peer peer = (Peer) conn.getRemoteObject("foo.bar.Test", "/Test", Peer.class);
-      DBus dbus = (DBus) conn.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
+      Peer peer = conn.getRemoteObject("foo.bar.Test", "/Test", Peer.class);
+      DBus dbus = conn.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
 
       System.out.print("Listening for signals...");
       try {
@@ -412,13 +412,13 @@ public class test
       
       System.out.println("Getting our introspection data");
       /** This gets a remote object matching our bus name and exported object path. */
-      Introspectable intro = (Introspectable) conn.getRemoteObject("foo.bar.Test", "/", Introspectable.class);
+      Introspectable intro = conn.getRemoteObject("foo.bar.Test", "/", Introspectable.class);
       /** Get introspection data */
       String data = intro.Introspect();
       if (null == data || !data.startsWith("<!DOCTYPE"))
          fail("Introspection data invalid");
       System.out.println("Got Introspection Data: \n"+data);
-      intro = (Introspectable) conn.getRemoteObject("foo.bar.Test", "/Test", Introspectable.class);
+      intro = conn.getRemoteObject("foo.bar.Test", "/Test", Introspectable.class);
       /** Get introspection data */
       data = intro.Introspect();
       if (null == data || !data.startsWith("<!DOCTYPE"))
@@ -487,7 +487,7 @@ public class test
       /** Try and call an invalid remote object */
       try {
          System.out.println("Calling Method2");
-         tri = (TestRemoteInterface) conn.getRemoteObject("foo.bar.NotATest", "/Moofle", TestRemoteInterface.class);
+         tri = conn.getRemoteObject("foo.bar.NotATest", "/Moofle", TestRemoteInterface.class);
          System.out.println("Got Remote Name: "+tri.getName());
          test.fail("Method Execution should have failed");
       } catch (ServiceUnknown SU) {
@@ -497,7 +497,7 @@ public class test
       /** Try and call an invalid remote object */
       try {
          System.out.println("Calling Method3");
-         tri = (TestRemoteInterface) conn.getRemoteObject("foo.bar.Test", "/Moofle", TestRemoteInterface.class);
+         tri = conn.getRemoteObject("foo.bar.Test", "/Moofle", TestRemoteInterface.class);
          System.out.println("Got Remote Name: "+tri.getName());
          test.fail("Method Execution should have failed");
       } catch (UnknownObject UO) {
@@ -579,7 +579,7 @@ public class test
       System.out.println("done");
 
       System.out.print("testing method overloading...");
-      tri = (TestRemoteInterface) conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface.class);
+      tri = conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface.class);
       if (1 != tri2.overload("foo")) test.fail("wrong overloaded method called");
       if (2 != tri2.overload((byte) 0)) test.fail("wrong overloaded method called");
       if (3 != tri2.overload()) test.fail("wrong overloaded method called");
