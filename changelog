@@ -12,6 +12,7 @@ Version 2.2:
 	  use generics so you don't need explicit casts on return types.
 	  Suggested by Philippe Marschall <philippe -dot- marschall -at- gmail
 	  -dot- com>.
+	* Test with multiple requested (same actual) connection
 
 Version 2.1:
 
