@@ -181,10 +181,14 @@ by any remote method if any part of the execution fails.
 
 Calling a method on a remote object is synchronous, that is the thread will
 block until it has a reply. If you do not want to block you can use an
-asynchronous call. These are called using the {\tt callMethodAsync} function on
-the connection object. This returns a {\tt
+asynchronous call.
+
+There are two ways of making asynchronous calls. You can either call the {\tt
+callMethodAsync} function on the connection object, in which case you are
+returned a {\tt
 DBusAsyncReply\footnote{\url{\javadocroot/org/freedesktop/dbus/DBusAsyncReply.html}}}
-object which can be used to check for a reply and get the return value. This is demonstrated in figure \ref{fig:async}.
+object which can be used to check for a reply and get the return value.  This
+is demonstrated in figure \ref{fig:async}.
 
 \begin{figure}[htb]
 \begin{center}
@@ -202,6 +206,11 @@ if (stuffreply.hasReply()) {
 \label{fig:async}
 \end{figure}
 
+Alternatively, you can register a callback with the connection using the {\tt
+callWithCallback} function on the connection object. In this case, your
+callback class (implementing the {\tt
+CallbackHandler\footnote{\url{\javadocroot/org/freedesktop/dbus/CallbackHandler.html}}}
+interface will be called when the reply is returned from the bus.
 
 \section{DBusInterface}
 

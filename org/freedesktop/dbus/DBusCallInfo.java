@@ -26,7 +26,7 @@ public class DBusCallInfo
    private String iface;
    private String method;
    private int flags;
-   DBusCallInfo(MethodCall m)
+   DBusCallInfo(Message m)
    {
       this.source = m.getSource();
       this.destination = m.getDestination();

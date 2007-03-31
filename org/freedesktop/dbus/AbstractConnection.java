@@ -777,7 +777,6 @@ public abstract class AbstractConnection
          // queue callback for execution
          if (null != cbh) {
             final CallbackHandler fcbh = cbh;
-            final MethodReturn fmr = mr;
             final DBusAsyncReply fasr = asr;
             if (Debug.debug) Debug.print(Debug.VERBOSE, "Adding Runnable for method "+fasr.getMethod()+" with callback handler "+fcbh);
             addRunnable(new Runnable() { 
@@ -787,8 +786,17 @@ public abstract class AbstractConnection
                   if (run) return;
                   run = true;
                   try {
-                     if (Debug.debug) Debug.print(Debug.VERBOSE, "Running Callback for "+fmr);
-                     fcbh.handle(RemoteInvocationHandler.convertRV(mr.getSig(), fmr.getParameters(), fasr.getMethod(), fasr.getConnection()));
+                     if (Debug.debug) Debug.print(Debug.VERBOSE, "Running Callback for "+mr);
+                     DBusCallInfo info = new DBusCallInfo(mr);
+                     synchronized (infomap) {
+                        infomap.put(Thread.currentThread(), info);
+                     }
+
+                     fcbh.handle(RemoteInvocationHandler.convertRV(mr.getSig(), mr.getParameters(), fasr.getMethod(), fasr.getConnection()));
+                     synchronized (infomap) {
+                        infomap.remove(Thread.currentThread());
+                     }
+
                   } catch (Exception e) {
                      if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
                   }
