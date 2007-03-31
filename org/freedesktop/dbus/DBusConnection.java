@@ -129,11 +129,13 @@ public class DBusConnection extends AbstractConnection
                throw new DBusException("Invalid Bus Type: "+bustype);
          }
          DBusConnection c = conn.get(s);
+         if (Debug.debug) Debug.print(Debug.VERBOSE, "Getting bus connection for "+s+": "+c);
          if (null != c) {
             synchronized (c._reflock) { c._refcount++; }
             return c;
          }
          else {
+            if (Debug.debug) Debug.print(Debug.DEBUG, "Creating new bus connection to: "+s);
             c = new DBusConnection(s);
             conn.put(s, c);
             return c;

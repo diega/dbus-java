@@ -13,6 +13,7 @@ Version 2.2:
 	  Suggested by Philippe Marschall <philippe -dot- marschall -at- gmail
 	  -dot- com>.
 	* Test with multiple requested (same actual) connection
+	* Add async-with-callback API.
 
 Version 2.1:
 

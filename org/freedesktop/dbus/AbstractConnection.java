@@ -194,6 +194,8 @@ public abstract class AbstractConnection
    protected Map<DBusInterface,RemoteObject> importedObjects;
    protected Map<SignalTuple,Vector<DBusSigHandler>> handledSignals;
    protected EfficientMap pendingCalls;
+   protected Map<MethodCall, CallbackHandler> pendingCallbacks;
+   protected Map<MethodCall, DBusAsyncReply> pendingCallbackReplys;
    protected LinkedList<Runnable> runnables;
    protected LinkedList<_workerthread> workers;
    protected boolean _run;
@@ -238,6 +240,8 @@ public abstract class AbstractConnection
       handledSignals = new HashMap<SignalTuple,Vector<DBusSigHandler>>();
       pendingCalls = new EfficientMap(PENDING_MAP_INITIAL_SIZE);
       outgoing = new EfficientQueue(PENDING_MAP_INITIAL_SIZE);
+      pendingCallbacks = new HashMap<MethodCall, CallbackHandler>();
+      pendingCallbackReplys = new HashMap<MethodCall, DBusAsyncReply>();
       pendingErrors = new LinkedList<Error>();
       runnables = new LinkedList<Runnable>();
       workers = new LinkedList<_workerthread>();
@@ -519,6 +523,39 @@ public abstract class AbstractConnection
    }
 
    /**
+    * Call a method asynchronously and set a callback.
+    * This handler will be called in a separate thread.
+    * @param object The remote object on which to call the method.
+    * @param m The name of the method on the interface to call.
+    * @param callback The callback handler.
+    * @param parameters The parameters to call the method with.
+    */
+   @SuppressWarnings("unchecked")
+   public <A> void callWithCallback(DBusInterface object, String m, CallbackHandler<A> callback, Object... parameters)
+   {
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "callWithCallback("+object+","+m+", "+callback);
+      Class[] types = new Class[parameters.length];
+      for (int i = 0; i < parameters.length; i++) 
+         types[i] = parameters[i].getClass();
+      RemoteObject ro = importedObjects.get(object);
+
+      try {
+         Method me;
+         if (null == ro.iface)
+            me = object.getClass().getMethod(m, types);
+         else
+            me = ro.iface.getMethod(m, types);
+         RemoteInvocationHandler.executeRemoteMethod(ro, me, this, RemoteInvocationHandler.CALL_TYPE_CALLBACK, callback, parameters);
+      } catch (DBusExecutionException DBEe) {
+         if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBEe);
+         throw DBEe;
+      } catch (Exception e) {
+         if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
+         throw new DBusExecutionException(e.getMessage());
+      }
+   }
+ 
+   /**
     * Call a method asynchronously and get a handle with which to get the reply.
     * @param object The remote object on which to call the method.
     * @param m The name of the method on the interface to call.
@@ -538,7 +575,7 @@ public abstract class AbstractConnection
             me = object.getClass().getMethod(m, types);
          else
             me = ro.iface.getMethod(m, types);
-         return (DBusAsyncReply) RemoteInvocationHandler.executeRemoteMethod(ro, me, this, true, parameters);
+         return (DBusAsyncReply) RemoteInvocationHandler.executeRemoteMethod(ro, me, this, RemoteInvocationHandler.CALL_TYPE_ASYNC, null, parameters);
       } catch (DBusExecutionException DBEe) {
          if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBEe);
          throw DBEe;
@@ -717,6 +754,7 @@ public abstract class AbstractConnection
          synchronized (pendingErrors) {
             pendingErrors.addLast(err); }
    }
+   @SuppressWarnings("unchecked")
    private void handleMessage(final MethodReturn mr)
    {
       if (Debug.debug) Debug.print(Debug.DEBUG, "Handling incoming method return: "+mr);
@@ -729,6 +767,35 @@ public abstract class AbstractConnection
       if (null != m) {
          m.setReply(mr);
          mr.setCall(m);
+         CallbackHandler cbh = null;
+         DBusAsyncReply asr = null;
+         synchronized (pendingCallbacks) {
+            cbh = pendingCallbacks.remove(m);
+            if (Debug.debug) Debug.print(Debug.VERBOSE, cbh+" = pendingCallbacks.remove("+m+")");
+            asr = pendingCallbackReplys.remove(m);
+         }
+         // queue callback for execution
+         if (null != cbh) {
+            final CallbackHandler fcbh = cbh;
+            final MethodReturn fmr = mr;
+            final DBusAsyncReply fasr = asr;
+            if (Debug.debug) Debug.print(Debug.VERBOSE, "Adding Runnable for method "+fasr.getMethod()+" with callback handler "+fcbh);
+            addRunnable(new Runnable() { 
+               private boolean run = false;
+               public synchronized void run() 
+               {
+                  if (run) return;
+                  run = true;
+                  try {
+                     if (Debug.debug) Debug.print(Debug.VERBOSE, "Running Callback for "+fmr);
+                     fcbh.handle(RemoteInvocationHandler.convertRV(mr.getSig(), fmr.getParameters(), fasr.getMethod(), fasr.getConnection()));
+                  } catch (Exception e) {
+                     if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
+                  }
+               }
+            });
+         }
+         
       } else
          try {
             queueOutgoing(new Error(mr, new DBusExecutionException("Spurious reply. No message with the given serial id was awaiting a reply."))); 

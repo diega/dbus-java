@@ -20,6 +20,7 @@ import java.util.Vector;
 
 import java.text.Collator;
 
+import org.freedesktop.dbus.CallbackHandler;
 import org.freedesktop.dbus.DBusAsyncReply;
 import org.freedesktop.dbus.DBusCallInfo;
 import org.freedesktop.dbus.DBusConnection;
@@ -357,6 +358,23 @@ class badarraysignalhandler implements DBusSigHandler
 }
 
 /**
+ * Callback handler
+ */
+class callbackhandler implements CallbackHandler<String>
+{
+   public void handle(String r)
+   {
+      System.out.println("Handling callback: "+r);
+      Collator col = Collator.getInstance();
+      col.setDecomposition(Collator.FULL_DECOMPOSITION);
+      col.setStrength(Collator.PRIMARY);
+      if (0 != col.compare("This Is A UTF-8 Name: ﺱ !!", r))
+         test.fail("call with callback, wrong return value");
+      test.done4 = true;
+   }
+}
+
+/**
  * This is a test program which sends and recieves a signal, implements, exports and calls a remote method.
  */
 public class test
@@ -364,8 +382,10 @@ public class test
    public static boolean done1 = false;
    public static boolean done2 = false;
    public static boolean done3 = false;
+   public static boolean done4 = false;
    public static void fail(String message)
    {
+      System.out.println("Test Failed: "+message);
       System.err.println("Test Failed: "+message);
       if (null != serverconn) serverconn.disconnect();
       if (null != clientconn) clientconn.disconnect();
@@ -469,6 +489,9 @@ public class test
       if (-5 != rint)
          fail("frobnicate return value incorrect");
  
+      System.out.println("Doing stuff asynchronously with callback");
+      clientconn.callWithCallback(tri, "getName", new callbackhandler());
+
       /** call something that throws */
       try {
          System.out.println("Throwing stuff");
@@ -628,6 +651,7 @@ public class test
       if (!done1) fail("Signal handler 1 failed to be run");
       if (!done2) fail("Signal handler 2 failed to be run");
       if (!done3) fail("Signal handler 3 failed to be run");
+      if (!done4) fail("Callback handler failed to be run");
       
    } catch (Exception e) {
       e.printStackTrace();

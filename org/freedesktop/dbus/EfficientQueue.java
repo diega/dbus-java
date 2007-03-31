@@ -28,6 +28,7 @@ class EfficientQueue
    }
    private void grow()
    {
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Growing");
       // create new vectors twice as long
       Message[] oldmv = mv;
       mv = new Message[oldmv.length*2];
@@ -61,6 +62,7 @@ class EfficientQueue
    }
    private void shrink()
    {
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Shrinking");
       if (null != mv && mv.length == init_size) return;
       // reset to original size
       mv = new Message[init_size];
@@ -69,6 +71,7 @@ class EfficientQueue
    }
    public void add(Message m)
    {
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Enqueueing Message "+m);
       // put this at the end
       mv[end] = m;
       // move the end
@@ -86,6 +89,7 @@ class EfficientQueue
       // set it as unused
       mv[pos] = null;
       if (start == (mv.length-1)) start = 0; else start++;
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Dequeueing "+m);
       return m;
    }
    public boolean isEmpty()

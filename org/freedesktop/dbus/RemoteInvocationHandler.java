@@ -30,6 +30,9 @@ import cx.ath.matthew.debug.Debug;
 
 class RemoteInvocationHandler implements InvocationHandler
 {
+   public static final int CALL_TYPE_SYNC = 0;
+   public static final int CALL_TYPE_ASYNC = 1;
+   public static final int CALL_TYPE_CALLBACK = 2;
    public static Object convertRV(String sig, Object[] rp, Method m, AbstractConnection conn) throws DBusException
    {
       Class c = m.getReturnType();
@@ -75,7 +78,7 @@ class RemoteInvocationHandler implements InvocationHandler
             }
       }
    }
-   public static Object executeRemoteMethod(RemoteObject ro, Method m, AbstractConnection conn, boolean async, Object... args) throws DBusExecutionException
+   public static Object executeRemoteMethod(RemoteObject ro, Method m, AbstractConnection conn, int syncmethod, CallbackHandler callback, Object... args) throws DBusExecutionException
    {
       Type[] ts = m.getGenericParameterTypes();
       String sig = null;
@@ -88,7 +91,7 @@ class RemoteInvocationHandler implements InvocationHandler
       MethodCall call;
       byte flags = 0;
       if (!ro.autostart) flags |= Message.Flags.NO_AUTO_START;
-      if (async) flags |= Message.Flags.ASYNC;
+      if (syncmethod == CALL_TYPE_ASYNC) flags |= Message.Flags.ASYNC;
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) flags |= Message.Flags.NO_REPLY_EXPECTED;
       try {
          if (null == ro.iface)
@@ -100,9 +103,23 @@ class RemoteInvocationHandler implements InvocationHandler
          throw new DBusExecutionException("Failed to construct outgoing method call: "+DBe.getMessage());
       }
       if (null == conn.outgoing) throw new NotConnected("Not Connected");
-      conn.queueOutgoing(call);
 
-      if (async) return new DBusAsyncReply(call, m, conn);
+      switch (syncmethod) {
+         case CALL_TYPE_ASYNC: 
+            conn.queueOutgoing(call);
+            return new DBusAsyncReply(call, m, conn);
+         case CALL_TYPE_CALLBACK:
+             synchronized (conn.pendingCallbacks) {
+                if (Debug.debug) Debug.print(Debug.VERBOSE, "Queueing Callback "+callback+" for "+call);
+                conn.pendingCallbacks.put(call, callback);
+                conn.pendingCallbackReplys.put(call, new DBusAsyncReply(call, m, conn));
+             }
+             conn.queueOutgoing(call);
+             return null;
+         case CALL_TYPE_SYNC:
+             conn.queueOutgoing(call);
+             break;
+      }
 
       // get reply
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) return null;
@@ -163,7 +180,7 @@ class RemoteInvocationHandler implements InvocationHandler
       else if (method.getName().equals("toString"))
          return remote.toString();
 
-      return executeRemoteMethod(remote, method, conn, false, args);
+      return executeRemoteMethod(remote, method, conn, CALL_TYPE_SYNC, null, args);
    }
 }
 

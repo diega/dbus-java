@@ -102,5 +102,8 @@ public class DBusAsyncReply<ReturnType>
    {
       return "Waiting for: "+mc;
    }
+   Method getMethod() { return me; }
+   AbstractConnection getConnection() { return conn; }
+   MethodCall getCall() { return mc; }
 }
 
