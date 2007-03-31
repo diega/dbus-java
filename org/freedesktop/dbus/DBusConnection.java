@@ -410,6 +410,7 @@ public class DBusConnection extends AbstractConnection
        * @throws ClassCastException If type is not a sub-type of DBusInterface
        * @throws DBusException If busname or objectpath are incorrectly formatted or type is not in a package.
     */
+   @SuppressWarnings("unchecked")
    public <I extends DBusInterface> I getRemoteObject(String busname, String objectpath, Class<I> type, boolean autostart) throws DBusException
    {
       if (null == busname) throw new DBusException("Invalid bus name (null)");

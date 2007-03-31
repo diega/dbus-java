@@ -367,33 +367,36 @@ public class test
    public static void fail(String message)
    {
       System.err.println("Test Failed: "+message);
-      if (null != conn) conn.disconnect();
+      if (null != serverconn) serverconn.disconnect();
+      if (null != clientconn) clientconn.disconnect();
       System.exit(1);
    }
-   static DBusConnection conn = null;
+   static DBusConnection serverconn = null;
+   static DBusConnection clientconn = null;
    @SuppressWarnings("unchecked")
    public static void main(String[] args) 
    { try {
       System.out.println("Creating Connection");
-      conn = DBusConnection.getConnection(DBusConnection.SESSION);
+      serverconn = DBusConnection.getConnection(DBusConnection.SESSION);
+      clientconn = DBusConnection.getConnection(DBusConnection.SESSION);
       
       System.out.println("Registering Name");
-      conn.requestBusName("foo.bar.Test");
+      serverconn.requestBusName("foo.bar.Test");
       
       /** This gets a remote object matching our bus name and exported object path. */
-      Peer peer = conn.getRemoteObject("foo.bar.Test", "/Test", Peer.class);
-      DBus dbus = conn.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
+      Peer peer = clientconn.getRemoteObject("foo.bar.Test", "/Test", Peer.class);
+      DBus dbus = clientconn.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
 
       System.out.print("Listening for signals...");
       try {
          /** This registers an instance of the test class as the signal handler for the TestSignal class. */
-         conn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler());
+         clientconn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler());
          String source = dbus.GetNameOwner("foo.bar.Test");
-         conn.addSigHandler(TestSignalInterface.TestArraySignal.class, source, peer, new arraysignalhandler());
-         conn.addSigHandler(TestSignalInterface.TestObjectSignal.class, new objectsignalhandler());
+         clientconn.addSigHandler(TestSignalInterface.TestArraySignal.class, source, peer, new arraysignalhandler());
+         clientconn.addSigHandler(TestSignalInterface.TestObjectSignal.class, new objectsignalhandler());
          badarraysignalhandler bash = new badarraysignalhandler();
-         conn.addSigHandler(TestSignalInterface.TestSignal.class, bash);
-         conn.removeSigHandler(TestSignalInterface.TestSignal.class, bash);
+         clientconn.addSigHandler(TestSignalInterface.TestSignal.class, bash);
+         clientconn.removeSigHandler(TestSignalInterface.TestSignal.class, bash);
          System.out.println("done");
       } catch (MatchRuleInvalid MRI) {
          test.fail("Failed to add handlers: "+MRI.getMessage());
@@ -402,23 +405,23 @@ public class test
       }
       
       System.out.println("Listening for Method Calls");
-      testclass tclass = new testclass(conn);
+      testclass tclass = new testclass(serverconn);
       /** This exports an instance of the test class as the object /Test. */
-      conn.exportObject("/Test", tclass);
+      serverconn.exportObject("/Test", tclass);
       
       System.out.println("Sending Signal");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
-      conn.sendSignal(new TestSignalInterface.TestSignal("/foo/bar/Wibble", "Bar", new UInt32(42)));
+      serverconn.sendSignal(new TestSignalInterface.TestSignal("/foo/bar/Wibble", "Bar", new UInt32(42)));
       
       System.out.println("Getting our introspection data");
       /** This gets a remote object matching our bus name and exported object path. */
-      Introspectable intro = conn.getRemoteObject("foo.bar.Test", "/", Introspectable.class);
+      Introspectable intro = clientconn.getRemoteObject("foo.bar.Test", "/", Introspectable.class);
       /** Get introspection data */
       String data = intro.Introspect();
       if (null == data || !data.startsWith("<!DOCTYPE"))
          fail("Introspection data invalid");
       System.out.println("Got Introspection Data: \n"+data);
-      intro = conn.getRemoteObject("foo.bar.Test", "/Test", Introspectable.class);
+      intro = clientconn.getRemoteObject("foo.bar.Test", "/Test", Introspectable.class);
       /** Get introspection data */
       data = intro.Introspect();
       if (null == data || !data.startsWith("<!DOCTYPE"))
@@ -436,7 +439,7 @@ public class test
       
       System.out.println("Calling Method0/1");
       /** This gets a remote object matching our bus name and exported object path. */
-      TestRemoteInterface tri = (TestRemoteInterface) conn.getPeerRemoteObject("foo.bar.Test", "/Test");
+      TestRemoteInterface tri = (TestRemoteInterface) clientconn.getPeerRemoteObject("foo.bar.Test", "/Test");
       System.out.println("Got Remote Object: "+tri);
       /** Call the remote object and get a response. */
       String rname = tri.getName();
@@ -487,7 +490,7 @@ public class test
       /** Try and call an invalid remote object */
       try {
          System.out.println("Calling Method2");
-         tri = conn.getRemoteObject("foo.bar.NotATest", "/Moofle", TestRemoteInterface.class);
+         tri = clientconn.getRemoteObject("foo.bar.NotATest", "/Moofle", TestRemoteInterface.class);
          System.out.println("Got Remote Name: "+tri.getName());
          test.fail("Method Execution should have failed");
       } catch (ServiceUnknown SU) {
@@ -497,7 +500,7 @@ public class test
       /** Try and call an invalid remote object */
       try {
          System.out.println("Calling Method3");
-         tri = conn.getRemoteObject("foo.bar.Test", "/Moofle", TestRemoteInterface.class);
+         tri = clientconn.getRemoteObject("foo.bar.Test", "/Moofle", TestRemoteInterface.class);
          System.out.println("Got Remote Name: "+tri.getName());
          test.fail("Method Execution should have failed");
       } catch (UnknownObject UO) {
@@ -506,18 +509,18 @@ public class test
 
       System.out.println("Calling Method4/5/6/7");
       /** This gets a remote object matching our bus name and exported object path. */
-      TestRemoteInterface2 tri2 = (TestRemoteInterface2) conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);
+      TestRemoteInterface2 tri2 = clientconn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);
       /** Call the remote object and get a response. */
       TestTuple<String,List<Integer>,Boolean> rv = tri2.show(234);
       System.out.println("Show returned: "+rv);
-      if (!conn.getUniqueName().equals(rv.a) ||
+      if (!serverconn.getUniqueName().equals(rv.a) ||
             1 != rv.b.size() ||
             1953 != rv.b.get(0) ||
             true != rv.c.booleanValue())
          fail("show return value incorrect ("+rv.a+","+rv.b+","+rv.c+")");
       
       System.out.println("Doing stuff asynchronously");
-      DBusAsyncReply<Boolean> stuffreply = (DBusAsyncReply<Boolean>) conn.callMethodAsync(tri2, "dostuff", new TestStruct("bar", new UInt32(52), new Variant<Boolean>(new Boolean(true))));
+      DBusAsyncReply<Boolean> stuffreply = (DBusAsyncReply<Boolean>) clientconn.callMethodAsync(tri2, "dostuff", new TestStruct("bar", new UInt32(52), new Variant<Boolean>(new Boolean(true))));
 
       System.out.println("Checking bools");
       if (tri2.check()) fail("bools are broken");
@@ -552,7 +555,7 @@ public class test
       
       System.out.print("Sending Array Signal...");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
-      conn.sendSignal(new TestSignalInterface.TestArraySignal("/Test", new TestStruct2(l, new Variant<UInt64>(new UInt64(567)))));
+      serverconn.sendSignal(new TestSignalInterface.TestArraySignal("/Test", new TestStruct2(l, new Variant<UInt64>(new UInt64(567)))));
       
       System.out.println("done");
 
@@ -579,7 +582,7 @@ public class test
       System.out.println("done");
 
       System.out.print("testing method overloading...");
-      tri = conn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface.class);
+      tri = clientconn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface.class);
       if (1 != tri2.overload("foo")) test.fail("wrong overloaded method called");
       if (2 != tri2.overload((byte) 0)) test.fail("wrong overloaded method called");
       if (3 != tri2.overload()) test.fail("wrong overloaded method called");
@@ -604,19 +607,23 @@ public class test
       System.out.println("done");
 
       /* send an object in a signal */
-      conn.sendSignal(new TestSignalInterface.TestObjectSignal("/foo/bar/Wibble", tclass));
+      serverconn.sendSignal(new TestSignalInterface.TestObjectSignal("/foo/bar/Wibble", tclass));
 
       /** Pause while we wait for the DBus messages to go back and forth. */
       Thread.sleep(1000);
 
       System.out.println("Checking for outstanding errors");
-      DBusExecutionException DBEe = conn.getError();
+      DBusExecutionException DBEe = serverconn.getError();
+      if (null != DBEe) throw DBEe;
+      DBEe = clientconn.getError();
       if (null != DBEe) throw DBEe;
     
       System.out.println("Disconnecting");
       /** Disconnect from the bus. */
-      conn.disconnect();
-      conn = null;
+      clientconn.disconnect();
+      clientconn = null;
+      serverconn.disconnect();
+      serverconn = null;
 
       if (!done1) fail("Signal handler 1 failed to be run");
       if (!done2) fail("Signal handler 2 failed to be run");
