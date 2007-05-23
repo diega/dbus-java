@@ -1,4 +1,5 @@
  * Javadoc
+ * add annotation to override the interface or method name on the bus
  * don't respond to Introspect/Ping except on the right interface Serkan Kaba <serkan_kaba -at- yahoo -dot- com>
  * document that we handle Introspect for you 
  * add header checks to daemon
