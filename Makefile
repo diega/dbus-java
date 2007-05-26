@@ -86,6 +86,8 @@ dbus.jar: libdbus-java-$(VERSION).jar
 	ln -sf $< $@
 dbus-bin.jar: dbus-java-bin-$(VERSION).jar
 	ln -sf $< $@
+dbus-viewer.jar: dbus-java-viewer-$(VERSION).jar
+	ln -sf $< $@
 	
 jar: libdbus-java-$(VERSION).jar
 doc: doc/dbus-java.dvi doc/dbus-java.ps doc/dbus-java.pdf doc/dbus-java/index.html doc/api/index.html
@@ -127,7 +129,7 @@ bin/%: %.sh .bin
 win/%.bat: %.bat .win
 	sed 's,\%WINJARPATH\%,$(JARPREFIX),;s,\%WINUNIXJARPATH\%,$(JAVAUNIXJARDIR),;s,\%VERSION\%,$(VERSION),;s,\%DEBUG\%,$(DEBUG),' < $< > $@
 
-testbin/%: %.sh .testbin libdbus-java-$(VERSION).jar dbus-java-bin-$(VERSION).jar dbus-bin.jar dbus.jar
+testbin/%: %.sh .testbin libdbus-java-$(VERSION).jar dbus-java-bin-$(VERSION).jar dbus-bin.jar dbus.jar dbus-viewer.jar
 	sed 's,\%JARPATH\%,.,;s,\%JAVAUNIXJARPATH\%,$(JAVAUNIXJARDIR),;s,\%JAVAUNIXLIBPATH\%,$(JAVAUNIXLIBDIR),;s,\%VERSION\%,$(VERSION),;s,\%DEBUG\%,$(DEBUG),;s,\%JAVA\%,$(JAVA),' < $< > $@
 	chmod 755 $@
 

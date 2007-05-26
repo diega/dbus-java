@@ -8,7 +8,6 @@
  * run a daemon in the same JVM as the application for autolaunch??
  * autodetection of float support
  * allow 'virtual' object handlers, so that all object paths under a certain hierarchy are handled by the same object
- * fix dbus-viewer to recurse on paths
  * extend dbus-viewer to make calls
  * check that this is true:
    objects should not return ObjectUnknown if the path has an existant

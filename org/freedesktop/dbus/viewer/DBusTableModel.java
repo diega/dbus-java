@@ -25,8 +25,10 @@ class DBusTableModel extends AbstractTableModel
 	private static final String USER = "user";
 
 	private static final String NAME = "name";
+	
+	private static final String PATH = "path";
 
-	final String[] columns = { NAME, USER, OWNER, INTROSPECTABLE };
+	final String[] columns = { NAME, PATH, USER, OWNER, INTROSPECTABLE };
 
 	private List<DBusEntry> entries = new ArrayList<DBusEntry>();
 
@@ -75,6 +77,10 @@ class DBusTableModel extends AbstractTableModel
 		{
 			return String.class;
 		}
+		if (columnName.equals(PATH))
+		{
+			return String.class;
+		}
 		else if (columnName.equals(USER))
 		{
 			return Object.class;
@@ -98,6 +104,10 @@ class DBusTableModel extends AbstractTableModel
 		if (columnName.equals(NAME))
 		{
 			return entry.getName();
+		}
+		if (columnName.equals(PATH))
+		{
+			return entry.getPath();
 		}
 		else if (columnName.equals(USER))
 		{

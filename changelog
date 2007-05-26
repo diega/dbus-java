@@ -1,5 +1,8 @@
 Version 2.3:
 
+	* Apply recursive-path patch for DBusViewer (written by Zsombor Gegesy
+	  <gzsombor -at- gmail -dot- com>)
+
 Version 2.2:
 
 	* Fix cross-test to pass.

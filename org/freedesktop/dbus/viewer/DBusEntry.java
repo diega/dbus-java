@@ -21,6 +21,8 @@ import org.freedesktop.dbus.UInt32;
 public class DBusEntry
 {
 	private String name;
+	
+	private String path;
 
 	private UInt32 user;
 
@@ -99,4 +101,23 @@ public class DBusEntry
 	{
 		return introspectable;
 	}
+	
+	/**
+	 * retrieve the path parameter
+	 * 
+	 * @return
+	 */
+	public String getPath() {
+		return path;
+	}
+	
+	/**
+	 * set the path parameter
+	 * 
+	 * @param path
+	 */
+	public void setPath(String path) {
+		this.path = path;
+	}
+	
 }

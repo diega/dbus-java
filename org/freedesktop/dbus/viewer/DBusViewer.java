@@ -12,6 +12,8 @@ package org.freedesktop.dbus.viewer;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +28,9 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.TableModel;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.freedesktop.DBus;
 import org.freedesktop.DBus.Introspectable;
@@ -33,6 +38,12 @@ import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * A viewer for DBus
@@ -203,47 +214,147 @@ public class DBusViewer
 		DBus dbus = (DBus) conn.getRemoteObject("org.freedesktop.DBus",
 				"/org/freedesktop/DBus", DBus.class);
 		String[] names = dbus.ListNames();
+
+		ParsingContext p = new ParsingContext(conn);
+		
 		for (String name : names)
 		{
-			DBusEntry entry = new DBusEntry();
-			entry.setName(name);
+			List<DBusEntry> results  = new ArrayList<DBusEntry>();
 			try
 			{
 				//String objectpath = '/' + name.replace('.', '/');
-            String objectpath = "/";
-				Introspectable introspectable = (Introspectable) conn
-						.getRemoteObject(name, objectpath, Introspectable.class);
-				entry.setIntrospectable(introspectable);
+				
+
+				p.visitNode(name,"/");
 			}
 			catch (DBusException e)
 			{
+				e.printStackTrace();
 			}
 			catch (DBusExecutionException e)
 			{
+				e.printStackTrace();
+			} catch (SAXException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
+			results = p.getResult();
+			p.reset();
 
-			if (users) try
-			{
-				final UInt32 user = dbus.GetConnectionUnixUser(name);
-				entry.setUser(user);
-			}
-			catch (DBusExecutionException DBEe)
-			{
-			}
-			if (!name.startsWith(":") && owners)
-			{
-				try
+			if (results.size()>0) {
+				if (users) try
 				{
-					final String owner = dbus.GetNameOwner(name);
-					entry.setOwner(owner);
+					final UInt32 user = dbus.GetConnectionUnixUser(name);
+					for (DBusEntry entry : results) {
+						entry.setUser(user);
+					}
 				}
 				catch (DBusExecutionException DBEe)
 				{
 				}
+				if (!name.startsWith(":") && owners)
+				{
+					try
+					{
+						final String owner = dbus.GetNameOwner(name);
+						for (DBusEntry entry : results) {
+							entry.setOwner(owner);
+						}
+					}
+					catch (DBusExecutionException DBEe)
+					{
+					}
+				}
+				for (DBusEntry entry : results) {
+					model.add(entry);
+				}
 			}
-			model.add(entry);
 		}
 		return model;
 	}
+	private final static String DOC_TYPE = "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\"\n\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">";
+
+	class ParsingContext {
+		private DBusConnection conn;
+		private DocumentBuilder builder;
+		private List<DBusEntry> result;
+		
+		ParsingContext(DBusConnection conn) {
+			this.conn = conn;
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			try {
+				builder = factory.newDocumentBuilder();
+			} catch (ParserConfigurationException e1) {
+				// TODO Auto-generated catch block
+				throw new RuntimeException("Error during parser init:"+e1.getMessage(),e1);
+			}
+			reset();
+			
+		}
+
+		DBusEntry addEntry(String name, String path) throws DBusException {
+			DBusEntry entry = new DBusEntry();
+			entry.setName(name);
+			entry.setPath(path);
+			Introspectable introspectable = (Introspectable) conn.getRemoteObject(name, path, Introspectable.class);
+			entry.setIntrospectable(introspectable);
+
+			result.add(entry);
+			
+			return entry;
+		}
+		
+		public void visitNode(String name, String path) throws DBusException, SAXException, IOException {
+			System.out.println("visit "+name+":"+path);
+			if ("/org/freedesktop/DBus/Local".equals(path)) {
+				// this will disconnects us.
+				return;
+			}
+			DBusEntry e = addEntry(name, path);
+			String introspectData = e.getIntrospectable().Introspect();
+
+			
+		    Document document = builder.parse(new InputSource(new StringReader(introspectData.replace(DOC_TYPE, ""))));
+		    Element root = document.getDocumentElement();
+			
+		    NodeList children = root.getChildNodes();
+		    for (int i=0;i<children.getLength();i++) {
+		    	Node node = children.item(i);
+		        if (Node.ELEMENT_NODE != node.getNodeType()) {
+		        	continue;
+		        }
+		        if ("node".equals(node.getNodeName())) {
+			        Node nameNode = node.getAttributes().getNamedItem("name");
+			        if (nameNode!=null) {
+			        	try {
+				        	if (path.endsWith("/")) {
+				        		visitNode(name, path + nameNode.getNodeValue());
+				        	} else {
+				        		visitNode(name, path + '/' + nameNode.getNodeValue());
+				        	}
+			        	} catch (DBusException ex) {
+			        		ex.printStackTrace();
+			        	}
+			        }
+		        }
+		    	
+		    }
+
+		}
+
+		public List<DBusEntry> getResult() {
+			return result;
+		}
+		
+		void reset() {
+			result = new ArrayList<DBusEntry>();
+		}
+		
+		
+	}
+
 
 }
