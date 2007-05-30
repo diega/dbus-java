@@ -75,13 +75,17 @@ binclasses: .binclasses
 	touch .classes
 
 libdbus-java-$(VERSION).jar: .classes
-	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/dbus/types/*.class org/freedesktop/dbus/exceptions/*.class)
+	echo "Class-Path: ${JAVAUNIXJARDIR}/unix.jar ${JAVAUNIXJARDIR}/debug-$(DEBUG).jar" > Manifest
+	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/dbus/types/*.class org/freedesktop/dbus/exceptions/*.class)
 dbus-java-test-$(VERSION).jar: .testclasses
-	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/test/*.class)
+	echo "Class-Path: ${JARDIR}/libdbus-java-$(VERSION).jar" > Manifest
+	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/test/*.class)
 dbus-java-viewer-$(VERSION).jar: .viewerclasses
-	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/viewer/*.class)
+	echo "Class-Path: ${JARDIR}/libdbus-java-$(VERSION).jar" > Manifest
+	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/viewer/*.class)
 dbus-java-bin-$(VERSION).jar: .binclasses
-	(cd classes; $(JAR) -cf ../$@ org/freedesktop/dbus/bin/*.class)
+	echo "Class-Path: ${JARDIR}/libdbus-java-$(VERSION).jar" > Manifest
+	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/bin/*.class)
 dbus.jar: libdbus-java-$(VERSION).jar
 	ln -sf $< $@
 dbus-bin.jar: dbus-java-bin-$(VERSION).jar
