@@ -3,6 +3,8 @@ Version 2.3:
 	* Apply recursive-path patch for DBusViewer (written by Zsombor Gegesy
 	  <gzsombor -at- gmail -dot- com>)
 	* Add Class-Path to jar manifests
+	* Update documentation for nested classes
+	* Documentation build fix
 
 Version 2.2:
 

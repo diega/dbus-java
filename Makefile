@@ -122,7 +122,7 @@ doc/dbus-java/index.html: dbus-java.tex .doc
 	rm -f doc/dbus-java/*{4ct,4tc,aux,dvi,idv,lg,log,tmp,xref}
 	cp doc/dbus-java/dbus-java.html doc/dbus-java/index.html
 doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
-	$(JAVADOC) -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/ -classpath $(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/dbus/{types,exceptions}/*.java
+	$(JAVADOC) -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/ -classpath $(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/dbus/types/*.java $(SRCDIR)/dbus/exceptions/*.java
 
 %.1: %.sgml
 	docbook-to-man $< > $@

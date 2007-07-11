@@ -823,6 +823,37 @@ The Java source code interfaces will be written to the standard ouput. If the
 {\tt --create-files} option is specified the correct files in the
 correct directory structure will be created.
 
+\subsection{Nested Interfaces}
+
+In some cases there are nested interfaces. In this case CreateInterface will
+not correctly create the Java equivalent. This is because Java cannot have both
+a class and a package with the same name. The solution to this is to create
+nested classes in the same file.
+
+An example would be the Hal interface:
+
+\begin{verbatim}
+<interface name="org.freedesktop.Hal.Device">
+   ...
+</interface>
+<interface name="org.freedesktop.Hal.Device.Volume">
+   ...
+</interface>
+\end{verbatim}
+
+When converted to Java you would just have one file {\tt
+org/freedesktop/Hal/Device.java} in the package {\tt org.freedesktop.Hal},
+which would contain one class and one nested class:
+
+\begin{verbatim}
+public interface Device extends DBusInterface {
+   public interface Volume extends DBusInterface {
+      ... methods in Volume ...
+   }
+   ... methods in Device ...
+}
+\end{verbatim}
+
 \section{Debugging}
 
 It is possible to enable debugging in the library. This will be a lot slower,
