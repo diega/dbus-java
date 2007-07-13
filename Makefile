@@ -49,9 +49,9 @@ all: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar bin/DBusDaemon 
 
 clean:
 	rm -rf doc bin classes testbin win
-	rm -f *.1 *.o *.so *.h .dist .classes .testclasses .doc *.jar *.log pid address tmp-session-bus *.gz .viewerclasses .bin .testbin .win .binclasses
-	rm -rf dbus-$(VERSION)
-	rm -rf dbus-$(RELEASEVERSION)
+	rm -f *.1 *.o *.so *.h .dist .classes .testclasses .doc *.jar *.log pid address tmp-session-bus *.gz .viewerclasses .bin .testbin .win .binclasses Manifest
+	rm -rf dbus-java-$(VERSION)
+	rm -rf dbus-java-$(RELEASEVERSION)
 	
 classes: .classes
 testclasses: .testclasses
