@@ -397,6 +397,7 @@ public class Marshalling
    @SuppressWarnings("unchecked")
    static Object deSerializeParameter(Object parameter, Type type, AbstractConnection conn) throws Exception
    {
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing from "+parameter.getClass()+" to "+type.getClass());
       if (null == parameter) 
          return null;
 
@@ -460,6 +461,10 @@ public class Marshalling
          parameter = deSerializeParameters((Object[]) parameter,
                ts, conn);
       }
+      if (parameter instanceof List) {
+         Type type2 = ((ParameterizedType) type).getActualTypeArguments()[0];
+         parameter = deSerializeParameters((List) parameter, type2, conn);
+      }
 
       // correct floats if appropriate
       if (type.equals(Float.class) || type.equals(Float.TYPE)) 
@@ -501,11 +506,46 @@ public class Marshalling
       }
       return parameter;
    }
+   static List deSerializeParameters(List parameters, Type type, AbstractConnection conn) throws Exception
+   {
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing from "+parameters+" to "+type);
+      if (null == parameters) return null;
+      for (int i = 0; i < parameters.size(); i++) {
+         if (null == parameters.get(i)) continue;
+
+         /* DO NOT DO THIS! IT'S REALLY NOT SUPPORTED! 
+          * if (type instanceof Class &&
+               DBusSerializable.class.isAssignableFrom((Class) types[i])) {
+            for (Method m: ((Class) types[i]).getDeclaredMethods()) 
+               if (m.getName().equals("deserialize")) {
+                  Type[] newtypes = m.getGenericParameterTypes();
+                  try {
+                     Object[] sub = new Object[newtypes.length];
+                     System.arraycopy(parameters, i, sub, 0, newtypes.length); 
+                     sub = deSerializeParameters(sub, newtypes, conn);
+                     DBusSerializable sz = (DBusSerializable) ((Class) types[i]).newInstance();
+                     m.invoke(sz, sub);
+                     Object[] compress = new Object[parameters.length - newtypes.length + 1];
+                     System.arraycopy(parameters, 0, compress, 0, i);
+                     compress[i] = sz;
+                     System.arraycopy(parameters, i + newtypes.length, compress, i+1, parameters.length - i - newtypes.length);
+                     parameters = compress;
+                  } catch (ArrayIndexOutOfBoundsException AIOOBe) {
+                     if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, AIOOBe);
+                     throw new DBusException("Not enough elements to create custom object from serialized data ("+(parameters.size()-i)+" < "+(newtypes.length)+")");
+                  }
+               }
+         } else*/
+            parameters.set(i, deSerializeParameter(parameters.get(i), type, conn));
+      }
+      return parameters;
+   }
+
    static Object[] deSerializeParameters(Object[] parameters, Type[] types, AbstractConnection conn) throws Exception
    {
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing from "+parameters+" to "+types);
       if (null == parameters) return null;
       for (int i = 0; i < parameters.length; i++) {
-         if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing "+i+" from "+parameters[i]+" to "+types[i]);
          if (null == parameters[i]) continue;
 
          if (types[i] instanceof Class &&

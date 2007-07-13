@@ -305,27 +305,33 @@ class arraysignalhandler implements DBusSigHandler
    /** Handling a signal */
    public void handle(DBusSignal s)
    {
-      if (false == test.done2) {
-         test.done2 = true;
-      } else {
-         test.fail("SignalHandler 2 has been run too many times");
+      try {
+         if (false == test.done2) {
+            test.done2 = true;
+         } else {
+            test.fail("SignalHandler 2 has been run too many times");
+         }
+         TestSignalInterface.TestArraySignal t = (TestSignalInterface.TestArraySignal) s;
+         System.out.println("SignalHandler 2 Running");
+         if (t.v.size() != 1) test.fail("Incorrect TestArraySignal array length: should be 1, actually "+t.v.size());
+         System.out.println("Got a test array signal with Parameters: ");
+         for (String str: t.v.get(0).a)
+            System.out.println("--"+str);
+         System.out.println(t.v.get(0).b.getType());
+         System.out.println(t.v.get(0).b.getValue());
+         if (!(t.v.get(0).b.getValue() instanceof UInt64) ||
+               567L != ((UInt64) t.v.get(0).b.getValue()).longValue() ||
+               t.v.get(0).a.size() != 5 ||
+               !"hi".equals(t.v.get(0).a.get(0)) ||
+               !"hello".equals(t.v.get(0).a.get(1)) ||
+               !"hej".equals(t.v.get(0).a.get(2)) ||
+               !"hey".equals(t.v.get(0).a.get(3)) ||
+               !"aloha".equals(t.v.get(0).a.get(4)))
+            test.fail("Incorrect TestArraySignal parameters");
+      } catch (Exception e) {
+         e.printStackTrace();
+         test.fail("SignalHandler 2 threw an exception: "+e);
       }
-      TestSignalInterface.TestArraySignal t = (TestSignalInterface.TestArraySignal) s;
-      System.out.println("SignalHandler 2 Running");
-      System.out.println("Got a test array signal with Parameters: ");
-      for (String str: t.v.a)
-         System.out.println("--"+str);
-      System.out.println(t.v.b.getType());
-      System.out.println(t.v.b.getValue());
-      if (!(t.v.b.getValue() instanceof UInt64) ||
-            567L != ((UInt64) t.v.b.getValue()).longValue() ||
-            t.v.a.size() != 5 ||
-            !"hi".equals(t.v.a.get(0)) ||
-            !"hello".equals(t.v.a.get(1)) ||
-            !"hej".equals(t.v.a.get(2)) ||
-            !"hey".equals(t.v.a.get(3)) ||
-            !"aloha".equals(t.v.a.get(4)))
-         test.fail("Incorrect TestArraySignal parameters");
    }
 }
 
@@ -578,7 +584,9 @@ public class test
       
       System.out.print("Sending Array Signal...");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
-      serverconn.sendSignal(new TestSignalInterface.TestArraySignal("/Test", new TestStruct2(l, new Variant<UInt64>(new UInt64(567)))));
+      List<TestStruct2> tsl = new Vector<TestStruct2>();
+      tsl.add(new TestStruct2(l, new Variant<UInt64>(new UInt64(567))));
+      serverconn.sendSignal(new TestSignalInterface.TestArraySignal("/Test", tsl));
       
       System.out.println("done");
 

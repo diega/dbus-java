@@ -43,8 +43,8 @@ public interface TestSignalInterface extends DBusInterface
    @Description("Test signal with arrays")
    public static class TestArraySignal extends DBusSignal
    {
-      public final TestStruct2 v;
-      public TestArraySignal(String path, TestStruct2 v) throws DBusException
+      public final List<TestStruct2> v;
+      public TestArraySignal(String path, List<TestStruct2> v) throws DBusException
       {
          super(path, v);
          this.v = v;

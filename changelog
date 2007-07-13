@@ -5,6 +5,10 @@ Version 2.3:
 	* Add Class-Path to jar manifests
 	* Update documentation for nested classes
 	* Documentation build fix
+	* Add test for arrays-of-structs
+	* Fix arrays-of-structs bug (spotted by Daniel Machado
+	  <cdanielmachado -at- gmail -dot- com>)
+	* Fix bashism in Makefile
 
 Version 2.2:
 

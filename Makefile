@@ -78,13 +78,13 @@ libdbus-java-$(VERSION).jar: .classes
 	echo "Class-Path: ${JAVAUNIXJARDIR}/unix.jar ${JAVAUNIXJARDIR}/debug-$(DEBUG).jar" > Manifest
 	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/dbus/types/*.class org/freedesktop/dbus/exceptions/*.class)
 dbus-java-test-$(VERSION).jar: .testclasses
-	echo "Class-Path: ${JARDIR}/libdbus-java-$(VERSION).jar" > Manifest
+	echo "Class-Path: ${JARPREFIX}/libdbus-java-$(VERSION).jar" > Manifest
 	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/test/*.class)
 dbus-java-viewer-$(VERSION).jar: .viewerclasses
-	echo "Class-Path: ${JARDIR}/libdbus-java-$(VERSION).jar" > Manifest
+	echo "Class-Path: ${JARPREFIX}/libdbus-java-$(VERSION).jar" > Manifest
 	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/viewer/*.class)
 dbus-java-bin-$(VERSION).jar: .binclasses
-	echo "Class-Path: ${JARDIR}/libdbus-java-$(VERSION).jar" > Manifest
+	echo "Class-Path: ${JARPREFIX}/libdbus-java-$(VERSION).jar" > Manifest
 	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/bin/*.class)
 dbus.jar: libdbus-java-$(VERSION).jar
 	ln -sf $< $@
@@ -183,7 +183,7 @@ check: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDae
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
 	  if $(MAKE) DBUS_JAVA_FLOATS=true testrun 2> client.log; then export PASS=true; fi  ; \
 	  kill $$(cat pid) ; \
-	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
+	  if [ "$$PASS" = "true" ]; then exit 0; else exit 1; fi )
 
 cross-test-compile: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
 
@@ -217,7 +217,7 @@ profile: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusD
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
 	  if $(MAKE) DBUS_JAVA_FLOATS=true profilerun ; then export PASS=true; fi  ; \
 	  kill $$(cat pid) ; \
-	  if [[ "$$PASS" == "true" ]]; then exit 0; else exit 1; fi )
+	  if [ "$$PASS" = "true" ]; then exit 0; else exit 1; fi )
 
 uninstall: 
 	rm -f $(DESTDIR)$(JARPREFIX)/dbus.jar $(DESTDIR)$(JARPREFIX)/dbus-$(VERSION).jar $(DESTDIR)$(JARPREFIX)/dbus-viewer.jar $(DESTDIR)$(JARPREFIX)/dbus-viewer-$(VERSION).jar $(DESTDIR)$(JARPREFIX)/dbus-bin.jar $(DESTDIR)$(JARPREFIX)/dbus-bin-$(VERSION).jar
