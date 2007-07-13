@@ -236,7 +236,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    public int overload()
    {
       DBusCallInfo info = DBusConnection.getCallInfo();
-      if ("org.freedesktop.dbus.test.TestRemoteInterface2".equals(info.getInterface()))
+      if ("org.freedesktop.dbus.test.AlternateTestInterface".equals(info.getInterface()))
          return 3;
       else if ("org.freedesktop.dbus.test.TestRemoteInterface".equals(info.getInterface()))
          return 4;

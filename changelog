@@ -9,6 +9,8 @@ Version 2.3:
 	* Fix arrays-of-structs bug (spotted by Daniel Machado
 	  <cdanielmachado -at- gmail -dot- com>)
 	* Fix bashism in Makefile
+	* add DBusInterfaceName annotation to override the Java interface name as
+	  the name exported on the bus.
 
 Version 2.2:
 

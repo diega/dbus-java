@@ -11,12 +11,14 @@
 package org.freedesktop.dbus.test;
 
 import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.DBusInterfaceName;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.DBus.Description;
 
 import java.util.List;
 
 @Description("An example remote interface")
+@DBusInterfaceName("org.freedesktop.dbus.test.AlternateTestInterface")
 public interface TestRemoteInterface2 extends DBusInterface
 {
    @Description("Test multiple return values and implicit variant parameters.")

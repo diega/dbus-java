@@ -290,6 +290,36 @@ public class DBusImpl implements DBus
 \label{fig:class}
 \end{figure}
 
+\subsection{Interface name overriding}
+
+It is highly recommended that the Java interface and package name match the
+D-Bus interface. However, if, for some reason, this is not possible then the
+name can be overridden by use of an Annotation.
+
+To override the Java interface name you should add an annotation to the
+interface of {\tt
+DBusInterfaceName\footnote{\url{\javadocroot/org/freedesktop/dbus/DBusInterfaceName.html}}}
+with a value of the desired D-Bus interface name. An example of this can be seen in
+figure \ref{fig:interfacename}.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}
+package my.package;
+import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.DBusInterfaceName;
+
+@DBusInterfaceName("my.otherpackage.Remote")
+public interface Remote extends DBusInterface
+{
+   ...
+}
+\end{verbatim}
+\end{center}
+\caption{Overloading the name of an interface.}
+\label{fig:interfacename}
+\end{figure}
+
 \section{DBusSignal}
 
 Signals are also declared as part of an interface. The Java API

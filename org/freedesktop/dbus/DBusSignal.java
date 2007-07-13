@@ -160,7 +160,10 @@ public class DBusSignal extends Message
             enc.getName().equals(enc.getSimpleName()))
          throw new DBusException("Signals must be declared as a member of a class implementing DBusInterface which is the member of a package.");
       else
-         iface = AbstractConnection.dollar_pattern.matcher(enc.getName()).replaceAll(".");
+         if (null != enc.getAnnotation(DBusInterfaceName.class))
+            iface = ((DBusInterfaceName) enc.getAnnotation(DBusInterfaceName.class)).value();
+         else
+            iface = AbstractConnection.dollar_pattern.matcher(enc.getName()).replaceAll(".");
 
       headers.put(Message.HeaderField.PATH,objectpath);
       headers.put(Message.HeaderField.MEMBER,member);

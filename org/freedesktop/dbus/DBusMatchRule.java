@@ -63,14 +63,20 @@ public class DBusMatchRule
    public DBusMatchRule(Class c) throws DBusException
    {
       if (DBusInterface.class.isAssignableFrom(c)) {
-         iface = AbstractConnection.dollar_pattern.matcher(c.getName()).replaceAll(".");
+         if (null != c.getAnnotation(DBusInterfaceName.class))
+            iface = ((DBusInterfaceName) c.getAnnotation(DBusInterfaceName.class)).value();
+         else
+            iface = AbstractConnection.dollar_pattern.matcher(c.getName()).replaceAll(".");
          if (!iface.matches(".*\\..*"))
             throw new DBusException("DBusInterfaces must be defined in a package.");
          member = null;
          type = null;
       }
       else if (DBusSignal.class.isAssignableFrom(c)) {
-         iface = AbstractConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
+         if (null != c.getEnclosingClass().getAnnotation(DBusInterfaceName.class))
+            iface = ((DBusInterfaceName) c.getEnclosingClass().getAnnotation(DBusInterfaceName.class)).value();
+         else
+            iface = AbstractConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
          // Don't export things which are invalid D-Bus interfaces
          if (!iface.matches(".*\\..*"))
             throw new DBusException("DBusInterfaces must be defined in a package.");
@@ -78,14 +84,20 @@ public class DBusMatchRule
          type = "signal";
       }
       else if (Error.class.isAssignableFrom(c)) {
-         iface = AbstractConnection.dollar_pattern.matcher(c.getName()).replaceAll(".");
+         if (null != c.getAnnotation(DBusInterfaceName.class))
+            iface = ((DBusInterfaceName) c.getAnnotation(DBusInterfaceName.class)).value();
+         else
+            iface = AbstractConnection.dollar_pattern.matcher(c.getName()).replaceAll(".");
          if (!iface.matches(".*\\..*"))
             throw new DBusException("DBusInterfaces must be defined in a package.");
          member = null;
          type = "error";
       }
       else if (DBusExecutionException.class.isAssignableFrom(c)) {
-         iface = AbstractConnection.dollar_pattern.matcher(c.getClass().getName()).replaceAll(".");
+         if (null != c.getClass().getAnnotation(DBusInterfaceName.class))
+            iface = c.getClass().getAnnotation(DBusInterfaceName.class).value();
+         else
+            iface = AbstractConnection.dollar_pattern.matcher(c.getClass().getName()).replaceAll(".");
          if (!iface.matches(".*\\..*"))
             throw new DBusException("DBusInterfaces must be defined in a package.");
          member = null;
