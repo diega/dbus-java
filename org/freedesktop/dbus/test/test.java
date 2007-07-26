@@ -438,6 +438,11 @@ public class test
       System.out.println("Sending Signal");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
       serverconn.sendSignal(new TestSignalInterface.TestSignal("/foo/bar/Wibble", "Bar", new UInt32(42)));
+
+      System.out.println("These things are on the bus:");
+      String[] names = dbus.ListNames();
+      for (String name: names)
+         System.out.println("\t"+name);
       
       System.out.println("Getting our introspection data");
       /** This gets a remote object matching our bus name and exported object path. */

@@ -2,7 +2,7 @@ The D-Bus Java implementation was written by:
 
 Matthew Johnson <dbus -at matthew -dot- ath -dot- cx>
 
-Bug fixes and other suggestions from:
+Bug fixes/reports and other suggestions from:
 
 Remi Emonet <remi.emonet -at- inrialpes -dot- fr>
 Simon McVittie <simon -dot- mcvittie -at- collabora -dot- co -dot- uk>
@@ -15,6 +15,8 @@ Roberto Francisco Arroyo Moreno <robfram -at- ugr -dot- es>
 Steve Crane <Steve -dot Crane -at- rococosoft -dot- com>
 Philippe Marschall <philippe -dot- marschall -at- gmail -dot- com>
 Daniel Machado <cdanielmachado -at- gmail -dot- com>
+Anibal Sanchez <anibal -dot- sanchez -at- sunya -dot- com -dot- ar>
+Jan Kümmel <freedesktop -at- snorc -dot- org>
 
 The included Viewer application was originally written by:
 

@@ -145,7 +145,7 @@ class DBusMap<K, V> implements Map<K, V>
    {
       String s = "{ ";
       for (int i = 0; i < entries.length; i++) 
-         s += entries[i][0] + " => " + entries[i][0] + ",";
+         s += entries[i][0] + " => " + entries[i][1] + ",";
       return s.replaceAll(".$", " }");
    }
 }

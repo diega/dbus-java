@@ -891,7 +891,8 @@ public class Message
                      byte[] temp2 = new byte[sigb.length-ofs[0]];
                      System.arraycopy(sigb, ofs[0], temp2, 0, temp2.length);
                      String temp3 = new String(temp2);
-                     int temp4 = Marshalling.getJavaType(temp3, temp, 1);
+                     // ofs[0] gets incremented anyway. Leave one character on the stack
+                     int temp4 = Marshalling.getJavaType(temp3, temp, 1) - 1;
                      ofs[0] += temp4;
                      if (Debug.debug) Debug.print(Debug.VERBOSE, "Aligned type: "+temp3+" "+temp4+" "+ofs[0]);
                   }
@@ -911,7 +912,8 @@ public class Message
                      byte[] temp2 = new byte[sigb.length-ofs[0]];
                      System.arraycopy(sigb, ofs[0], temp2, 0, temp2.length);
                      String temp3 = new String(temp2);
-                     int temp4 = Marshalling.getJavaType(temp3, temp, 1);
+                     // ofs[0] gets incremented anyway. Leave one character on the stack
+                     int temp4 = Marshalling.getJavaType(temp3, temp, 1) - 1;
                      ofs[0] += temp4;
                      if (Debug.debug) Debug.print(Debug.VERBOSE, "Aligned type: "+temp3+" "+temp4+" "+ofs[0]);
                   }
@@ -976,7 +978,10 @@ public class Message
          default: 
             throw new UnknownTypeCodeException(sigb[ofs[0]]);
       }
-      if (Debug.debug) Debug.print(Debug.VERBOSE, "Extracted: "+rv+" (now at "+ofs[1]+")");
+      if (Debug.debug) if (rv instanceof Object[])
+         Debug.print(Debug.VERBOSE, "Extracted: "+Arrays.deepToString((Object[]) rv)+" (now at "+ofs[1]+")");
+      else
+         Debug.print(Debug.VERBOSE, "Extracted: "+rv+" (now at "+ofs[1]+")");
       return rv;
    }
    /** 

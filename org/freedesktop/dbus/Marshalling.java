@@ -462,8 +462,17 @@ public class Marshalling
                ts, conn);
       }
       if (parameter instanceof List) {
-         Type type2 = ((ParameterizedType) type).getActualTypeArguments()[0];
-         parameter = deSerializeParameters((List) parameter, type2, conn);
+         Type type2;
+         if (type instanceof ParameterizedType)
+            type2 = ((ParameterizedType) type).getActualTypeArguments()[0];
+         else if (type instanceof GenericArrayType)
+            type2 = ((GenericArrayType) type).getGenericComponentType();
+         else if (type instanceof Class && ((Class) type).isArray())
+            type2 = ((Class) type).getComponentType();
+         else
+            type2 = null;
+         if (null != type2)
+            parameter = deSerializeParameters((List) parameter, type2, conn);
       }
 
       // correct floats if appropriate
