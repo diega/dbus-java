@@ -2,6 +2,9 @@ Version 2.3.2:
 
 	* Fix empty array/map bug (reported by	Jan Kümmel
 	  <freedesktop -at- snorc -dot- org>)
+	* Add licence headers to files missing them
+	* Fix minor bug in AbstractConnection.java (reported by Frank Benoit
+	  <benoit -at- tionex -dot- de>
 
 Version 2.3.1:
 	

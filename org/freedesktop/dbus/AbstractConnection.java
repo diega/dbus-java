@@ -336,10 +336,10 @@ public abstract class AbstractConnection
     */
    public void exportObject(String objectpath, DBusInterface object) throws DBusException
    {
-      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length() > MAX_NAME_LENGTH) 
-         throw new DBusException("Invalid object path ("+objectpath+")");
       if (null == objectpath || "".equals(objectpath)) 
          throw new DBusException("Must Specify an Object Path");
+      if (!objectpath.matches(OBJECT_REGEX)||objectpath.length() > MAX_NAME_LENGTH) 
+         throw new DBusException("Invalid object path ("+objectpath+")");
       synchronized (exportedObjects) {
          if (null != exportedObjects.get(objectpath)) 
             throw new DBusException("Object already exported");

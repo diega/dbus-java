@@ -71,12 +71,40 @@ public class MethodCall extends Message
       marshallint(bytecounter-c, blen, 0, 4);
       if (Debug.debug) Debug.print("marshalled size ("+blen+"): "+Hexdump.format(blen));
    }
-   static long REPLY_WAIT_TIMEOUT = 20000;
+   private static long REPLY_WAIT_TIMEOUT = 20000;
+   /**
+    * Set the default timeout for method calls.
+    * Default is 20s.
+    * @param New timeout in ms.
+    */
+   public static setDefaultTimeout(long timeout)
+   {
+      REPLY_WAIT_TIMEOUT = timeout;
+   }
    Message reply = null;
    public synchronized boolean hasReply()
    {
       return null != reply;
    }
+   /**
+    * Block (if neccessary) for a reply.
+    * @return The reply to this MethodCall, or null if a timeout happens.
+    * @param timeout The length of time to block before timing out (ms).
+    */
+   public synchronized Message getReply(long timeout)
+   {
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Blocking on "+this);
+      if (null != reply) return reply;
+      try {
+         wait(timeout);
+         return reply;
+      } catch (InterruptedException Ie) { return reply; }
+   }
+   /**
+    * Block (if neccessary) for a reply.
+    * Default timeout is 20s, or can be configured with setDefaultTimeout()
+    * @return The reply to this MethodCall, or null if a timeout happens.
+    */
    public synchronized Message getReply()
    {
       if (Debug.debug) Debug.print(Debug.VERBOSE, "Blocking on "+this);
