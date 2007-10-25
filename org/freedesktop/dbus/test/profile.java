@@ -254,6 +254,51 @@ public class profile
          long t = System.currentTimeMillis();
          p.bytes(bs);
          System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
+      } else if ("rate".equals(args[0])) {
+         conn.exportObject("/Profiler", new ProfilerInstance());
+         Profiler p = (Profiler) conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler",         Profiler.class);
+         Peer peer = (Peer) conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Peer.class);
+         long start = System.currentTimeMillis();
+         int count = 0;
+         do {
+            peer.Ping();
+            count++;
+         } while(count < 10000);
+         long end = System.currentTimeMillis();
+         System.out.println("No payload: "+((count*1000)/(end-start))+" RT/second");
+         int len = 256;
+         while (len <= 32768) {
+            byte[] bs = new byte[len];
+            count = 0;
+            start = System.currentTimeMillis();
+            do {
+               p.bytes(bs);
+               count++;
+            } while(count < 1000);
+            end = System.currentTimeMillis();
+            long ms = end-start;
+            double cps = (count*1000)/ms;
+            double rate = (len*cps)/(1024.0*1024.0);
+            System.out.println(len+" byte array) "+(count*len)+" bytes in "+ms+"ms (in "+count+" calls / "+(int)cps+" CPS): "+rate+"MB/s");
+            len <<= 1;
+         }
+         len = 256;
+         while (len <= 32768) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < len; i++) sb.append('a');
+            String s = sb.toString();
+            end = System.currentTimeMillis()+500;
+            count = 0;
+            do {
+               p.string(s);
+               count++;
+            } while(count < 1000);
+            long ms = end-start;
+            double cps = (count*1000)/ms;
+            double rate = (len*cps)/(1024.0*1024.0);
+            System.out.println(len+" string) "+(count*len)+" bytes in "+ms+"ms (in "+count+" calls / "+(int)cps+" CPS): "+rate+"MB/s");
+            len <<= 1;
+         }
       } else if ("signals".equals(args[0])) {
          int count = SIGNAL_OUTER*SIGNAL_INNER;
          System.out.print("Sending "+count+" signals");

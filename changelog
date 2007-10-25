@@ -5,11 +5,14 @@ Version 2.3.2:
 	* Add licence headers to files missing them
 	* Fix minor bug in AbstractConnection.java (reported by Frank Benoit
 	  <benoit -at- tionex -dot- de>
+	* Make Marshalling more verbose and descriptive in the presence of
+	  mismatched parameter lists (suggested by Anibal Sanchez
+	  <anibal -dot- sanchez -at- sunya -dot- com -dot- ar>)
 
 Version 2.3.1:
 	
 	* Fix regression in normal array handling (spotted by Anibal Sanchez
-	  <anibal -dot- sanchez -at- sunya -dot- com -dot- ar>
+	  <anibal -dot- sanchez -at- sunya -dot- com -dot- ar>)
 
 Version 2.3:
 

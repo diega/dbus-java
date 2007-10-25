@@ -21,4 +21,5 @@ public class ProfilerInstance implements Profiler
    public void list(List<String> l) { return; }
    public void bytes(byte[] b) { return; }
    public void struct(ProfileStruct ps) { return; }
+   public void string(String s) { return; }
 }

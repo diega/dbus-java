@@ -30,6 +30,7 @@ public interface Profiler extends DBusInterface
    public void list(List<String> l);
    public void bytes(byte[] b);
    public void struct(ProfileStruct ps);
+   public void string(String s);
 }
 
 

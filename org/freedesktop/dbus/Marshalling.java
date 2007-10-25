@@ -554,6 +554,17 @@ public class Marshalling
    {
       if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing from "+parameters+" to "+types);
       if (null == parameters) return null;
+
+      // CHECK IF ARRAYS HAVE THE SAME LENGTH
+      if (types.length != parameters.length) {
+         if (Debug.debug) {
+            for (int i = 0; i < parameters.length; i++) {
+               Debug.print(Debug.ERR, String.format("Error, Parameters difference (%1d, '%2s')", i, parameters[i].toString()));
+            }
+         }
+         throw new DBusException("Error deserializing message: number parameters didn't match receiving signature");
+      }
+      
       for (int i = 0; i < parameters.length; i++) {
          if (null == parameters[i]) continue;
 

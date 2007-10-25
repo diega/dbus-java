@@ -75,9 +75,9 @@ public class MethodCall extends Message
    /**
     * Set the default timeout for method calls.
     * Default is 20s.
-    * @param New timeout in ms.
+    * @param timeout New timeout in ms.
     */
-   public static setDefaultTimeout(long timeout)
+   public static void setDefaultTimeout(long timeout)
    {
       REPLY_WAIT_TIMEOUT = timeout;
    }

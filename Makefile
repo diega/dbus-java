@@ -181,7 +181,7 @@ check: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDae
 	  testbin/DBusDaemon --addressfile address --pidfile pid 2> server.log&\
 	  sleep 1; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  if $(MAKE) DBUS_JAVA_FLOATS=true testrun 2> client.log; then export PASS=true; fi  ; \
+	  if $(MAKE) DBUS_JAVA_FLOATS=true DEBUG=$(DEBUG) testrun 2> client.log; then export PASS=true; fi  ; \
 	  kill $$(cat pid) ; \
 	  if [ "$$PASS" = "true" ]; then exit 0; else exit 1; fi )
 
@@ -191,23 +191,23 @@ internal-cross-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar t
 	( testbin/DBusDaemon --addressfile address --pidfile pid &\
 	  sleep 1; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  $(MAKE) DBUS_JAVA_FLOATS=true -s cross-test-server | tee server.log &\
+	  $(MAKE) DEBUG=$(DEBUG) DBUS_JAVA_FLOATS=true -s cross-test-server | tee server.log &\
 	  sleep 1;\
-	  $(MAKE) DBUS_JAVA_FLOATS=true -s cross-test-client | tee client.log ;\
+	  $(MAKE) DEBUG=$(DEBUG) DBUS_JAVA_FLOATS=true -s cross-test-client | tee client.log ;\
 	  kill $$(cat pid) ; )
 
 peer-to-peer-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
-	( $(MAKE) DBUS_JAVA_FLOATS=true -s peer-server 2>&1 | tee server.log &\
+	( $(MAKE) DEBUG=$(DEBUG) DBUS_JAVA_FLOATS=true -s peer-server 2>&1 | tee server.log &\
 	  sleep 1;\
-	  $(MAKE) DBUS_JAVA_FLOATS=true -s peer-client 2>&1 | tee client.log )
+	  $(MAKE) DEBUG=$(DEBUG) DBUS_JAVA_FLOATS=true -s peer-client 2>&1 | tee client.log )
 
 two-part-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDaemon dbus.jar dbus-java-bin-$(VERSION).jar dbus-bin.jar
 	( testbin/DBusDaemon --addressfile address --pidfile pid &\
 	  sleep 1; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  $(MAKE) DBUS_JAVA_FLOATS=true -s two-part-server | tee server.log &\
+	  $(MAKE) DEBUG=$(DEBUG) DBUS_JAVA_FLOATS=true -s two-part-server | tee server.log &\
 	  sleep 1;\
-	  $(MAKE) DBUS_JAVA_FLOATS=true -s two-part-client | tee client.log ;\
+	  $(MAKE) DEBUG=$(DEBUG)  DBUS_JAVA_FLOATS=true -s two-part-client | tee client.log ;\
 	  kill $$(cat pid) ; )
 
 profile: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDaemon dbus.jar dbus-java-bin-$(VERSION).jar dbus-bin.jar
@@ -215,7 +215,7 @@ profile: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusD
 	  testbin/DBusDaemon --addressfile address --pidfile pid &\
 	  sleep 1; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  if $(MAKE) DBUS_JAVA_FLOATS=true profilerun ; then export PASS=true; fi  ; \
+	  if $(MAKE) DEBUG=$(DEBUG) DBUS_JAVA_FLOATS=true profilerun ; then export PASS=true; fi  ; \
 	  kill $$(cat pid) ; \
 	  if [ "$$PASS" = "true" ]; then exit 0; else exit 1; fi )
 
