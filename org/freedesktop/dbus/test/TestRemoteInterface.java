@@ -45,4 +45,6 @@ public interface TestRemoteInterface extends DBusInterface
    public void newpathtest(Path p);
    @Description("Testing the float type")
    public float testfloat(float[] f);
+   @Description("Testing structs of structs")
+   public int[][] teststructstruct(TestStruct3 in);
 }

@@ -63,6 +63,8 @@ public class Transport
                      mechs = AUTH_EXTERNAL;
                   else if (0 == col.compare(ss[1], "DBUS_COOKIE_SHA1"))
                      mechs = AUTH_SHA;
+                  else if (0 == col.compare(ss[1], "ANONYMOUS"))
+                     mechs = AUTH_ANON;
                }
                if (ss.length > 2)
                   data = ss[2];
@@ -76,6 +78,8 @@ public class Transport
                      mechs |= AUTH_EXTERNAL;
                   else if (0 == col.compare(ss[i], "DBUS_COOKIE_SHA1"))
                      mechs |= AUTH_SHA;
+                  else if (0 == col.compare(ss[i], "ANONYMOUS"))
+                     mechs |= AUTH_ANON;
             } else if (0 == col.compare(ss[0], "BEGIN")) {
                command = COMMAND_BEGIN;
             } else if (0 == col.compare(ss[0], "CANCEL")) {
@@ -236,6 +240,7 @@ public class Transport
       public static final int AUTH_NONE=0;
       public static final int AUTH_EXTERNAL=1;
       public static final int AUTH_SHA=2;
+      public static final int AUTH_ANON=4;
       
       public static final int COMMAND_AUTH=1;
       public static final int COMMAND_DATA=2;
@@ -376,6 +381,8 @@ public class Transport
          switch (auth) {
             case AUTH_NONE:
                switch (c.getMechs()) {
+                  case AUTH_ANON:
+                     return OK;
                   case AUTH_EXTERNAL:
                      if (0 == col.compare(Uid, c.getData()))
                         return OK;
@@ -424,8 +431,16 @@ public class Transport
                return new String[] { "EXTERNAL" };
             case AUTH_SHA:
                return new String[] { "DBUS_COOKIE_SHA1" };
+            case AUTH_ANON:
+               return new String[] { "ANONYMOUS" };
             case AUTH_SHA+AUTH_EXTERNAL:
                return new String[] { "EXTERNAL", "DBUS_COOKIE_SHA1" };
+            case AUTH_SHA+AUTH_ANON:
+               return new String[] { "ANONYMOUS", "DBUS_COOKIE_SHA1" };
+            case AUTH_EXTERNAL+AUTH_ANON:
+               return new String[] { "ANONYMOUS", "EXTERNAL" };
+            case AUTH_EXTERNAL+AUTH_ANON+AUTH_SHA:
+               return new String[] { "ANONYMOUS", "EXTERNAL", "DBUS_COOKIE_SHA1" };
             default:
                return new String[] { };
          }
@@ -490,6 +505,9 @@ public class Transport
                            } else if (0 != (available & AUTH_SHA)) {
                               send(out, COMMAND_AUTH, "DBUS_COOKIE_SHA1", Uid);
                               current = AUTH_SHA;
+                           } else if (0 != (available & AUTH_ANON)) {
+                              send(out, COMMAND_AUTH, "ANONYMOUS");
+                              current = AUTH_ANON;
                            }
                            else state = FAILED;
                            break;
@@ -528,6 +546,9 @@ public class Transport
                               } else if (0 != (available & AUTH_SHA)) {
                                  send(out, COMMAND_AUTH, "DBUS_COOKIE_SHA1", Uid);
                                  current = AUTH_SHA;
+                              } else if (0 != (available & AUTH_ANON)) {
+                                 send(out, COMMAND_AUTH, "ANONYMOUS");
+                                 current = AUTH_ANON;
                               }
                               else state = FAILED;
                               break;
@@ -548,6 +569,9 @@ public class Transport
                               } else if (0 != (available & AUTH_SHA)) {
                                  send(out, COMMAND_AUTH, "DBUS_COOKIE_SHA1", Uid);
                                  current = AUTH_SHA;
+                              } else if (0 != (available & AUTH_ANON)) {
+                                 send(out, COMMAND_AUTH, "ANONYMOUS");
+                                 current = AUTH_ANON;
                               }
                               else state = FAILED;
                               break;

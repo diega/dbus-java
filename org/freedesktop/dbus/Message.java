@@ -933,7 +933,6 @@ public class Message
             Vector<Object> contents = new Vector<Object>();
             while (sigb[++ofs[0]] != ArgumentType.STRUCT2)
                contents.add(extractone(sigb, buf, ofs, true));
-            ofs[0]++;
             rv = contents.toArray();
             break;
          case ArgumentType.DICT_ENTRY1:

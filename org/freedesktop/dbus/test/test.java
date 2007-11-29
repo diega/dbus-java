@@ -13,6 +13,7 @@ package org.freedesktop.dbus.test;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,17 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    public testclass(DBusConnection conn)
    {
       this.conn = conn;
+   }
+   public int[][] teststructstruct(TestStruct3 in)
+   {
+      List<List<Integer>> lli = in.b;
+      int[][] out = new int[lli.size()][];
+      for (int j = 0; j < out.length; j++) {
+         out[j] = new int[lli.get(j).size()];
+         for (int k = 0; k < out[j].length; k++)
+            out[j][k] = lli.get(j).get(k);
+      }
+      return out;
    }
    public float testfloat(float[] f)
    {
@@ -485,6 +497,24 @@ public class test
       System.out.println("testing floats");
       if (17.093f != tri.testfloat(new float[] { 17.093f, -23f, 0.0f, 31.42f }))
          fail("testfloat returned the wrong thing");
+      System.out.println("Structs of Structs");
+      List<List<Integer>> lli = new Vector<List<Integer>>();
+      List<Integer> li = new Vector<Integer>();
+      li.add(1);
+      li.add(2);
+      li.add(3);
+      lli.add(li);
+      lli.add(li);
+      lli.add(li);
+      TestStruct3 ts3 = new TestStruct3(new TestStruct2(new Vector<String>(), new Variant<Integer>(0)), lli);
+      int[][] out = tri.teststructstruct(ts3);
+      if (out.length != 3) fail("teststructstruct returned the wrong thing: "+Arrays.deepToString(out));
+      for (int[] o: out)
+         if (o.length != 3
+           ||o[0] != 1
+           ||o[1] != 2
+           ||o[2] != 3) fail("teststructstruct returned the wrong thing: "+Arrays.deepToString(out));
+
       System.out.println("frobnicating");
       List<Long> ls = new Vector<Long>();
       ls.add(2L);
@@ -626,8 +656,8 @@ public class test
       System.out.println("done");
 
       System.out.print("Testing nested lists...");
-      List<List<Integer>> lli = new Vector<List<Integer>>();
-      List<Integer> li = new Vector<Integer>();
+      lli = new Vector<List<Integer>>();
+      li = new Vector<Integer>();
       li.add(1);
       lli.add(li);
       List<List<Integer>> reti = tri2.checklist(lli);

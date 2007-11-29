@@ -552,20 +552,19 @@ public class Marshalling
 
    static Object[] deSerializeParameters(Object[] parameters, Type[] types, AbstractConnection conn) throws Exception
    {
-      if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing from "+parameters+" to "+types);
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing from "+Arrays.deepToString(parameters)+" to "+Arrays.deepToString(types));
       if (null == parameters) return null;
 
-      // CHECK IF ARRAYS HAVE THE SAME LENGTH
-      if (types.length != parameters.length) {
-         if (Debug.debug) {
-            for (int i = 0; i < parameters.length; i++) {
-               Debug.print(Debug.ERR, String.format("Error, Parameters difference (%1d, '%2s')", i, parameters[i].toString()));
-            }
-         }
-         throw new DBusException("Error deserializing message: number parameters didn't match receiving signature");
-      }
-      
       for (int i = 0; i < parameters.length; i++) {
+         // CHECK IF ARRAYS HAVE THE SAME LENGTH <-- has to happen after expanding parameters
+         if (i >= types.length) {
+            if (Debug.debug) {
+               for (int j = 0; j < parameters.length; j++) {
+                  Debug.print(Debug.ERR, String.format("Error, Parameters difference (%1d, '%2s')", j, parameters[j].toString()));
+               }
+            }
+            throw new DBusException("Error deserializing message: number of parameters didn't match receiving signature");
+         }
          if (null == parameters[i]) continue;
 
          if (types[i] instanceof Class &&

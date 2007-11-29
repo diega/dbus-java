@@ -8,6 +8,11 @@ Version 2.3.2:
 	* Make Marshalling more verbose and descriptive in the presence of
 	  mismatched parameter lists (suggested by Anibal Sanchez
 	  <anibal -dot- sanchez -at- sunya -dot- com -dot- ar>)
+	* Fix struct type parsing error (spotted by Gunnar Aastrand Grimnes
+	  <gunnar -dot- grimnes -at- dfki -dot- de> and Frank Benoit 
+	  <keinfarbton -at- googlemail -dot- com>)
+	* Fix parsing of serializable classes
+	* Anonymous SASL (needs testing)
 
 Version 2.3.1:
 	

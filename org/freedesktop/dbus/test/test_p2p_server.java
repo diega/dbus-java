@@ -24,6 +24,17 @@ import org.freedesktop.dbus.UInt16;
 
 public class test_p2p_server implements TestRemoteInterface
 {
+   public int[][] teststructstruct(TestStruct3 in)
+   {
+      List<List<Integer>> lli = in.b;
+      int[][] out = new int[lli.size()][];
+      for (int j = 0; j < out.length; j++) {
+         out[j] = new int[lli.get(j).size()];
+         for (int k = 0; k < out[j].length; k++)
+            out[j][k] = lli.get(j).get(k);
+      }
+      return out;
+   }
    public String getName()
    {
       System.out.println("getName called");
