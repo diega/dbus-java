@@ -191,6 +191,7 @@ public abstract class AbstractConnection
    static final int MAX_NAME_LENGTH = 255;
    protected Map<String,ExportedObject> exportedObjects;
    private ObjectTree objectTree;
+   private _globalhandler _globalhandlerreference;
    protected Map<DBusInterface,RemoteObject> importedObjects;
    protected Map<SignalTuple,Vector<DBusSigHandler>> handledSignals;
    protected EfficientMap pendingCalls;
@@ -236,7 +237,10 @@ public abstract class AbstractConnection
    {
       exportedObjects = new HashMap<String,ExportedObject>();
       importedObjects = new HashMap<DBusInterface,RemoteObject>();
-      exportedObjects.put(null, new ExportedObject(new _globalhandler()));
+      _globalhandlerreference = new _globalhandler();
+      synchronized (exportedObjects) {
+         exportedObjects.put(null, new ExportedObject(_globalhandlerreference));
+      }
       handledSignals = new HashMap<SignalTuple,Vector<DBusSigHandler>>();
       pendingCalls = new EfficientMap(PENDING_MAP_INITIAL_SIZE);
       outgoing = new EfficientQueue(PENDING_MAP_INITIAL_SIZE);
@@ -300,9 +304,11 @@ public abstract class AbstractConnection
 
    String getExportedObject(DBusInterface i) throws DBusException
    {
-      for (String s: exportedObjects.keySet())
-         if (exportedObjects.get(s).object.equals(i))
-            return s;
+      synchronized (exportedObjects) {
+         for (String s: exportedObjects.keySet())
+            if (i.equals(exportedObjects.get(s).object.get()))
+               return s;
+      }
 
       String s = importedObjects.get(i).objectpath;
       if (null != s) return s;
@@ -345,7 +351,7 @@ public abstract class AbstractConnection
             throw new DBusException("Object already exported");
          ExportedObject eo = new ExportedObject(object);
          exportedObjects.put(objectpath, eo);
-         objectTree.add(objectpath, object, eo.introspectiondata);
+         objectTree.add(objectpath, eo, eo.introspectiondata);
       }
    }
    /** 
@@ -356,6 +362,7 @@ public abstract class AbstractConnection
    {
       synchronized (exportedObjects) {
          exportedObjects.remove(objectpath);
+         objectTree.remove(objectpath);
       }
    }
    /** 
@@ -601,17 +608,27 @@ public abstract class AbstractConnection
          synchronized (exportedObjects) {
             eo = exportedObjects.get(null);
          }
+         if (null != eo && null == eo.object.get()) {
+            unExportObject(null);
+            eo = null;
+         }
          if (null != eo) {
             meth = eo.methods.get(new MethodTuple(m.getName(), m.getSig()));
          }
          if (null != meth)
             o = new _globalhandler(m.getPath());
+         else
+            eo = null;
       }
       if (null == o) {
          // now check for specific exported functions
 
          synchronized (exportedObjects) {
             eo = exportedObjects.get(m.getPath());
+         }
+         if (null != eo && null == eo.object.get()) {
+            unExportObject(m.getPath());
+            eo = null;
          }
 
          if (null == eo) {
@@ -620,6 +637,12 @@ public abstract class AbstractConnection
             } catch (DBusException DBe) {}
             return;
          }
+         if (Debug.debug) {
+            Debug.print(Debug.VERBOSE, "Searching for method "+m.getName()+" with signature "+m.getSig());
+            Debug.print(Debug.VERBOSE, "List of methods on "+eo+":");
+            for (MethodTuple mt: eo.methods.keySet())
+               Debug.print(Debug.VERBOSE, "   "+mt+" => "+eo.methods.get(mt));
+         }
          meth = eo.methods.get(new MethodTuple(m.getName(), m.getSig()));
          if (null == meth) {
             try {
@@ -627,7 +650,7 @@ public abstract class AbstractConnection
             } catch (DBusException DBe) {}
             return;
          }
-         o = eo.object;
+         o = eo.object.get();
       }
 
       // now execute it
@@ -663,6 +686,7 @@ public abstract class AbstractConnection
                }
                Object result;
                try {
+                  if (Debug.debug) Debug.print(Debug.VERBOSE, "Invoking Method: "+me+" on "+ob+" with parameters "+Arrays.deepToString(m.getParameters()));
                   result = me.invoke(ob, m.getParameters());
                } catch (InvocationTargetException ITe) {
                   if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, ITe.getCause());

@@ -448,8 +448,22 @@ public class test
       
       System.out.println("Listening for Method Calls");
       testclass tclass = new testclass(serverconn);
+      testclass tclass2 = new testclass(serverconn);
       /** This exports an instance of the test class as the object /Test. */
       serverconn.exportObject("/Test", tclass);
+      serverconn.exportObject("/BadTest", tclass);
+      serverconn.exportObject("/BadTest2", tclass2);
+
+      // explicitly unexport object
+      serverconn.unExportObject("/BadTest");
+      // implicitly unexport object
+      tclass2 = null;
+      System.gc();
+      System.runFinalization();
+      System.gc();
+      System.runFinalization();
+      System.gc();
+      System.runFinalization();
       
       System.out.println("Sending Signal");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
@@ -574,8 +588,28 @@ public class test
       } catch (UnknownObject UO) {
          System.out.println("Remote Method Failed with: "+UO.getClass().getName()+" "+UO.getMessage());
       }
+      
+      /** Try and call an explicitly unexported object */
+      try {
+         System.out.println("Calling Method4");
+         tri = clientconn.getRemoteObject("foo.bar.Test", "/BadTest", TestRemoteInterface.class);
+         System.out.println("Got Remote Name: "+tri.getName());
+         test.fail("Method Execution should have failed");
+      } catch (UnknownObject UO) {
+         System.out.println("Remote Method Failed with: "+UO.getClass().getName()+" "+UO.getMessage());
+      }
+ 
+      /** Try and call an implicitly unexported object */
+      try {
+         System.out.println("Calling Method5");
+         tri = clientconn.getRemoteObject("foo.bar.Test", "/BadTest2", TestRemoteInterface.class);
+         System.out.println("Got Remote Name: "+tri.getName());
+         test.fail("Method Execution should have failed");
+      } catch (UnknownObject UO) {
+         System.out.println("Remote Method Failed with: "+UO.getClass().getName()+" "+UO.getMessage());
+      }
 
-      System.out.println("Calling Method4/5/6/7");
+      System.out.println("Calling Method5--8");
       /** This gets a remote object matching our bus name and exported object path. */
       TestRemoteInterface2 tri2 = clientconn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);
       System.out.print("Calling the other introspect method: ");

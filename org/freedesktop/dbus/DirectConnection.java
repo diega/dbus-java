@@ -10,6 +10,7 @@
 */
 package org.freedesktop.dbus;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Proxy;
 import java.io.File;
 import java.io.IOException;
@@ -137,8 +138,15 @@ public class DirectConnection extends AbstractConnection
    
    DBusInterface getExportedObject(String path) throws DBusException
    {
-      ExportedObject o = exportedObjects.get(path);
-      if (null != o) return o.object;
+      ExportedObject o = null;
+      synchronized (exportedObjects) {
+         o = exportedObjects.get(path);
+      }
+      if (null != o && null == o.object.get()) {
+         unExportObject(path);
+         o = null;
+      }
+      if (null != o) return o.object.get();
       return dynamicProxy(path);
    }
 

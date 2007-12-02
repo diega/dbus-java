@@ -10,6 +10,8 @@
 */
 package org.freedesktop.dbus;
 
+import cx.ath.matthew.debug.Debug;
+
 import java.util.regex.Pattern;
 
 /**
@@ -19,7 +21,7 @@ class ObjectTree
    class TreeNode
    {
       String name;
-      DBusInterface object;
+      ExportedObject object;
       String data;
       TreeNode right;
       TreeNode down;
@@ -27,7 +29,7 @@ class ObjectTree
       {
          this.name = name;
       }
-      public TreeNode(String name, DBusInterface object, String data)
+      public TreeNode(String name, ExportedObject object, String data)
       {
          this.name = name;
          this.object = object;
@@ -69,7 +71,7 @@ class ObjectTree
          return recursiveFind(current.right, path);
       }
    }
-   private TreeNode recursiveAdd(TreeNode current, String path, DBusInterface object, String data)
+   private TreeNode recursiveAdd(TreeNode current, String path, ExportedObject object, String data)
    {
       String[] elements = slashpattern.split(path, 2);
       // this is us or a parent node
@@ -106,12 +108,14 @@ class ObjectTree
       }
       return current;
    }
-   public void add(String path, DBusInterface object, String data)
+   public void add(String path, ExportedObject object, String data)
    {
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Adding "+path+" to object tree");
       root = recursiveAdd(root, path, object, data);
    }
    public void remove(String path)
    {
+      if (Debug.debug) Debug.print(Debug.DEBUG, "Removing "+path+" from object tree");
       TreeNode t = recursiveFind(root, path);
       t.object = null;
       t.data = null;

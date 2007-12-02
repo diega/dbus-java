@@ -5,6 +5,8 @@ Version 2.4:
 	  yandex -dot- ru>)
 	* Don't respond to Introspect/Ping except on the right interface 
 	  (pointed out by Serkan Kaba <serkan_kaba -at- yahoo -dot- com>)
+	* Automatically unexport objects which go out of scope in the 
+	  parent program (don't hold a strong reference).
 
 
 Version 2.3.2:
