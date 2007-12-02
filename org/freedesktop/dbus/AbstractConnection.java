@@ -41,6 +41,37 @@ import cx.ath.matthew.debug.Debug;
  */
 public abstract class AbstractConnection
 {
+   protected class FallbackContainer 
+   {
+      private Map<String[], ExportedObject> fallbacks = new HashMap<String[], ExportedObject>();
+      public synchronized void add(String path, ExportedObject eo)
+      {
+         if (Debug.debug) Debug.print(Debug.DEBUG, "Adding fallback on "+path+" of "+eo);
+         fallbacks.put(path.split("/"), eo);
+      }
+      public synchronized void remove(String path)
+      {
+         if (Debug.debug) Debug.print(Debug.DEBUG, "Removing fallback on "+path);
+         fallbacks.remove(path.split("/"));
+      }
+      public synchronized ExportedObject get(String path)
+      {
+         int best = 0;
+         int i = 0;
+         ExportedObject bestobject = null;
+         String[] pathel = path.split("/");
+         for (String[] fbpath: fallbacks.keySet()) {
+            if (Debug.debug) Debug.print(Debug.VERBOSE, "Trying fallback path "+Arrays.deepToString(fbpath)+" to match "+Arrays.deepToString(pathel));
+            for (i = 0; i < pathel.length && i < fbpath.length; i++)
+               if (!pathel[i].equals(fbpath[i])) break;
+            if (i > 0 && i == fbpath.length && i > best)
+               bestobject = fallbacks.get(fbpath);
+            if (Debug.debug) Debug.print(Debug.VERBOSE, "Matches "+i+" bestobject now "+bestobject);
+         }
+         if (Debug.debug) Debug.print(Debug.DEBUG, "Found fallback for "+path+" of "+bestobject);
+         return bestobject;
+      }
+   }
    protected class _thread extends Thread
    {
       public _thread()
@@ -199,6 +230,7 @@ public abstract class AbstractConnection
    protected Map<MethodCall, DBusAsyncReply> pendingCallbackReplys;
    protected LinkedList<Runnable> runnables;
    protected LinkedList<_workerthread> workers;
+   protected FallbackContainer fallbackcontainer;
    protected boolean _run;
    EfficientQueue outgoing;
    LinkedList<Error> pendingErrors;
@@ -250,6 +282,7 @@ public abstract class AbstractConnection
       runnables = new LinkedList<Runnable>();
       workers = new LinkedList<_workerthread>();
       objectTree = new ObjectTree();
+      fallbackcontainer = new FallbackContainer();
       synchronized (workers) {
          for (int i = 0; i < THREADCOUNT; i++) {
             _workerthread t = new _workerthread();
@@ -333,7 +366,7 @@ public abstract class AbstractConnection
 
    /** 
     * Export an object so that its methods can be called on DBus.
-    * @param objectpath The path to the object we are exposing. MUST be in slash-notation, like "org/freedesktop/Local", 
+    * @param objectpath The path to the object we are exposing. MUST be in slash-notation, like "/org/freedesktop/Local", 
     * and SHOULD end with a capitalised term. Only one object may be exposed on each path at any one time, but an object
     * may be exposed on several paths at once.
     * @param object The object to export.
@@ -354,6 +387,32 @@ public abstract class AbstractConnection
          objectTree.add(objectpath, eo, eo.introspectiondata);
       }
    }
+   /** 
+    * Export an object as a fallback object.
+    * This object will have it's methods invoked for all paths starting
+    * with this object path.
+    * @param objectprefix The path below which the fallback handles calls.
+    * MUST be in slash-notation, like "/org/freedesktop/Local", 
+    * @param object The object to export.
+    * @throws DBusException If the objectpath is incorrectly formatted,
+    */
+   public void addFallback(String objectprefix, DBusInterface object) throws DBusException
+   {
+      if (null == objectprefix || "".equals(objectprefix)) 
+         throw new DBusException("Must Specify an Object Path");
+      if (!objectprefix.matches(OBJECT_REGEX)||objectprefix.length() > MAX_NAME_LENGTH) 
+         throw new DBusException("Invalid object path ("+objectprefix+")");
+         ExportedObject eo = new ExportedObject(object);
+         fallbackcontainer.add(objectprefix, eo);
+   }
+   /** 
+    * Remove a fallback
+    * @param objectprefix The prefix to remove the fallback for.
+    */
+   public void removeFallback(String objectprefix) 
+   {
+      fallbackcontainer.remove(objectprefix);
+   }   
    /** 
     * Stop Exporting an object 
     * @param objectpath The objectpath to stop exporting.
@@ -629,6 +688,10 @@ public abstract class AbstractConnection
          if (null != eo && null == eo.object.get()) {
             unExportObject(m.getPath());
             eo = null;
+         }
+
+         if (null == eo) {
+            eo = fallbackcontainer.get(m.getPath());
          }
 
          if (null == eo) {

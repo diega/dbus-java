@@ -453,6 +453,7 @@ public class test
       serverconn.exportObject("/Test", tclass);
       serverconn.exportObject("/BadTest", tclass);
       serverconn.exportObject("/BadTest2", tclass2);
+      serverconn.addFallback("/FallbackTest", tclass);
 
       // explicitly unexport object
       serverconn.unExportObject("/BadTest");
@@ -609,7 +610,11 @@ public class test
          System.out.println("Remote Method Failed with: "+UO.getClass().getName()+" "+UO.getMessage());
       }
 
-      System.out.println("Calling Method5--8");
+      System.out.println("Calling Method6");
+      tri = clientconn.getRemoteObject("foo.bar.Test", "/FallbackTest/0/1", TestRemoteInterface.class);
+      System.out.println("Got Fallback Name: "+tri.getName());
+
+      System.out.println("Calling Method7--9");
       /** This gets a remote object matching our bus name and exported object path. */
       TestRemoteInterface2 tri2 = clientconn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);
       System.out.print("Calling the other introspect method: ");
