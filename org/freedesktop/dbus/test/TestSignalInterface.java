@@ -12,6 +12,7 @@ package org.freedesktop.dbus.test;
 
 import org.freedesktop.DBus.Description;
 import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.DBusMemberName;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.Variant;
@@ -51,6 +52,7 @@ public interface TestSignalInterface extends DBusInterface
       }
    }
    @Description("Test signal sending an object path")
+   @DBusMemberName("TestSignalObject")
    public static class TestObjectSignal extends DBusSignal
    {
       public final DBusInterface otherpath;

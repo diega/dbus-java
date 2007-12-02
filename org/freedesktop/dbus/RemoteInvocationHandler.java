@@ -94,13 +94,18 @@ class RemoteInvocationHandler implements InvocationHandler
       if (syncmethod == CALL_TYPE_ASYNC) flags |= Message.Flags.ASYNC;
       if (m.isAnnotationPresent(DBus.Method.NoReply.class)) flags |= Message.Flags.NO_REPLY_EXPECTED;
       try {
-         if (null == ro.iface)
-            call = new MethodCall(ro.busname, ro.objectpath, null, m.getName(),flags, sig, args);
+         String name;
+         if (m.isAnnotationPresent(DBusMemberName.class))
+            name = ((DBusMemberName) m.getAnnotation(DBusMemberName.class)).value();
+         else
+            name = m.getName();
+         if (null == ro.iface) 
+            call = new MethodCall(ro.busname, ro.objectpath, null, name,flags, sig, args);
          else {
             if (null != ro.iface.getAnnotation(DBusInterfaceName.class)) {
-               call = new MethodCall(ro.busname, ro.objectpath, ro.iface.getAnnotation(DBusInterfaceName.class).value(), m.getName(), flags, sig, args);
+               call = new MethodCall(ro.busname, ro.objectpath, ro.iface.getAnnotation(DBusInterfaceName.class).value(), name, flags, sig, args);
             } else
-               call = new MethodCall(ro.busname, ro.objectpath, AbstractConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), m.getName(), flags, sig, args);
+               call = new MethodCall(ro.busname, ro.objectpath, AbstractConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), name, flags, sig, args);
          }
       } catch (DBusException DBe) {
          if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);

@@ -1,3 +1,9 @@
+Version 2.4:
+
+	* Add DBusMemberName to force method names or signal names to something
+  	  other than the Java name (suggested byaViktar Vauchkevich <vctr -at-
+	  yandex -dot- ru>)
+
 Version 2.3.2:
 
 	* Fix empty array/map bug (reported by	Jan Kümmel

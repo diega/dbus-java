@@ -80,7 +80,10 @@ public class DBusMatchRule
          // Don't export things which are invalid D-Bus interfaces
          if (!iface.matches(".*\\..*"))
             throw new DBusException("DBusInterfaces must be defined in a package.");
-         member = c.getSimpleName();
+         if (c.isAnnotationPresent(DBusMemberName.class))
+            member = ((DBusMemberName) c.getAnnotation(DBusMemberName.class)).value();
+         else
+            member = c.getSimpleName();
          type = "signal";
       }
       else if (Error.class.isAssignableFrom(c)) {

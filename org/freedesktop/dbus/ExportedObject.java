@@ -49,24 +49,33 @@ class ExportedObject
       Map<MethodTuple,Method> m = new HashMap<MethodTuple,Method>();
       for (Class i: c.getInterfaces())
          if (DBusInterface.class.equals(i)) {
-            // don't let people export things which don't have a
-            // valid D-Bus interface name
-            if (i.getName().equals(i.getSimpleName()))
-               throw new DBusException("DBusInterfaces cannot be declared outside a package");
             // add this class's public methods
-            if (c.getName().length() > DBusConnection.MAX_NAME_LENGTH) 
-               throw new DBusException("Introspected interface name exceeds 255 characters. Cannot export objects of type "+c.getName()+".");
-            if (null != c.getAnnotation(DBusInterfaceName.class))
-               introspectiondata += " <interface name=\""+((DBusInterfaceName) c.getAnnotation(DBusInterfaceName.class)).value()+"\">\n";
-            else
-               introspectiondata += " <interface name=\""+AbstractConnection.dollar_pattern.matcher(c.getName()).replaceAll(".")+"\">\n";
+            if (null != c.getAnnotation(DBusInterfaceName.class)) {
+               String name = ((DBusInterfaceName) c.getAnnotation(DBusInterfaceName.class)).value();
+               introspectiondata += " <interface name=\""+name+"\">\n";
+               DBusSignal.addInterfaceMap(c.getName(), name);
+            } else {
+               // don't let people export things which don't have a
+               // valid D-Bus interface name
+               if (c.getName().equals(c.getSimpleName()))
+                  throw new DBusException("DBusInterfaces cannot be declared outside a package");
+               if (c.getName().length() > DBusConnection.MAX_NAME_LENGTH) 
+                  throw new DBusException("Introspected interface name exceeds 255 characters. Cannot export objects of type "+c.getName()+".");
+               else
+                  introspectiondata += " <interface name=\""+AbstractConnection.dollar_pattern.matcher(c.getName()).replaceAll(".")+"\">\n";
+            }
             introspectiondata += getAnnotations(c);
             for (Method meth: c.getDeclaredMethods()) 
                if (Modifier.isPublic(meth.getModifiers())) {
                   String ms = "";
-                  if (meth.getName().length() > DBusConnection.MAX_NAME_LENGTH) 
-                     throw new DBusException("Introspected method name exceeds 255 characters. Cannot export objects with method "+meth.getName()+".");
-                  introspectiondata += "  <method name=\""+meth.getName()+"\" >\n";
+                  String name;
+                  if (meth.isAnnotationPresent(DBusMemberName.class))
+                     name = ((DBusMemberName) meth.getAnnotation(DBusMemberName.class)).value();
+                  else
+                     name = meth.getName();
+                  if (name.length() > DBusConnection.MAX_NAME_LENGTH) 
+                     throw new DBusException("Introspected method name exceeds 255 characters. Cannot export objects with method "+name+".");
+                  introspectiondata += "  <method name=\""+name+"\" >\n";
                   introspectiondata += getAnnotations(meth);
                   for (Class ex: meth.getExceptionTypes())
                      if (DBusExecutionException.class.isAssignableFrom(ex))
@@ -93,13 +102,19 @@ class ExportedObject
                         introspectiondata += "   <arg type=\""+s+"\" direction=\"out\"/>\n";
                   }
                   introspectiondata += "  </method>\n";
-                  m.put(new MethodTuple(meth.getName(), ms), meth);
+                  m.put(new MethodTuple(name, ms), meth);
                }
             for (Class sig: c.getDeclaredClasses()) 
                if (DBusSignal.class.isAssignableFrom(sig)) {
-                  if (sig.getSimpleName().length() > DBusConnection.MAX_NAME_LENGTH) 
-                     throw new DBusException("Introspected signal name exceeds 255 characters. Cannot export objects with signals of type "+sig.getSimpleName()+".");
-                  introspectiondata += "  <signal name=\""+sig.getSimpleName()+"\">\n";
+                  String name;
+                  if (sig.isAnnotationPresent(DBusMemberName.class)) {
+                     name = ((DBusMemberName) sig.getAnnotation(DBusMemberName.class)).value();
+                     DBusSignal.addSignalMap(sig.getSimpleName(), name);
+                  } else
+                     name = sig.getSimpleName();
+                  if (name.length() > DBusConnection.MAX_NAME_LENGTH) 
+                     throw new DBusException("Introspected signal name exceeds 255 characters. Cannot export objects with signals of type "+name+".");
+                  introspectiondata += "  <signal name=\""+name+"\">\n";
                   Constructor con = sig.getConstructors()[0];
                   Type[] ts = con.getGenericParameterTypes();
                   for (int j = 1; j < ts.length; j++)

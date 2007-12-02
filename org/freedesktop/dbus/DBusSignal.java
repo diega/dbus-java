@@ -71,9 +71,20 @@ public class DBusSignal extends Message
    }
    private static Map<Class, Type[]> typeCache = new HashMap<Class, Type[]>();
    private static Map<Class, Constructor> conCache = new HashMap<Class, Constructor>();
+   private static Map<String, String> signames = new HashMap<String, String>();
+   private static Map<String, String> intnames = new HashMap<String, String>();
    private Class<? extends DBusSignal> c;
    private boolean bodydone = false;
    private byte[] blen;
+
+   static void addInterfaceMap(String java, String dbus)
+   {
+      intnames.put(dbus, java);
+   }
+   static void addSignalMap(String java, String dbus)
+   {
+      signames.put(dbus, java);
+   }
    
    static DBusSignal createSignal(Class<? extends DBusSignal> c, String source, String objectpath, String sig, long serial, Object... parameters) throws DBusException
    {
@@ -98,8 +109,12 @@ public class DBusSignal extends Message
    }
    DBusSignal createReal(AbstractConnection conn) throws DBusException
    {
+      String intname = intnames.get(getInterface());
+      String signame = signames.get(getName());
+      if (null == intname) intname = getInterface();
+      if (null == signame) signame = getName();
       if (null == c) 
-         c = createSignalClass(getInterface()+"$"+getName());
+         c = createSignalClass(intname+"$"+signame);
       if (Debug.debug) Debug.print(Debug.DEBUG, "Converting signal to type: "+c);
       Type[] types = typeCache.get(c);
       Constructor con = conCache.get(c);
@@ -152,7 +167,11 @@ public class DBusSignal extends Message
       if (!objectpath.matches(AbstractConnection.OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
 
       Class tc = getClass();
-      String member = tc.getSimpleName();
+      String member;
+      if (tc.isAnnotationPresent(DBusMemberName.class))
+         member = ((DBusMemberName) tc.getAnnotation(DBusMemberName.class)).value();
+      else
+         member = tc.getSimpleName();
       String iface = null;
       Class enc = tc.getEnclosingClass();
       if (null == enc ||
