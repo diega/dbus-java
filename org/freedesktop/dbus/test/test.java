@@ -612,7 +612,9 @@ public class test
 
       System.out.println("Calling Method6");
       tri = clientconn.getRemoteObject("foo.bar.Test", "/FallbackTest/0/1", TestRemoteInterface.class);
+      intro = clientconn.getRemoteObject("foo.bar.Test", "/FallbackTest/0/4", Introspectable.class);
       System.out.println("Got Fallback Name: "+tri.getName());
+      System.out.println("Fallback Introspection Data: \n"+intro.Introspect());
 
       System.out.println("Calling Method7--9");
       /** This gets a remote object matching our bus name and exported object path. */

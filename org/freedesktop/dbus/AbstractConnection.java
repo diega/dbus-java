@@ -139,6 +139,10 @@ public abstract class AbstractConnection
       public String Introspect() 
       {
          String intro = objectTree.Introspect(objectpath);
+         if (null == intro) {
+            ExportedObject eo = fallbackcontainer.get(objectpath);
+            if (null != eo) intro = eo.introspectiondata;
+         }
          if (null == intro) 
             throw new DBus.Error.UnknownObject("Introspecting on non-existant object");
          else return 
