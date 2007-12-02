@@ -61,6 +61,10 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    {
       this.conn = conn;
    }
+   public String Introspect()
+   {
+      return "Not XML";
+   }
    public int[][] teststructstruct(TestStruct3 in)
    {
       List<List<Integer>> lli = in.b;
@@ -574,6 +578,12 @@ public class test
       System.out.println("Calling Method4/5/6/7");
       /** This gets a remote object matching our bus name and exported object path. */
       TestRemoteInterface2 tri2 = clientconn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);
+      System.out.print("Calling the other introspect method: ");
+      String intro2 = tri2.Introspect();
+      System.out.println(intro2);
+      if (0 != col.compare("Not XML", intro2))
+         fail("Introspect return value incorrect");
+
       /** Call the remote object and get a response. */
       TestTuple<String,List<Integer>,Boolean> rv = tri2.show(234);
       System.out.println("Show returned: "+rv);

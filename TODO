@@ -1,7 +1,6 @@
  ** check that the blocking is correct on DBusAsyncReply and add an explicit timeout value
  * only hold weak refs to user objects and reply correctly when they have gone
  * Javadoc
- * don't respond to Introspect/Ping except on the right interface Serkan Kaba <serkan_kaba -at- yahoo -dot- com>
  * document that we handle Introspect for you 
  * add header checks to daemon
  * add TERM/etc handler to DBusDaemon

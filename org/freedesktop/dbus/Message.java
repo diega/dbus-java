@@ -465,7 +465,7 @@ public class Message
    {
       try {
          int i = sigofs;
-         if (Debug.debug) Debug.print((int) Debug.VERBOSE, (Object) bytecounter);
+         if (Debug.debug) Debug.print(Debug.VERBOSE, (Object) bytecounter);
          if (Debug.debug) Debug.print(Debug.VERBOSE, "Appending type: "+((char)sigb[i])+" value: "+data);
 
          // pad to the alignment of this type.
@@ -865,7 +865,7 @@ public class Message
                case ArgumentType.INT64:
                   rv = new long[length];
                   for (int j = 0; j < length; j++, ofs[1] += algn) 
-                     ((long[]) rv)[j] = (long) demarshallint(buf, ofs[1], algn);
+                     ((long[]) rv)[j] = demarshallint(buf, ofs[1], algn);
                   break;
                case ArgumentType.BOOLEAN:
                   rv = new boolean[length];
@@ -971,7 +971,7 @@ public class Message
             break;
          case ArgumentType.SIGNATURE:
             length = (buf[ofs[1]++] & 0xFF);
-            rv = new String(buf, ofs[1], (int)length);
+            rv = new String(buf, ofs[1], length);
             ofs[1] += length + 1;
             break;
          default: 

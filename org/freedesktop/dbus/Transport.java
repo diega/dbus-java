@@ -451,6 +451,7 @@ public class Transport
        * Types is a bitmask of the available auth types.
        * Returns true if the auth was successful and false if it failed.
        */
+      @SuppressWarnings("unchecked")
       public boolean auth(int mode, int types, String guid, OutputStream out, InputStream in) throws IOException
       {
          String username = System.getProperty("user.name");

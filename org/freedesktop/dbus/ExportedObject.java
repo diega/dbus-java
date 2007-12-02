@@ -26,6 +26,7 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 class ExportedObject
 {
+   @SuppressWarnings("unchecked")
    private String getAnnotations(AnnotatedElement c)
    {
       String ans = "";
@@ -43,6 +44,7 @@ class ExportedObject
       }
       return ans;
    }
+   @SuppressWarnings("unchecked")
    private Map<MethodTuple,Method> getExportedMethods(Class c) throws DBusException
    {
       if (DBusInterface.class.equals(c)) return new HashMap<MethodTuple,Method>();
@@ -70,7 +72,7 @@ class ExportedObject
                   String ms = "";
                   String name;
                   if (meth.isAnnotationPresent(DBusMemberName.class))
-                     name = ((DBusMemberName) meth.getAnnotation(DBusMemberName.class)).value();
+                     name = meth.getAnnotation(DBusMemberName.class).value();
                   else
                      name = meth.getName();
                   if (name.length() > DBusConnection.MAX_NAME_LENGTH) 

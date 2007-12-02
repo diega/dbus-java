@@ -145,7 +145,7 @@ public class Marshalling
             for (Type t: ts)
                for (String s: recursiveGetDBusType(t, false, level+1))
                   vs.add(s);
-            return (String[]) vs.toArray(new String[0]);
+            return vs.toArray(new String[0]);
          }
          else
             throw new DBusException("Exporting non-exportable parameterized type "+c);
@@ -515,7 +515,7 @@ public class Marshalling
       }
       return parameter;
    }
-   static List deSerializeParameters(List parameters, Type type, AbstractConnection conn) throws Exception
+   static List<Object> deSerializeParameters(List<Object> parameters, Type type, AbstractConnection conn) throws Exception
    {
       if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing from "+parameters+" to "+type);
       if (null == parameters) return null;

@@ -60,6 +60,7 @@ public class DBusMatchRule
       this.source = source;
       this.object = object;
    }
+   @SuppressWarnings("unchecked")
    public DBusMatchRule(Class c) throws DBusException
    {
       if (DBusInterface.class.isAssignableFrom(c)) {

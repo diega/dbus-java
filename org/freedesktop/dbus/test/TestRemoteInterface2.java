@@ -49,4 +49,6 @@ public interface TestRemoteInterface2 extends DBusInterface
    public TestNewInterface getNew();
    @Description("Test Complex Variants")
    public void complexv(Variant v);
+   @Description("Test Introspect on a different interface")
+   public String Introspect();
 }

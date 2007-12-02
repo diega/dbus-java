@@ -211,7 +211,7 @@ public class DBusViewer
 	{
 		DBusTableModel model = new DBusTableModel();
 
-		DBus dbus = (DBus) conn.getRemoteObject("org.freedesktop.DBus",
+		DBus dbus = conn.getRemoteObject("org.freedesktop.DBus",
 				"/org/freedesktop/DBus", DBus.class);
 		String[] names = dbus.ListNames();
 
@@ -299,7 +299,7 @@ public class DBusViewer
 			DBusEntry entry = new DBusEntry();
 			entry.setName(name);
 			entry.setPath(path);
-			Introspectable introspectable = (Introspectable) conn.getRemoteObject(name, path, Introspectable.class);
+			Introspectable introspectable = conn.getRemoteObject(name, path, Introspectable.class);
 			entry.setIntrospectable(introspectable);
 
 			result.add(entry);

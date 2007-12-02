@@ -653,7 +653,7 @@ public class CreateInterface
 
       if (null != config.busname) try {
          DBusConnection conn = DBusConnection.getConnection(config.bus);
-         Introspectable in = (Introspectable) conn.getRemoteObject(config.busname, config.object, Introspectable.class);
+         Introspectable in = conn.getRemoteObject(config.busname, config.object, Introspectable.class);
          String id = in.Introspect();
          if (null == id) {
             System.err.println("ERROR: Failed to get introspection data");

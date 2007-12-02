@@ -168,7 +168,7 @@ public class DBusConnection extends AbstractConnection
       addSigHandlerWithoutMatch(org.freedesktop.DBus.NameAcquired.class, h);
 
       // register ourselves
-      _dbus = (DBus) getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
+      _dbus = getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
       try {
          busnames.add(_dbus.Hello());
       } catch (DBusExecutionException DBEe) {
@@ -180,7 +180,7 @@ public class DBusConnection extends AbstractConnection
    DBusInterface dynamicProxy(String source, String path) throws DBusException
    {
       try {
-         DBus.Introspectable intro = (DBus.Introspectable) getRemoteObject(source, path, DBus.Introspectable.class);
+         DBus.Introspectable intro = getRemoteObject(source, path, DBus.Introspectable.class);
          String data = intro.Introspect();
          String[] tags = data.split("[<>]");
          Vector<String> ifaces = new Vector<String>();
@@ -209,8 +209,10 @@ public class DBusConnection extends AbstractConnection
          if (ifcs.size() == 0) throw new DBusException("Could not find an interface to cast to");
 
          RemoteObject ro = new RemoteObject(source, path, null, false);
-         DBusInterface newi =  (DBusInterface) Proxy.newProxyInstance(ifcs.get(0).getClassLoader(), 
-               (Class[]) ifcs.toArray(new Class[0]), new RemoteInvocationHandler(this, ro));
+         DBusInterface newi = (DBusInterface) 
+            Proxy.newProxyInstance(ifcs.get(0).getClassLoader(), 
+                                   ifcs.toArray(new Class[0]), 
+                                   new RemoteInvocationHandler(this, ro));
          importedObjects.put(newi, ro);
          return newi;
       } catch (Exception e) {

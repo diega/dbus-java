@@ -593,18 +593,21 @@ public abstract class AbstractConnection
 
       ExportedObject eo = null;
       Method meth = null;
-      Object o;
+      Object o = null;
       
-      synchronized (exportedObjects) {
-         eo = exportedObjects.get(null);
+      if (null == m.getInterface() ||
+          m.getInterface().equals("org.freedesktop.DBus.Peer") ||
+          m.getInterface().equals("org.freedesktop.DBus.Introspectable")) {
+         synchronized (exportedObjects) {
+            eo = exportedObjects.get(null);
+         }
+         if (null != eo) {
+            meth = eo.methods.get(new MethodTuple(m.getName(), m.getSig()));
+         }
+         if (null != meth)
+            o = new _globalhandler(m.getPath());
       }
-      if (null != eo) {
-         meth = eo.methods.get(new MethodTuple(m.getName(), m.getSig()));
-      }
-      if (null != meth)
-         o = new _globalhandler(m.getPath());
-
-      else {
+      if (null == o) {
          // now check for specific exported functions
 
          synchronized (exportedObjects) {

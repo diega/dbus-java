@@ -285,33 +285,33 @@ public class cross_test_client implements DBus.Binding.TestClient, DBusSigHandle
       test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) 0, (byte) 0); 
       test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) 1, (byte) 1); 
       test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) -1, (byte) -1); 
-      test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) Byte.MAX_VALUE, (byte) Byte.MAX_VALUE); 
-      test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) Byte.MIN_VALUE, (byte) Byte.MIN_VALUE); 
+      test(DBus.Binding.Tests.class, tests, "IdentityByte", Byte.MAX_VALUE, Byte.MAX_VALUE); 
+      test(DBus.Binding.Tests.class, tests, "IdentityByte", Byte.MIN_VALUE, Byte.MIN_VALUE); 
       i = r.nextInt();
       test(DBus.Binding.Tests.class, tests, "IdentityByte", (byte) i, (byte) i); 
       
       test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) 0, (short) 0); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) 1, (short) 1); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) -1, (short) -1); 
-      test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) Short.MAX_VALUE, (short) Short.MAX_VALUE); 
-      test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) Short.MIN_VALUE, (short) Short.MIN_VALUE); 
+      test(DBus.Binding.Tests.class, tests, "IdentityInt16", Short.MAX_VALUE, Short.MAX_VALUE); 
+      test(DBus.Binding.Tests.class, tests, "IdentityInt16", Short.MIN_VALUE, Short.MIN_VALUE); 
       i = r.nextInt();
       test(DBus.Binding.Tests.class, tests, "IdentityInt16", (short) i, (short) i); 
       
-      test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) 0, (int) 0); 
-      test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) 1, (int) 1); 
-      test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) -1, (int) -1); 
-      test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) Integer.MAX_VALUE, (int) Integer.MAX_VALUE); 
-      test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) Integer.MIN_VALUE, (int) Integer.MIN_VALUE); 
+      test(DBus.Binding.Tests.class, tests, "IdentityInt32", 0, 0); 
+      test(DBus.Binding.Tests.class, tests, "IdentityInt32", 1, 1); 
+      test(DBus.Binding.Tests.class, tests, "IdentityInt32", -1, -1); 
+      test(DBus.Binding.Tests.class, tests, "IdentityInt32", Integer.MAX_VALUE, Integer.MAX_VALUE); 
+      test(DBus.Binding.Tests.class, tests, "IdentityInt32", Integer.MIN_VALUE, Integer.MIN_VALUE); 
       i = r.nextInt();
-      test(DBus.Binding.Tests.class, tests, "IdentityInt32", (int) i, (int) i); 
+      test(DBus.Binding.Tests.class, tests, "IdentityInt32", i, i); 
 
       
       test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) 0, (long) 0); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) 1, (long) 1); 
       test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) -1, (long) -1); 
-      test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) Long.MAX_VALUE, (long) Long.MAX_VALUE); 
-      test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) Long.MIN_VALUE, (long) Long.MIN_VALUE); 
+      test(DBus.Binding.Tests.class, tests, "IdentityInt64", Long.MAX_VALUE, Long.MAX_VALUE); 
+      test(DBus.Binding.Tests.class, tests, "IdentityInt64", Long.MIN_VALUE, Long.MIN_VALUE); 
       i = r.nextInt();
       test(DBus.Binding.Tests.class, tests, "IdentityInt64", (long) i, (long) i); 
 
@@ -485,12 +485,12 @@ public class cross_test_client implements DBus.Binding.TestClient, DBusSigHandle
       ctc = new cross_test_client(conn);
       conn.exportObject("/Test", ctc);
       conn.addSigHandler(DBus.Binding.TestSignals.Triggered.class, ctc);
-      DBus.Binding.Tests tests = (DBus.Binding.Tests) conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Binding.Tests.class);
-      DBus.Binding.SingleTests singletests = (DBus.Binding.SingleTests) conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Binding.SingleTests.class);
-      DBus.Peer peer = (DBus.Peer) conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Peer.class);
-      DBus.Introspectable intro = (DBus.Introspectable) conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Introspectable.class);
+      DBus.Binding.Tests tests = conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Binding.Tests.class);
+      DBus.Binding.SingleTests singletests = conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Binding.SingleTests.class);
+      DBus.Peer peer = conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Peer.class);
+      DBus.Introspectable intro = conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/Test", DBus.Introspectable.class);
 
-      DBus.Introspectable rootintro = (DBus.Introspectable) conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/", DBus.Introspectable.class);
+      DBus.Introspectable rootintro = conn.getRemoteObject("org.freedesktop.DBus.Binding.TestServer", "/", DBus.Introspectable.class);
 
       doTests(peer, intro, rootintro, tests, singletests);
 

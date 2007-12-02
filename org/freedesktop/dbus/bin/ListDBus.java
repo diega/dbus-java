@@ -51,7 +51,7 @@ public class ListDBus
          else syntax();
 
       DBusConnection conn = DBusConnection.getConnection(connection);
-      DBus dbus = (DBus) conn.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
+      DBus dbus = conn.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
       String[] names = dbus.ListNames();
       for (String s: names) {
          if (users)

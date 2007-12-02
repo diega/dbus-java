@@ -315,7 +315,7 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       done.add("org.freedesktop.DBus.Binding.TestClient.Trigger");
       notdone.remove("org.freedesktop.DBus.Binding.TestClient.Trigger");
       try {
-         DBus.Binding.TestClient cb = (DBus.Binding.TestClient) conn.getRemoteObject(t.getSource(), "/Test", DBus.Binding.TestClient.class);
+         DBus.Binding.TestClient cb = conn.getRemoteObject(t.getSource(), "/Test", DBus.Binding.TestClient.class);
          cb.Response(t.a, t.b);
       } catch (DBusException DBe) {
          throw new DBusExecutionException(DBe.getMessage());

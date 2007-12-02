@@ -46,7 +46,7 @@ public class UInt16 extends Number implements Comparable<UInt16>
    /** The value of this as a float. */
    public float floatValue() { return (float) value; }
    /** The value of this as a int. */
-   public int intValue() { return (int) value; }
+   public int intValue() { return /*(int)*/ value; }
    /** The value of this as a long. */
    public long longValue() { return (long) value; }
    /** The value of this as a short. */
@@ -58,14 +58,14 @@ public class UInt16 extends Number implements Comparable<UInt16>
    }
    public int hashCode()
    {
-      return (int) value;
+      return /*(int)*/ value;
    }
    /** Compare two UInt16s. 
     * @return 0 if equal, -ve or +ve if they are different. 
     */
    public int compareTo(UInt16 other)
    {
-      return (int) (this.value - other.value);
+      return /*(int)*/ (this.value - other.value);
    }
    /** The value of this as a string. */
    public String toString()

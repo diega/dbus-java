@@ -96,7 +96,7 @@ class RemoteInvocationHandler implements InvocationHandler
       try {
          String name;
          if (m.isAnnotationPresent(DBusMemberName.class))
-            name = ((DBusMemberName) m.getAnnotation(DBusMemberName.class)).value();
+            name = m.getAnnotation(DBusMemberName.class).value();
          else
             name = m.getName();
          if (null == ro.iface) 

@@ -48,7 +48,7 @@ public class UInt32 extends Number implements Comparable<UInt32>
    /** The value of this as a int. */
    public int intValue() { return (int) value; }
    /** The value of this as a long. */
-   public long longValue() { return (long) value; }
+   public long longValue() { return /*(long)*/ value; }
    /** The value of this as a short. */
    public short shortValue(){ return (short) value; }
    /** Test two UInt32s for equality. */

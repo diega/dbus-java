@@ -25,6 +25,7 @@ import cx.ath.matthew.debug.Debug;
 
 public class Caller
 {
+   @SuppressWarnings("unchecked")
    public static void main(String[] args) 
    {
       try { 
@@ -49,7 +50,7 @@ public class Caller
          else {
             Vector<Type> lts = new Vector<Type>();
             Marshalling.getJavaType(args[4],lts, -1);
-            Type[] ts = (Type[]) lts.toArray(new Type[0]);
+            Type[] ts = lts.toArray(new Type[0]);
             Object[] os = new Object[args.length-5];
             for (int i = 5; i < args.length; i++) {
                if (ts[i-5] instanceof Class) {

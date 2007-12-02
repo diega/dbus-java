@@ -160,6 +160,7 @@ public class DBusSignal extends Message
     * @param args The parameters of the signal.
     * @throws DBusException This is thrown if the subclass is incorrectly defined.
     */
+   @SuppressWarnings("unchecked")
    protected DBusSignal(String objectpath, Object... args) throws DBusException
    {
       super(Message.Endian.BIG, Message.MessageType.SIGNAL, (byte) 0);

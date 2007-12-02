@@ -123,8 +123,10 @@ public class DirectConnection extends AbstractConnection
          if (ifcs.size() == 0) throw new DBusException("Could not find an interface to cast to");
 
          RemoteObject ro = new RemoteObject(null, path, null, false);
-         DBusInterface newi =  (DBusInterface) Proxy.newProxyInstance(ifcs.get(0).getClassLoader(), 
-               (Class[]) ifcs.toArray(new Class[0]), new RemoteInvocationHandler(this, ro));
+         DBusInterface newi =  (DBusInterface)
+            Proxy.newProxyInstance(ifcs.get(0).getClassLoader(), 
+                                   ifcs.toArray(new Class[0]),
+                                   new RemoteInvocationHandler(this, ro));
          importedObjects.put(newi, ro);
          return newi;
       } catch (Exception e) {
