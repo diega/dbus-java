@@ -10,6 +10,8 @@
 */
 package org.freedesktop.dbus.viewer;
 
+import static org.freedesktop.dbus.Gettext._;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -35,7 +37,7 @@ class SaveFileAction extends TabbedSaveAction implements ChangeListener
 		{
 			if (iterated)
 			{
-				throw new NoSuchElementException("Already iterated");
+				throw new NoSuchElementException(_("Already iterated"));
 			}
 			iterated = true;
 			return getTextFile(tabbedPane.getSelectedIndex());
@@ -71,7 +73,7 @@ class SaveFileAction extends TabbedSaveAction implements ChangeListener
 	{
 		int selectedIndex = tabbedPane.getSelectedIndex();
 		boolean enabled = selectedIndex > -1;
-		putValue(Action.NAME, "Save " + getFileName(selectedIndex) + "...");
+		putValue(Action.NAME, _("Save ") + getFileName(selectedIndex) + "...");
 		setEnabled(enabled);
 	}
 

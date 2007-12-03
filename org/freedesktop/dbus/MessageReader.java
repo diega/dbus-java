@@ -10,10 +10,13 @@
 */
 package org.freedesktop.dbus;
 
+import static org.freedesktop.dbus.Gettext._;
+
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
 import java.net.SocketTimeoutException;
+import java.text.MessageFormat;
 
 import cx.ath.matthew.debug.Debug;
 import cx.ath.matthew.utils.Hexdump;
@@ -42,7 +45,7 @@ public class MessageReader
       if (len[0] < 12) {
          try { rv = in.read(buf, len[0], 12-len[0]); }
          catch (SocketTimeoutException STe) { return null; }
-         if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
+         if (-1 == rv) throw new EOFException(_("Underlying transport returned EOF"));
          len[0] += rv;
       }
       if (len[0] == 0) return null;
@@ -57,7 +60,7 @@ public class MessageReader
       byte protover = buf[3];
       if (protover > Message.PROTOCOL) {
          buf = null;
-         throw new MessageProtocolVersionException("Protocol version "+protover+" is unsupported");
+         throw new MessageProtocolVersionException(MessageFormat.format(_("Protocol version {0} is unsupported"), new Object[] { protover }));
       }
 
       /* Read the length of the variable header */
@@ -65,7 +68,7 @@ public class MessageReader
       if (len[1] < 4) {
          try { rv = in.read(tbuf, len[1], 4-len[1]); }
          catch (SocketTimeoutException STe) { return null; }
-         if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
+         if (-1 == rv) throw new EOFException(_("Underlying transport returned EOF"));
          len[1] += rv;
       }
       if (len[1] < 4) {
@@ -91,7 +94,7 @@ public class MessageReader
       if (len[2] < headerlen) {
          try { rv = in.read(header, 8+len[2], headerlen-len[2]); }
          catch (SocketTimeoutException STe) { return null; }
-         if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
+         if (-1 == rv) throw new EOFException(_("Underlying transport returned EOF"));
          len[2] += rv;
       }
       if (len[2] < headerlen) {
@@ -106,7 +109,7 @@ public class MessageReader
       if (len[3] < body.length) {
          try { rv = in.read(body, len[3], body.length-len[3]); }
          catch (SocketTimeoutException STe) { return null; }
-         if (-1 == rv) throw new EOFException("Underlying transport returned EOF");
+         if (-1 == rv) throw new EOFException(_("Underlying transport returned EOF"));
          len[3] += rv;
       }
       if (len[3] < body.length) {
@@ -129,7 +132,7 @@ public class MessageReader
             m = new Error();
             break;
          default:
-            throw new MessageTypeException("Message type "+type+" unsupported");
+            throw new MessageTypeException(MessageFormat.format(_("Message type {0} unsupported"), new Object[] {type}));
       }
       if (Debug.debug) {
          Debug.print(Debug.VERBOSE, Hexdump.format(buf));

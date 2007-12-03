@@ -14,6 +14,7 @@ JAVA?=java
 JAVADOC?=javadoc
 JAR?=jar
 MAKE?=make
+MSGFMT?=msgfmt
 
 # Program parameters
 CPFLAG?=-classpath
@@ -43,7 +44,7 @@ DEBUG=disable
 VERSION = $(shell sed -n '1s/.* \(.*\):/\1/p' changelog)
 RELEASEVERSION = $(shell sed -n '/^Version/s/.* \(.*\):/\1/p' changelog | sed -n '2p')
 
-DISTFILES=dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml DBusDaemon.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh DBusDaemon.sh ListDBus.sh DBusViewer.sh DBusDaemon.bat CreateInterface.bat ListDBus.bat DBusViewer.bat compile.bat DBusCall.bat DBusCall.sh DBusCall.sgml
+DISTFILES=dbus-java.tex Makefile org tmp-session.conf CreateInterface.sgml DBusDaemon.sgml ListDBus.sgml DBusViewer.sgml changelog AUTHORS COPYING README INSTALL CreateInterface.sh DBusDaemon.sh ListDBus.sh DBusViewer.sh DBusDaemon.bat CreateInterface.bat ListDBus.bat DBusViewer.bat compile.bat DBusCall.bat DBusCall.sh DBusCall.sgml translations
 
 all: libdbus-java-$(VERSION).jar dbus-java-viewer-$(VERSION).jar bin/DBusDaemon bin/ListDBus bin/CreateInterface bin/DBusViewer dbus-java-bin-$(VERSION).jar bin/DBusCall
 
@@ -69,14 +70,20 @@ binclasses: .binclasses
 	mkdir -p classes
 	$(JAVAC) -cp classes:$(CLASSPATH):${JAVAUNIXJARDIR}/unix.jar:${JAVAUNIXJARDIR}/debug-$(DEBUG).jar:${JAVAUNIXJARDIR}/hexdump.jar -d classes $(JCFLAGS) $(SRCDIR)/dbus/bin/*.java
 	touch .binclasses 
-.classes: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/dbus/exceptions/*.java $(SRCDIR)/dbus/types/*.java
+.classes: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/dbus/exceptions/*.java $(SRCDIR)/dbus/types/*.java translations/*.po
 	mkdir -p classes
-	$(JAVAC) -d classes -cp classes:${JAVAUNIXJARDIR}/unix.jar:${JAVAUNIXJARDIR}/debug-$(DEBUG).jar:${JAVAUNIXJARDIR}/hexdump.jar:$(CLASSPATH) $(JCFLAGS) $^
+	$(JAVAC) -d classes -cp classes:${JAVAUNIXJARDIR}/unix.jar:${JAVAUNIXJARDIR}/debug-$(DEBUG).jar:${JAVAUNIXJARDIR}/hexdump.jar:$(CLASSPATH) $(JCFLAGS) $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/dbus/exceptions/*.java $(SRCDIR)/dbus/types/*.java
+	(cd translations; for i in *.po; do $(MSGFMT) --java2 -r dbusjava_localized -d ../classes -l $${i%.po} $$i; done)
+	$(MSGFMT) --java2 -r dbusjava_localized -d classes translations/en_GB.po
 	touch .classes
+
+translations/en_GB.po: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/dbus/exceptions/*.java $(SRCDIR)/dbus/types/*.java $(SRCDIR)/dbus/bin/*.java $(SRCDIR)/dbus/viewer/*.java
+	echo "#java-format" > $@
+	sed -n '/_(/s/.*_("\([^"]*\)").*/\1/p' $^ | sort -u | sed 's/\(.*\)/msgid "\1"\nmsgstr "\1"/' >> $@
 
 libdbus-java-$(VERSION).jar: .classes
 	echo "Class-Path: ${JAVAUNIXJARDIR}/unix.jar ${JAVAUNIXJARDIR}/debug-$(DEBUG).jar" > Manifest
-	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/dbus/types/*.class org/freedesktop/dbus/exceptions/*.class)
+	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/dbus/types/*.class org/freedesktop/dbus/exceptions/*.class *localized*class)
 dbus-java-test-$(VERSION).jar: .testclasses
 	echo "Class-Path: ${JARPREFIX}/libdbus-java-$(VERSION).jar" > Manifest
 	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/test/*.class)

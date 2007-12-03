@@ -10,6 +10,8 @@
 */
 package org.freedesktop.dbus;
 
+import static org.freedesktop.dbus.Gettext._;
+
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
@@ -69,7 +71,7 @@ public class DBusMatchRule
          else
             iface = AbstractConnection.dollar_pattern.matcher(c.getName()).replaceAll(".");
          if (!iface.matches(".*\\..*"))
-            throw new DBusException("DBusInterfaces must be defined in a package.");
+            throw new DBusException(_("DBusInterfaces must be defined in a package."));
          member = null;
          type = null;
       }
@@ -80,7 +82,7 @@ public class DBusMatchRule
             iface = AbstractConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
          // Don't export things which are invalid D-Bus interfaces
          if (!iface.matches(".*\\..*"))
-            throw new DBusException("DBusInterfaces must be defined in a package.");
+            throw new DBusException(_("DBusInterfaces must be defined in a package."));
          if (c.isAnnotationPresent(DBusMemberName.class))
             member = ((DBusMemberName) c.getAnnotation(DBusMemberName.class)).value();
          else
@@ -93,7 +95,7 @@ public class DBusMatchRule
          else
             iface = AbstractConnection.dollar_pattern.matcher(c.getName()).replaceAll(".");
          if (!iface.matches(".*\\..*"))
-            throw new DBusException("DBusInterfaces must be defined in a package.");
+            throw new DBusException(_("DBusInterfaces must be defined in a package."));
          member = null;
          type = "error";
       }
@@ -103,12 +105,12 @@ public class DBusMatchRule
          else
             iface = AbstractConnection.dollar_pattern.matcher(c.getClass().getName()).replaceAll(".");
          if (!iface.matches(".*\\..*"))
-            throw new DBusException("DBusInterfaces must be defined in a package.");
+            throw new DBusException(_("DBusInterfaces must be defined in a package."));
          member = null;
          type = "error";
       }
       else
-         throw new DBusException("Invalid type for match rule ("+c+")");
+         throw new DBusException(_("Invalid type for match rule: ")+c);
    }
    public String toString()
    {

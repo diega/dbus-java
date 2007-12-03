@@ -10,11 +10,15 @@
 */
 package org.freedesktop.dbus;
 
+import static org.freedesktop.dbus.Gettext._;
+
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Proxy;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.text.MessageFormat;
+import java.text.ParseException;
 import java.util.Random;
 import java.util.Vector;
 
@@ -42,7 +46,10 @@ public class DirectConnection extends AbstractConnection
          transport = new Transport(addr, AbstractConnection.TIMEOUT);
       } catch (IOException IOe) {
          if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);            
-         throw new DBusException("Failed to connect to bus "+IOe.getMessage());
+         throw new DBusException(_("Failed to connect to bus ")+IOe.getMessage());
+      } catch (ParseException Pe) {
+         if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, Pe);            
+         throw new DBusException(_("Failed to connect to bus ")+Pe.getMessage());
       }
 
       listen();
@@ -121,7 +128,7 @@ public class DirectConnection extends AbstractConnection
             }
          }
 
-         if (ifcs.size() == 0) throw new DBusException("Could not find an interface to cast to");
+         if (ifcs.size() == 0) throw new DBusException(_("Could not find an interface to cast to"));
 
          RemoteObject ro = new RemoteObject(null, path, null, false);
          DBusInterface newi =  (DBusInterface)
@@ -132,7 +139,7 @@ public class DirectConnection extends AbstractConnection
          return newi;
       } catch (Exception e) {
          if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
-         throw new DBusException("Failed to create proxy object for "+path+". Reason: "+e.getMessage());
+         throw new DBusException(MessageFormat.format(_("Failed to create proxy object for {0}; reason: {1}."), new Object[] { path, e.getMessage()}));
       }
    }
    
@@ -170,10 +177,10 @@ public class DirectConnection extends AbstractConnection
     */
    public DBusInterface getRemoteObject(String objectpath) throws DBusException
    {
-      if (null == objectpath) throw new DBusException("Invalid object path (null)");
+      if (null == objectpath) throw new DBusException(_("Invalid object path: null"));
       
       if (!objectpath.matches(OBJECT_REGEX) || objectpath.length() > MAX_NAME_LENGTH) 
-         throw new DBusException("Invalid object path ("+objectpath+")");
+         throw new DBusException(_("Invalid object path: ")+objectpath);
       
       return dynamicProxy(objectpath);
    }
@@ -192,18 +199,18 @@ public class DirectConnection extends AbstractConnection
     */
    public DBusInterface getRemoteObject(String objectpath, Class<? extends DBusInterface> type) throws DBusException
    {
-      if (null == objectpath) throw new DBusException("Invalid object path (null)");
-      if (null == type) throw new ClassCastException("Not A DBus Interface");
+      if (null == objectpath) throw new DBusException(_("Invalid object path: null"));
+      if (null == type) throw new ClassCastException(_("Not A DBus Interface"));
       
       if (!objectpath.matches(OBJECT_REGEX) || objectpath.length() > MAX_NAME_LENGTH) 
-         throw new DBusException("Invalid object path ("+objectpath+")");
+         throw new DBusException(_("Invalid object path: ")+objectpath);
       
-      if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException("Not A DBus Interface");
+      if (!DBusInterface.class.isAssignableFrom(type)) throw new ClassCastException(_("Not A DBus Interface"));
 
       // don't let people import things which don't have a
       // valid D-Bus interface name
       if (type.getName().equals(type.getSimpleName()))
-         throw new DBusException("DBusInterfaces cannot be declared outside a package");
+         throw new DBusException(_("DBusInterfaces cannot be declared outside a package"));
       
       RemoteObject ro = new RemoteObject(null, objectpath, type, false);
       DBusInterface i =  (DBusInterface) Proxy.newProxyInstance(type.getClassLoader(), 

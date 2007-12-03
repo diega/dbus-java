@@ -9,6 +9,9 @@
    Full licence texts are included in the COPYING file with this program.
 */
 package org.freedesktop.dbus.viewer;
+
+import static org.freedesktop.dbus.Gettext._;
+
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -119,7 +122,7 @@ public class DBusViewer
 	{
 		for (final String key : connectionTypes.keySet())
 		{
-			final JLabel label = new JLabel("Processing DBus for " + key);
+			final JLabel label = new JLabel(_("Processing DBus for ") + key);
 			tabbedPane.addTab(key, label);
 		}
 		Runnable loader = new Runnable()
@@ -176,7 +179,7 @@ public class DBusViewer
 								JLabel label = (JLabel) tabbedPane
 										.getComponentAt(index);
 								label
-										.setText("Could not load Dbus information for "
+										.setText(_("Could not load Dbus information for ")
 												+ key + ":" + e.getMessage());
 							}
 						});
@@ -192,7 +195,7 @@ public class DBusViewer
 								JLabel label = (JLabel) tabbedPane
 										.getComponentAt(index);
 								label
-										.setText("Could not load Dbus information for "
+										.setText(_("Could not load Dbus information for ")
 												+ key + ":" + e.getMessage());
 							}
 						});
@@ -289,7 +292,7 @@ public class DBusViewer
 				builder = factory.newDocumentBuilder();
 			} catch (ParserConfigurationException e1) {
 				// TODO Auto-generated catch block
-				throw new RuntimeException("Error during parser init:"+e1.getMessage(),e1);
+				throw new RuntimeException(_("Error during parser init: ")+e1.getMessage(),e1);
 			}
 			reset();
 			

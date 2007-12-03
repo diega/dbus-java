@@ -10,6 +10,8 @@
 */
 package org.freedesktop.dbus;
 
+import static org.freedesktop.dbus.Gettext._;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -31,7 +33,7 @@ public class DBusSignal extends Message
       super(Message.Endian.BIG, Message.MessageType.SIGNAL, (byte) 0);
 
       if (null == path || null == member || null == iface)
-         throw new MessageFormatException("Must specify object path, interface and signal name to Signals.");
+         throw new MessageFormatException(_("Must specify object path, interface and signal name to Signals."));
       headers.put(Message.HeaderField.PATH,path);
       headers.put(Message.HeaderField.MEMBER,member);
       headers.put(Message.HeaderField.INTERFACE,iface);
@@ -165,7 +167,7 @@ public class DBusSignal extends Message
    {
       super(Message.Endian.BIG, Message.MessageType.SIGNAL, (byte) 0);
 
-      if (!objectpath.matches(AbstractConnection.OBJECT_REGEX)) throw new DBusException("Invalid object path ("+objectpath+")");
+      if (!objectpath.matches(AbstractConnection.OBJECT_REGEX)) throw new DBusException(_("Invalid object path: ")+objectpath);
 
       Class tc = getClass();
       String member;
@@ -178,7 +180,7 @@ public class DBusSignal extends Message
       if (null == enc ||
             !DBusInterface.class.isAssignableFrom(enc) ||
             enc.getName().equals(enc.getSimpleName()))
-         throw new DBusException("Signals must be declared as a member of a class implementing DBusInterface which is the member of a package.");
+         throw new DBusException(_("Signals must be declared as a member of a class implementing DBusInterface which is the member of a package."));
       else
          if (null != enc.getAnnotation(DBusInterfaceName.class))
             iface = ((DBusInterfaceName) enc.getAnnotation(DBusInterfaceName.class)).value();
@@ -216,7 +218,7 @@ public class DBusSignal extends Message
             setArgs(args);
          } catch (Exception e) {
             if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
-            throw new DBusException("Failed to add signal parameters: "+e.getMessage());
+            throw new DBusException(_("Failed to add signal parameters: ")+e.getMessage());
          }
       }
 

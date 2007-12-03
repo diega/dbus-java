@@ -9,7 +9,7 @@ Version 2.4:
 	  parent program (don't hold a strong reference).
 	* Add fallback objects---a single object can be called for any
 	  object under a given path prefix.
-
+	* Add support for localization of strings via gettext
 
 Version 2.3.2:
 

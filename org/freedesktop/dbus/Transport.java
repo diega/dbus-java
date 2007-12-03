@@ -10,6 +10,8 @@
 */
 package org.freedesktop.dbus;
 
+import static org.freedesktop.dbus.Gettext._;
+
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
@@ -24,6 +26,7 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.ParseException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.Collator;
@@ -88,7 +91,7 @@ public class Transport
                command = COMMAND_ERROR;
                data = ss[1];
             } else {
-               throw new IOException("Invalid Command "+ss[0]);
+               throw new IOException(_("Invalid Command ")+ss[0]);
             }
             if (Debug.debug) Debug.print(Debug.VERBOSE, "Created command: "+this);
          }
@@ -706,19 +709,19 @@ public class Transport
    {
       connect(address);
    }
-   public Transport(String address) throws IOException
+   public Transport(String address) throws IOException, ParseException
    {
       connect(new BusAddress(address));
    }
-   public Transport(String address, int timeout) throws IOException
+   public Transport(String address, int timeout) throws IOException, ParseException
    {
       connect(new BusAddress(address), timeout);
    }
-   public void connect(String address) throws IOException
+   public void connect(String address) throws IOException, ParseException
    {
       connect(new BusAddress(address), 0);
    }
-   public void connect(String address, int timeout) throws IOException
+   public void connect(String address, int timeout) throws IOException, ParseException
    {
       connect(new BusAddress(address), timeout);
    }
@@ -772,12 +775,12 @@ public class Transport
          in = s.getInputStream();
          out = s.getOutputStream();
       } else {
-         throw new IOException("unknown address type "+address.getType());
+         throw new IOException(_("unknown address type ")+address.getType());
       }
       
       if (!(new SASL()).auth(mode, types, address.getParameter("guid"), out, in)) {
          out.close();
-         throw new IOException("Failed to auth");
+         throw new IOException(_("Failed to auth"));
       }
       if (null != us) {
          if (Debug.debug) Debug.print(Debug.VERBOSE, "Setting timeout to "+timeout+" on Socket");

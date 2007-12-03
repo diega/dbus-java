@@ -10,6 +10,10 @@
 */
 package org.freedesktop.dbus;
 
+import static org.freedesktop.dbus.Gettext._;
+
+import java.text.MessageFormat;
+
 /**
  * Class to represent 16-bit unsigned integers.
  */
@@ -28,7 +32,7 @@ public class UInt16 extends Number implements Comparable<UInt16>
    public UInt16(int value)
    {
       if (value < MIN_VALUE || value > MAX_VALUE)
-         throw new NumberFormatException(value +" is not between "+ MIN_VALUE +" and "+ MAX_VALUE);
+         throw new NumberFormatException(MessageFormat.format(_("{0} is not between {1} and {2}."), new Object[] { value, MIN_VALUE, MAX_VALUE}));
       this.value = value;
    }
    /** Create a UInt16 from a String.

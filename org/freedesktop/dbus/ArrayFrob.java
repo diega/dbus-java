@@ -10,9 +10,12 @@
 */
 package org.freedesktop.dbus;
 
+import static org.freedesktop.dbus.Gettext._;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -46,10 +49,10 @@ class ArrayFrob
    public static Object[] wrap(Object o) throws IllegalArgumentException
    {
          Class ac = o.getClass();
-         if (!ac.isArray()) throw new IllegalArgumentException("Not an array");
+         if (!ac.isArray()) throw new IllegalArgumentException(_("Not an array"));
          Class cc = ac.getComponentType();
          Class ncc = primitiveToWrapper.get(cc);
-         if (null == ncc) throw new IllegalArgumentException("Not a primitive type");
+         if (null == ncc) throw new IllegalArgumentException(_("Not a primitive type"));
          Object[] ns = (Object[]) Array.newInstance(ncc, Array.getLength(o));
          for (int i = 0; i < ns.length; i++)
             ns[i] = Array.get(o, i);
@@ -60,7 +63,7 @@ class ArrayFrob
       Class<? extends Object[]> ac = ns.getClass();
       Class cc = ac.getComponentType();
       Class ncc = wrapperToPrimitive.get(cc);
-      if (null == ncc) throw new IllegalArgumentException("Not a wrapper type");
+      if (null == ncc) throw new IllegalArgumentException(_("Not a wrapper type"));
       Object o = Array.newInstance(ncc, ns.length);
       for (int i = 0; i < ns.length; i++)
          Array.set(o, i, ns[i]);
@@ -73,7 +76,7 @@ class ArrayFrob
    public static List listify(Object o) throws IllegalArgumentException
    {
       if (o instanceof Object[]) return listify((Object[]) o);
-      if (!o.getClass().isArray()) throw new IllegalArgumentException("Not an array");
+      if (!o.getClass().isArray()) throw new IllegalArgumentException(_("Not an array"));
       List<Object> l = new ArrayList<Object>(Array.getLength(o));
       for (int i = 0; i < Array.getLength(o); i++)
          l.add(Array.get(o, i));
@@ -156,7 +159,7 @@ class ArrayFrob
          throw new IllegalArgumentException(e);
       }
 
-      throw new IllegalArgumentException("Not An Expected Convertion type from "+o.getClass()+" to "+c);
+      throw new IllegalArgumentException(MessageFormat.format(_("Not An Expected Convertion type from {0} to {1}"), new Object[] { o.getClass(), c}));
    }
    public static Object[] type(Object[] old, Class c)
    {
