@@ -76,10 +76,13 @@ public class DBusMatchRule
          type = null;
       }
       else if (DBusSignal.class.isAssignableFrom(c)) {
-         if (null != c.getEnclosingClass().getAnnotation(DBusInterfaceName.class))
-            iface = ((DBusInterfaceName) c.getEnclosingClass().getAnnotation(DBusInterfaceName.class)).value();
+         if (null == c.getEnclosingClass())
+            throw new DBusException(_("Signals must be declared as a member of a class implementing DBusInterface which is the member of a package."));
          else
-            iface = AbstractConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
+            if (null != c.getEnclosingClass().getAnnotation(DBusInterfaceName.class))
+               iface = ((DBusInterfaceName) c.getEnclosingClass().getAnnotation(DBusInterfaceName.class)).value();
+            else
+               iface = AbstractConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
          // Don't export things which are invalid D-Bus interfaces
          if (!iface.matches(".*\\..*"))
             throw new DBusException(_("DBusInterfaces must be defined in a package."));

@@ -91,8 +91,14 @@ public class DBusSignal extends Message
    static DBusSignal createSignal(Class<? extends DBusSignal> c, String source, String objectpath, String sig, long serial, Object... parameters) throws DBusException
    {
       String type = "";
-      if (null != c.getEnclosingClass())
-         type = AbstractConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
+      if (null != c.getEnclosingClass()) {
+         if (null != c.getEnclosingClass().getAnnotation(DBusInterfaceName.class))
+            type = ((DBusInterfaceName) c.getEnclosingClass().getAnnotation(DBusInterfaceName.class)).value();
+         else
+            type = AbstractConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
+
+      } else
+         throw new DBusException(_("Signals must be declared as a member of a class implementing DBusInterface which is the member of a package."));
       DBusSignal s = new internalsig(source, objectpath, type, c.getSimpleName(), sig, parameters, serial);
       s.c = c;
       return s;
