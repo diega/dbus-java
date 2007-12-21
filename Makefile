@@ -62,7 +62,7 @@ binclasses: .binclasses
 	mkdir -p classes
 	$(JAVAC) -cp classes:${JAVAUNIXJARDIR}/debug-$(DEBUG).jar:${JAVAUNIXJARDIR}/hexdump.jar:$(CLASSPATH) -d classes $(JCFLAGS) $(SRCDIR)/dbus/test/*.java
 	touch .testclasses 
-.viewerclasses: $(SRCDIR)/dbus/viewer/*.java .classes
+.viewerclasses: $(SRCDIR)/dbus/viewer/*.java .classes .binclasses
 	mkdir -p classes
 	$(JAVAC) -cp classes:$(CLASSPATH):${JAVAUNIXJARDIR}/unix.jar:${JAVAUNIXJARDIR}/debug-$(DEBUG).jar:${JAVAUNIXJARDIR}/hexdump.jar -d classes $(JCFLAGS) $(SRCDIR)/dbus/viewer/*.java
 	touch .viewerclasses 
