@@ -8,7 +8,7 @@ To compile and install the library you will need:
 
    A Java 1.5-compliant VM and Compiler (at time of writing
          only the Sun VM and Compiler is known to work).
-   The unix socket, debug and hexdump libraries from http://www.matthew.ath.cx/projects/java/
+   The unix socket, debug and hexdump libraries from http://www.matthew.ath.cx/projects/java/ (version 0.6 or later)
    GNU gettext
 
 To build and install the documentation you will also need:

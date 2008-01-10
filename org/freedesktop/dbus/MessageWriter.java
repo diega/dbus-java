@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import java.io.IOException;
 
 import cx.ath.matthew.debug.Debug;
+import cx.ath.matthew.unix.USOutputStream;
 import cx.ath.matthew.utils.Hexdump;
 
 public class MessageWriter
@@ -34,12 +35,20 @@ public class MessageWriter
          if (Debug.debug) Debug.print(Debug.WARN, "Message "+m+" wire-data was null!");
          return;
       }
-      for (byte[] buf: m.getWireData()) {
-         if (Debug.debug)
-            Debug.print(Debug.VERBOSE, "("+buf+"):"+ (null==buf? "": Hexdump.format(buf)));
-         if (null == buf) break;
-         out.write(buf);
-      }
+      if (out instanceof USOutputStream) {
+         if (Debug.debug) {
+            Debug.print(Debug.DEBUG, "Writing all "+m.getWireData().length+" buffers simultaneously to Unix Socket");
+            for (byte[] buf: m.getWireData()) 
+               Debug.print(Debug.VERBOSE, "("+buf+"):"+ (null==buf? "": Hexdump.format(buf)));
+         }
+         ((USOutputStream) out).write(m.getWireData());
+      } else
+         for (byte[] buf: m.getWireData()) {
+            if (Debug.debug)
+               Debug.print(Debug.VERBOSE, "("+buf+"):"+ (null==buf? "": Hexdump.format(buf)));
+            if (null == buf) break;
+            out.write(buf);
+         }
       out.flush();
    }
    public void close() throws IOException

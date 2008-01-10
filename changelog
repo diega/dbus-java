@@ -13,6 +13,8 @@ Version 2.4:
 	* Throw a nicer error when signals are not declared as part of an
 	  interface.
 	* .viewerclasses needs to depend on .binclasses
+	* Use libunixsocket-java support for writing multiple byte arrays at 
+	  once to write message vectors
 
 Version 2.3.2:
 
