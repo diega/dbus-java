@@ -188,7 +188,7 @@ check: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDae
 	  testbin/DBusDaemon --addressfile address --pidfile pid 2> server.log&\
 	  sleep 1; \
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
-	  if $(MAKE) DBUS_JAVA_FLOATS=true DEBUG=$(DEBUG) testrun 2> client.log; then export PASS=true; fi  ; \
+	  if $(MAKE) DBUS_JAVA_FLOATS=true DEBUG=$(DEBUG) testrun 2>&1 | tee client.log; then export PASS=true; fi  ; \
 	  kill $$(cat pid) ; \
 	  if [ "$$PASS" = "true" ]; then exit 0; else exit 1; fi )
 

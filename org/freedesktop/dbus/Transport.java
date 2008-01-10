@@ -372,7 +372,7 @@ public class Transport
       }
       public String challenge = "";
       public String cookie = "";
-      public int do_response(int auth, String Uid, Command c)
+      public int do_response(int auth, String Uid, String kernelUid, Command c)
       {
          MessageDigest md = null;
          try {
@@ -387,7 +387,8 @@ public class Transport
                   case AUTH_ANON:
                      return OK;
                   case AUTH_EXTERNAL:
-                     if (0 == col.compare(Uid, c.getData()))
+                     if (0 == col.compare(Uid, c.getData()) &&
+                        (null == kernelUid || 0 == col.compare(Uid, kernelUid)))
                         return OK;
                      else
                         return ERROR;
@@ -455,10 +456,11 @@ public class Transport
        * Returns true if the auth was successful and false if it failed.
        */
       @SuppressWarnings("unchecked")
-      public boolean auth(int mode, int types, String guid, OutputStream out, InputStream in) throws IOException
+      public boolean auth(int mode, int types, String guid, OutputStream out, InputStream in, UnixSocket us) throws IOException
       {
          String username = System.getProperty("user.name");
          String Uid = null;
+         String kernelUid = null;
          try {
             Class c = Class.forName("com.sun.security.auth.module.UnixSystem");
             Method m = c.getMethod("getUid");
@@ -593,6 +595,8 @@ public class Transport
                      case INITIAL_STATE:
                         byte[] buf = new byte[1];
                         in.read(buf);
+                        if (null != us) 
+                           kernelUid = stupidlyEncode(""+us.getPeerUID());
                         if (0 != buf[0]) state = FAILED;
                         else state = WAIT_AUTH;
                         break;
@@ -603,7 +607,7 @@ public class Transport
                               if (null == c.getData()) {
                                  send(out, COMMAND_REJECTED, getTypes(types));
                               } else {
-                                 switch (do_response(current, Uid, c)) {
+                                 switch (do_response(current, Uid, kernelUid, c)) {
                                     case CONTINUE:
                                        send(out, COMMAND_DATA, c.getResponse());
                                        current = c.getMechs();
@@ -636,7 +640,7 @@ public class Transport
                         c = receive(in);
                         switch (c.getCommand()) {
                            case COMMAND_DATA:
-                              switch (do_response(current, Uid, c)) {
+                              switch (do_response(current, Uid, kernelUid, c)) {
                                  case CONTINUE:
                                     send(out, COMMAND_DATA, c.getResponse());
                                     state = WAIT_DATA;
@@ -778,7 +782,7 @@ public class Transport
          throw new IOException(_("unknown address type ")+address.getType());
       }
       
-      if (!(new SASL()).auth(mode, types, address.getParameter("guid"), out, in)) {
+      if (!(new SASL()).auth(mode, types, address.getParameter("guid"), out, in, us)) {
          out.close();
          throw new IOException(_("Failed to auth"));
       }
@@ -798,6 +802,7 @@ public class Transport
    }
    public void disconnect() throws IOException
    {
+      if (Debug.debug) Debug.print(Debug.INFO, "Disconnecting Transport");
       min.close();
       mout.close();
    }

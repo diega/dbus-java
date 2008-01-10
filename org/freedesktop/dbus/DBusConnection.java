@@ -581,6 +581,7 @@ public class DBusConnection extends AbstractConnection
       synchronized (conn) {
          synchronized (_reflock) {
             if (0 == --_refcount) {
+               if (Debug.debug) Debug.print(Debug.INFO, "Disconnecting DBusConnection");
                // Set all pending messages to have an error.
                try {
                   Error err = new Error(

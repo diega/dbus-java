@@ -819,7 +819,7 @@ public class DBusDaemon extends Thread
       // accept new connections
       while (d._run) {
          UnixSocket s = uss.accept();
-         if ((new Transport.SASL()).auth(Transport.SASL.MODE_SERVER, Transport.SASL.AUTH_EXTERNAL, address.getParameter("guid"), s.getOutputStream(), s.getInputStream())) {
+         if ((new Transport.SASL()).auth(Transport.SASL.MODE_SERVER, Transport.SASL.AUTH_EXTERNAL, address.getParameter("guid"), s.getOutputStream(), s.getInputStream(), s)) {
          //   s.setBlocking(false);
             d.addSock(s);
          } else
@@ -839,7 +839,7 @@ public class DBusDaemon extends Thread
       // accept new connections
       while (d._run) {
          Socket s = ss.accept();
-         if ((new Transport.SASL()).auth(Transport.SASL.MODE_SERVER, Transport.SASL.AUTH_EXTERNAL, address.getParameter("guid"), s.getOutputStream(), s.getInputStream())) {
+         if ((new Transport.SASL()).auth(Transport.SASL.MODE_SERVER, Transport.SASL.AUTH_EXTERNAL, address.getParameter("guid"), s.getOutputStream(), s.getInputStream(), null)) {
             d.addSock(s);
          } else
             s.close();

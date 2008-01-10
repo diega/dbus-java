@@ -95,7 +95,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    {
       System.out.println("Sleeping.");
       try {
-         Thread.sleep(5000);
+         Thread.sleep(1000);
       } catch (InterruptedException Ie) {}
       System.out.println("Done sleeping.");
    }

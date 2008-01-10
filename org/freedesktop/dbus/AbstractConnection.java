@@ -547,6 +547,7 @@ public abstract class AbstractConnection
     */
    public void disconnect()
    {
+      if (Debug.debug) Debug.print(Debug.INFO, "Disconnecting Abstract Connection");
       // run all pending tasks.
       while (runnables.size() > 0)
          synchronized (runnables) {

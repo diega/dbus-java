@@ -168,6 +168,7 @@ public class MessageReader
    }
    public void close() throws IOException
    {
+      if (Debug.debug) Debug.print(Debug.INFO, "Closing Message Reader");
       in.close();
    }
 }

@@ -23,7 +23,7 @@ public class MessageWriter
    private OutputStream out;
    public MessageWriter(OutputStream out)
    {
-      this.out = new BufferedOutputStream(out);
+      this.out = out;
    }
    public void writeMessage(Message m) throws IOException
    {
@@ -53,6 +53,7 @@ public class MessageWriter
    }
    public void close() throws IOException
    {
+      if (Debug.debug) Debug.print(Debug.INFO, "Closing Message Writer");
       out.close();
    }
 }
