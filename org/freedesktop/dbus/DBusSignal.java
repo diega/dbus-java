@@ -93,7 +93,7 @@ public class DBusSignal extends Message
       String type = "";
       if (null != c.getEnclosingClass()) {
          if (null != c.getEnclosingClass().getAnnotation(DBusInterfaceName.class))
-            type = ((DBusInterfaceName) c.getEnclosingClass().getAnnotation(DBusInterfaceName.class)).value();
+            type = c.getEnclosingClass().getAnnotation(DBusInterfaceName.class).value();
          else
             type = AbstractConnection.dollar_pattern.matcher(c.getEnclosingClass().getName()).replaceAll(".");
 
