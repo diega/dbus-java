@@ -481,7 +481,10 @@ public class Transport
                case MODE_CLIENT:
                   switch (state) {
                      case INITIAL_STATE:
-                        out.write(new byte[] { 0 });
+                        if (null == us)
+                           out.write(new byte[] { 0 });
+                        else 
+                           us.sendCredentialByte((byte) 0);
                         send(out, COMMAND_AUTH);
                         state = WAIT_DATA;
                         break;
@@ -594,9 +597,14 @@ public class Transport
                   switch (state) {
                      case INITIAL_STATE:
                         byte[] buf = new byte[1];
-                        in.read(buf);
-                        if (null != us) 
-                           kernelUid = stupidlyEncode(""+us.getPeerUID());
+                        if (null == us) {
+                           in.read(buf);
+                        } else {
+                           buf[0] = us.recvCredentialByte();
+                           int kuid = us.getPeerUID();
+                           if (kuid >= 0)
+                              kernelUid = stupidlyEncode(""+kuid);
+                        }
                         if (0 != buf[0]) state = FAILED;
                         else state = WAIT_AUTH;
                         break;

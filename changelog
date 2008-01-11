@@ -17,6 +17,7 @@ Version 2.4:
 	  once to write message vectors
 	* check that the unix-socket-received uid matches for connections to 
 	  DBusDaemon
+	* Update to use libunixsocket-java syntax which works on BSDs
 
 Version 2.3.2:
 
