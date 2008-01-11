@@ -135,7 +135,8 @@ public class profile
       } else if ("arrays".equals(args[0])) {
          int count = ARRAY_INNER*ARRAY_OUTER;
          System.out.print("Sending array of "+ARRAY_LENGTH+" ints "+count+" times.");
-         conn.exportObject("/Profiler", new ProfilerInstance());
+         ProfilerInstance pi = new ProfilerInstance();
+         conn.exportObject("/Profiler", pi);
          Profiler p = conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Profiler.class);
          int[] v = new int[ARRAY_LENGTH];
          Random r = new Random();
@@ -158,7 +159,8 @@ public class profile
       } else if ("maps".equals(args[0])) {
          int count = MAP_INNER*MAP_OUTER;
          System.out.print("Sending map of "+MAP_LENGTH+" string=>strings "+count+" times.");
-         conn.exportObject("/Profiler", new ProfilerInstance());
+         ProfilerInstance pi = new ProfilerInstance();
+         conn.exportObject("/Profiler", pi);
          Profiler p = conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Profiler.class);
          HashMap<String,String> m = new HashMap<String,String>();
          for (int i = 0; i < MAP_LENGTH; i++) 
@@ -181,7 +183,8 @@ public class profile
       } else if ("lists".equals(args[0])) {
          int count = LIST_OUTER*LIST_INNER;
          System.out.print("Sending list of "+LIST_LENGTH+" strings "+count+" times.");
-         conn.exportObject("/Profiler", new ProfilerInstance());
+         ProfilerInstance pi = new ProfilerInstance();
+         conn.exportObject("/Profiler", pi);
          Profiler p = conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Profiler.class);
          Vector<String> v = new Vector<String>();
          for (int i = 0; i < LIST_LENGTH; i++) 
@@ -204,7 +207,8 @@ public class profile
       } else if ("structs".equals(args[0])) {
          int count = STRUCT_OUTER*STRUCT_INNER;
          System.out.print("Sending a struct "+count+" times.");
-         conn.exportObject("/Profiler", new ProfilerInstance());
+         ProfilerInstance pi = new ProfilerInstance();
+         conn.exportObject("/Profiler", pi);
          Profiler p = conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Profiler.class);
          ProfileStruct ps = new ProfileStruct("hello", new UInt32(18), 500L);
          Log l = new Log(count);
@@ -225,7 +229,8 @@ public class profile
       } else if ("introspect".equals(args[0])) {
          int count = INTROSPECTION_OUTER*INTROSPECTION_INNER;
          System.out.print("Recieving introspection data "+count+" times.");
-         conn.exportObject("/Profiler", new ProfilerInstance());
+         ProfilerInstance pi = new ProfilerInstance();
+         conn.exportObject("/Profiler", pi);
          Introspectable is = conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Introspectable.class);
          Log l = new Log(count);
          long t = System.currentTimeMillis();
@@ -246,7 +251,8 @@ public class profile
          System.out.println("Introspect data: "+s);
       } else if ("bytes".equals(args[0])) {
          System.out.print("Sending "+BYTES+" bytes");
-         conn.exportObject("/Profiler", new ProfilerInstance());
+         ProfilerInstance pi = new ProfilerInstance();
+         conn.exportObject("/Profiler", pi);
          Profiler p = conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Profiler.class);
          byte[] bs = new byte[BYTES];
          for (int i = 0; i < BYTES; i++) 
@@ -255,7 +261,8 @@ public class profile
          p.bytes(bs);
          System.out.println(" done in "+(System.currentTimeMillis()-t)+"ms.");
       } else if ("rate".equals(args[0])) {
-         conn.exportObject("/Profiler", new ProfilerInstance());
+         ProfilerInstance pi = new ProfilerInstance();
+         conn.exportObject("/Profiler", pi);
          Profiler p = conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler",         Profiler.class);
          Peer peer = conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Peer.class);
          long start = System.currentTimeMillis();
