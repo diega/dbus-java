@@ -1,5 +1,6 @@
  ** check that the blocking is correct on DBusAsyncReply and add an explicit timeout value
  * named pipes under windows: http://www.koders.com/csharp/fid2CD89EB558B80CE4947D53BAC3D667F2F1188FB9.aspx
+ * document that if you don't hold a reference, I will lose it!
  * Javadoc
  * document that we handle Introspect for you 
  * add header checks to daemon
