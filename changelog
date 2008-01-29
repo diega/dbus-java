@@ -18,6 +18,7 @@ Version 2.4:
 	* check that the unix-socket-received uid matches for connections to 
 	  DBusDaemon
 	* Update to use libunixsocket-java syntax which works on BSDs
+	* Fix utf-8 characters used in test to actually be the same character...
 
 Version 2.3.2:
 
