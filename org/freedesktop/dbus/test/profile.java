@@ -108,7 +108,7 @@ public class profile
    {
       if (0==args.length) {
          System.out.println("You must specify a profile type.");
-         System.out.println("Syntax: profile <pings|arrays|introspect|maps|bytes|lists|structs|signals|rate>");
+         System.out.println("Syntax: profile <pings|arrays|introspect|maps|bytes|lists|structs|signals>");
          System.exit(1);
       }
       DBusConnection conn = DBusConnection.getConnection(DBusConnection.SESSION);

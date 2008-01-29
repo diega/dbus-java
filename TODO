@@ -1,8 +1,4 @@
  ** check that the blocking is correct on DBusAsyncReply and add an explicit timeout value
- * check:
-       23:56 < danpb_ltop> you can toggle it with setsocketopt() and flag of
-       TCP_NODELAY, in C  - IIRC there's an explicit API for this in Java's
-       Socket() class
  * named pipes under windows: http://www.koders.com/csharp/fid2CD89EB558B80CE4947D53BAC3D667F2F1188FB9.aspx
  * document that if you don't hold a reference, I will lose it!
  * Javadoc
