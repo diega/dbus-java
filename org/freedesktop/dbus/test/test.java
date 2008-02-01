@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import java.text.Collator;
-
 import org.freedesktop.dbus.CallbackHandler;
 import org.freedesktop.dbus.DBusAsyncReply;
 import org.freedesktop.dbus.DBusCallInfo;
@@ -168,7 +166,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    }
    public String getName()
    {
-      return "This Is A UTF-8 Name: س !!";
+      return test.NAMESTRING;
    }
    public boolean check()
    {
@@ -387,10 +385,7 @@ class callbackhandler implements CallbackHandler<String>
    public void handle(String r)
    {
       System.out.println("Handling callback: "+r);
-      Collator col = Collator.getInstance();
-      col.setDecomposition(Collator.FULL_DECOMPOSITION);
-      col.setStrength(Collator.PRIMARY);
-      if (0 != col.compare("This Is A UTF-8 Name: ﺱ !!", r))
+      if (!test.NAMESTRING.equals(r))
          test.fail("call with callback, wrong return value");
       test.done4 = true;
    }
@@ -401,6 +396,7 @@ class callbackhandler implements CallbackHandler<String>
  */
 public class test
 {
+   public static final String NAMESTRING = "This Is A UTF-8 Name: س !!";
    public static boolean done1 = false;
    public static boolean done2 = false;
    public static boolean done3 = false;
@@ -506,10 +502,7 @@ public class test
       /** Call the remote object and get a response. */
       String rname = tri.getName();
       System.out.println("Got Remote Name: "+rname);
-      Collator col = Collator.getInstance();
-      col.setDecomposition(Collator.FULL_DECOMPOSITION);
-      col.setStrength(Collator.PRIMARY);
-      if (0 != col.compare("This Is A UTF-8 Name: ﺱ !!", rname))
+      if (!NAMESTRING.equals(rname))
          fail("getName return value incorrect");
       System.out.println("sending it to sleep");
       tri.waitawhile();
@@ -622,7 +615,7 @@ public class test
       System.out.print("Calling the other introspect method: ");
       String intro2 = tri2.Introspect();
       System.out.println(intro2);
-      if (0 != col.compare("Not XML", intro2))
+      if (!"Not XML".equals(intro2))
          fail("Introspect return value incorrect");
 
       /** Call the remote object and get a response. */
@@ -694,7 +687,7 @@ public class test
       
       System.out.print("testing recursion...");
       
-      if (0 != col.compare("This Is A UTF-8 Name: ﺱ !!",tri2.recursionTest())) fail("recursion test failed");
+      if (!NAMESTRING.equals(tri2.recursionTest())) fail("recursion test failed");
       
       System.out.println("done");
 
