@@ -696,6 +696,7 @@ public abstract class AbstractConnection
             eo = exportedObjects.get(m.getPath());
          }
          if (null != eo && null == eo.object.get()) {
+            if (Debug.debug) Debug.print(Debug.INFO, "Unexporting "+m.getPath()+" implicitly");
             unExportObject(m.getPath());
             eo = null;
          }
