@@ -623,13 +623,13 @@ public class Message
                } else if (data instanceof List) {
                   Object[] contents = ((List) data).toArray();
                   int diff = i;
-                  ensureBuffers(contents.length*2);
+                  ensureBuffers(contents.length*4);
                   for (Object o: contents) 
                      diff = appendone(sigb, i, o);
                   i = diff;
                } else if (data instanceof Map) {
                   int diff = i;
-                  ensureBuffers(((Map) data).size()*3);
+                  ensureBuffers(((Map) data).size()*6);
                   for (Map.Entry<Object,Object> o: ((Map<Object,Object>) data).entrySet())
                      diff = appendone(sigb, i, o);
                   if (i == diff) {
@@ -644,7 +644,7 @@ public class Message
                   i = diff;
                } else {
                   Object[] contents = (Object[]) data;
-                  ensureBuffers(contents.length*2);
+                  ensureBuffers(contents.length*4);
                   int diff = i;
                   for (Object o: contents) 
                      diff = appendone(sigb, i, o);
@@ -661,7 +661,7 @@ public class Message
                   contents = ((Container) data).getParameters();
                else
                   contents = (Object[]) data;
-               ensureBuffers(contents.length*2);
+               ensureBuffers(contents.length*4);
                int j = 0;
                for (i++; sigb[i] != ArgumentType.STRUCT2; i++)
                   i = appendone(sigb, i, contents[j++]);
