@@ -19,6 +19,8 @@ Version 2.4:
 	  DBusDaemon
 	* Update to use libunixsocket-java syntax which works on BSDs
 	* Fix utf-8 characters used in test to actually be the same character...
+	* Add code to preallocate the buffer array array (Suggested by Adam
+	  Bennett <cruxic -at- gmail -dot- com>)
 
 Version 2.3.2:
 
