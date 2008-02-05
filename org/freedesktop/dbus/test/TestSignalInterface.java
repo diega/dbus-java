@@ -15,7 +15,6 @@ import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusMemberName;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.UInt32;
-import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 
 import java.util.List;

@@ -21,6 +21,8 @@ Version 2.4:
 	* Fix utf-8 characters used in test to actually be the same character...
 	* Add code to preallocate the buffer array array (Suggested by Adam
 	  Bennett <cruxic -at- gmail -dot- com>)
+	* Fix warnings when building with gcj (fixes a bug in Peer handling and
+	  DBusSerializable handling)
 
 Version 2.3.2:
 

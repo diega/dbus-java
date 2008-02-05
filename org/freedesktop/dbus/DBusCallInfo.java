@@ -19,7 +19,7 @@ public class DBusCallInfo
     * Indicates the caller won't wait for a reply (and we won't send one).
     */
    public static final int NO_REPLY = Message.Flags.NO_REPLY_EXPECTED;
-   private static final int ASYNC = 0x100;
+   public static final int ASYNC = 0x100;
    private String source;
    private String destination;
    private String objectpath;

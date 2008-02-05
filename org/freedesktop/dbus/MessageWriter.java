@@ -10,7 +10,6 @@
 */
 package org.freedesktop.dbus;
 
-import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 

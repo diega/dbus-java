@@ -34,7 +34,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -45,7 +44,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Queue;
 import java.util.Vector;
 
 import cx.ath.matthew.debug.Debug;
@@ -300,6 +298,7 @@ public class DBusDaemon extends Thread
          if (Debug.debug) Debug.print(Debug.DEBUG, "exit");
          return;
       }
+      @SuppressWarnings("unchecked")
       private void handleMessage(Connstruct c, Message m) throws DBusException
       {
          if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
@@ -307,7 +306,7 @@ public class DBusDaemon extends Thread
          if (!(m instanceof MethodCall)) return;
          Object[] args = m.getParameters();
 
-         Class[] cs = new Class[args.length];
+         Class<? extends Object>[] cs = new Class[args.length];
 
          for (int i = 0; i < cs.length; i++)
             cs[i] = args[i].getClass();

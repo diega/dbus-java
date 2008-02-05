@@ -10,14 +10,10 @@
 */
 package org.freedesktop.dbus.test;
 
-import java.lang.reflect.Type;
-
 import java.util.List;
 import java.util.Vector;
 
-import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSerializable;
-import org.freedesktop.dbus.Marshalling;
 import org.freedesktop.dbus.exceptions.DBusException;
 
 public class TestSerializable<A> implements DBusSerializable

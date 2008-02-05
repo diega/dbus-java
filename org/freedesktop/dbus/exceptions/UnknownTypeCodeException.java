@@ -10,8 +10,6 @@
 */
 package org.freedesktop.dbus.exceptions;
 
-import java.io.IOException;
-
 @SuppressWarnings("serial")
 public class UnknownTypeCodeException extends DBusException implements NonFatalException
 {

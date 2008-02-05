@@ -10,12 +10,6 @@
 */
 package org.freedesktop.dbus;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.lang.reflect.Field;
-import java.lang.reflect.Type;
-import org.freedesktop.dbus.Position;
-
 /**
  * This class should be extended to create Structs.
  * Any such class may be sent over DBus to a method which takes a Struct.

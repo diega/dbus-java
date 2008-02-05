@@ -10,12 +10,6 @@
 */
 package org.freedesktop.dbus;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.lang.reflect.Field;
-import java.lang.reflect.Type;
-import org.freedesktop.dbus.Position;
-
 /**
  * This class should be extended to create Tuples.
  * Any such class may be used as the return type for a method

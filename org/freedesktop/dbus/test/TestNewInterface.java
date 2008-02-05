@@ -11,12 +11,8 @@
 package org.freedesktop.dbus.test;
 
 import org.freedesktop.dbus.DBusInterface;
-import org.freedesktop.dbus.UInt16;
 import org.freedesktop.DBus.Description;
-import org.freedesktop.DBus.Method;
 
-import java.util.Map;
-import java.util.List;
 /**
  * A sample remote interface which exports one method.
  */

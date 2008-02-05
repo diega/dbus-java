@@ -38,7 +38,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.freedesktop.DBus.Introspectable;
 import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.Marshalling;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.types.DBusStructType;
@@ -54,11 +53,12 @@ import org.xml.sax.SAXException;
  */
 public class CreateInterface
 {
+   @SuppressWarnings("unchecked")
    private static String collapseType(Type t, Set<String> imports, Map<StructStruct, Type[]> structs, boolean container, boolean fullnames) throws DBusException
    {
       if (t instanceof ParameterizedType) {
          String s;
-         Class c = (Class) ((ParameterizedType) t).getRawType();
+         Class<? extends Object> c = (Class<? extends Object>) ((ParameterizedType) t).getRawType();
          if (null != structs && t instanceof DBusStructType) {
             int num = 1;
             String name = "Struct";
@@ -77,7 +77,7 @@ public class CreateInterface
          s = s.replaceAll(",$", ">");
          return s;
       } else if (t instanceof Class) {
-         Class c = (Class) t;
+         Class<? extends Object> c = (Class<? extends Object>) t;
          if (c.isArray()) {
             return collapseType(c.getComponentType(), imports, structs, container, fullnames)+"[]";
          } else {
@@ -90,7 +90,7 @@ public class CreateInterface
             } else {
                try {
                   Field f = c.getField("TYPE");
-                  Class d = (Class) f.get(c);
+                  Class<? extends Object> d = (Class<? extends Object>) f.get(c);
                   return d.getSimpleName();
                } catch (Exception e) {
                   return c.getSimpleName();
@@ -103,7 +103,7 @@ public class CreateInterface
    {
       if (null == dbus || "".equals(dbus)) return "";
       Vector<Type> v = new Vector<Type>();
-      int c = Marshalling.getJavaType(dbus, v, 1);
+      /* UNNECCESSARY?? int c = Marshalling.getJavaType(dbus, v, 1);*/
       Type t = v.get(0);
       return collapseType(t, imports, structs, container, fullnames);
    }

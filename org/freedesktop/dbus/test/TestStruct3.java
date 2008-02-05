@@ -12,7 +12,6 @@ package org.freedesktop.dbus.test;
 
 import org.freedesktop.dbus.Position;
 import org.freedesktop.dbus.Struct;
-import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 
 import java.util.List;

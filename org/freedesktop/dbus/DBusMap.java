@@ -135,11 +135,12 @@ class DBusMap<K, V> implements Map<K, V>
    {
       return Arrays.deepHashCode(entries);
    }
+   @SuppressWarnings("unchecked")
    public boolean equals(Object o) 
    {
       if (null == o) return false;
       if (!(o instanceof Map)) return false;
-      return ((Map) o).entrySet().equals(entrySet());
+      return ((Map<K,V>) o).entrySet().equals(entrySet());
    }
    public String toString()
    {

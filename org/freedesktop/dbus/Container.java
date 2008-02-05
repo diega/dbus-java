@@ -15,9 +15,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-
-import org.freedesktop.dbus.exceptions.DBusException;
 
 /**
  * This class is the super class of both Structs and Tuples 
@@ -34,7 +31,6 @@ abstract class Container
    {
       return typecache.get(k);
    }
-   private String sig = null;
    private Object[] parameters = null;
    public Container() {}
    private void setup()

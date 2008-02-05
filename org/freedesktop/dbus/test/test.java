@@ -36,7 +36,6 @@ import org.freedesktop.dbus.UInt64;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
-import org.freedesktop.dbus.types.DBusListType;
 
 import org.freedesktop.DBus;
 import org.freedesktop.DBus.Error.MatchRuleInvalid;
@@ -218,7 +217,7 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    {
       throw new TestException("test");
    }
-   public void testSerializable(byte b, TestSerializable s, int i)
+   public void testSerializable(byte b, TestSerializable<String> s, int i)
    {
       System.out.println("Recieving TestSerializable: "+s);
       if (  b != 12
@@ -226,9 +225,9 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
          || !(s.getInt() == 1)
          || !(s.getString().equals("woo"))
          || !(s.getVector().size() == 3)
-         || !((Integer) s.getVector().get(0) == 1)
-         || !((Integer) s.getVector().get(1) == 2)
-         || !((Integer) s.getVector().get(2) == 3)    )
+         || !(s.getVector().get(0) == 1)
+         || !(s.getVector().get(1) == 2)
+         || !(s.getVector().get(2) == 3)    )
          test.fail("Error in recieving custom synchronisation");
    }
    public String recursionTest()
@@ -283,12 +282,13 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
          || ! Integer.class.equals(((ParameterizedType) s[1]).getActualTypeArguments()[1]))
          test.fail("Didn't send types correctly");
    }
-   public void complexv(Variant v)
+   @SuppressWarnings("unchecked")
+   public void complexv(Variant<? extends Object> v)
    {
       if (!"a{ss}".equals(v.getSig())
          || ! (v.getValue() instanceof Map)
-         || ((Map) v.getValue()).size() != 1
-         || !"moo".equals(((Map) v.getValue()).get("cow")))
+         || ((Map<Object,Object>) v.getValue()).size() != 1
+         || !"moo".equals(((Map<Object,Object>) v.getValue()).get("cow")))
          test.fail("Didn't send variant correctly");
    }
 }
@@ -316,10 +316,10 @@ class signalhandler implements DBusSigHandler<TestSignalInterface.TestSignal>
 /**
  * Untyped signal handler
  */
-class arraysignalhandler implements DBusSigHandler
+class arraysignalhandler implements DBusSigHandler<TestSignalInterface.TestArraySignal>
 {
    /** Handling a signal */
-   public void handle(DBusSignal s)
+   public void handle(TestSignalInterface.TestArraySignal t)
    {
       try {
          if (false == test.done2) {
@@ -327,7 +327,6 @@ class arraysignalhandler implements DBusSigHandler
          } else {
             test.fail("SignalHandler 2 has been run too many times");
          }
-         TestSignalInterface.TestArraySignal t = (TestSignalInterface.TestArraySignal) s;
          System.out.println("SignalHandler 2 Running");
          if (t.v.size() != 1) test.fail("Incorrect TestArraySignal array length: should be 1, actually "+t.v.size());
          System.out.println("Got a test array signal with Parameters: ");
@@ -370,10 +369,10 @@ class objectsignalhandler implements DBusSigHandler<TestSignalInterface.TestObje
 /**
  * handler which should never be called
  */
-class badarraysignalhandler implements DBusSigHandler
+class badarraysignalhandler<T extends DBusSignal> implements DBusSigHandler<T>
 {
    /** Handling a signal */
-   public void handle(DBusSignal s)
+   public void handle(T s)
    {
       test.fail("This signal handler shouldn't be called");
    }
@@ -436,7 +435,7 @@ public class test
          String source = dbus.GetNameOwner("foo.bar.Test");
          clientconn.addSigHandler(TestSignalInterface.TestArraySignal.class, source, peer, new arraysignalhandler());
          clientconn.addSigHandler(TestSignalInterface.TestObjectSignal.class, new objectsignalhandler());
-         badarraysignalhandler bash = new badarraysignalhandler();
+         badarraysignalhandler<TestSignalInterface.TestSignal> bash = new badarraysignalhandler<TestSignalInterface.TestSignal>();
          clientconn.addSigHandler(TestSignalInterface.TestSignal.class, bash);
          clientconn.removeSigHandler(TestSignalInterface.TestSignal.class, bash);
          System.out.println("done");

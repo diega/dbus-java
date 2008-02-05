@@ -13,7 +13,6 @@ package org.freedesktop.dbus;
 import static org.freedesktop.dbus.Gettext._;
 
 import java.io.BufferedReader;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -705,7 +704,6 @@ public class Transport
          return state == AUTHENTICATED;
       }
    }
-   private BusAddress address;
    public MessageReader min;
    public MessageWriter mout;
    public Transport() {}
@@ -744,7 +742,6 @@ public class Transport
    public void connect(BusAddress address, int timeout) throws IOException
    {
       if (Debug.debug) Debug.print(Debug.INFO, "Connecting to "+address);
-      this.address = address;
       OutputStream out = null;
       InputStream in = null;
       UnixSocket us = null;

@@ -102,10 +102,11 @@ public class Variant<T>
    /** Format the Variant as a string. */
    public String toString() { return "["+o+"]"; }
    /** Compare this Variant with another by comparing contents */
+   @SuppressWarnings("unchecked")
    public boolean equals(Object other)
    {
       if (null == other) return false;
       if (!(other instanceof Variant)) return false;
-      return this.o.equals(((Variant)other).o);
+      return this.o.equals(((Variant<? extends Object>)other).o);
    }
 }

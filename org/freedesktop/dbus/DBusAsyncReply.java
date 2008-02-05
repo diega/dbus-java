@@ -33,10 +33,10 @@ public class DBusAsyncReply<ReturnType>
     * @param replies A Collection of handles to replies to check.
     * @return A Collection only containing those calls which have had replies.
     */
-   public static Collection<DBusAsyncReply> hasReply(Collection<DBusAsyncReply> replies)
+   public static Collection<DBusAsyncReply<? extends Object>> hasReply(Collection<DBusAsyncReply<? extends Object>> replies)
    {
-      Collection<DBusAsyncReply> c = new ArrayList<DBusAsyncReply>(replies);
-      Iterator<DBusAsyncReply> i = c.iterator();
+      Collection<DBusAsyncReply<? extends Object>> c = new ArrayList<DBusAsyncReply<? extends Object>>(replies);
+      Iterator<DBusAsyncReply<? extends Object>> i = c.iterator();
       while (i.hasNext())
          if (!i.next().hasReply()) i.remove();
       return c;

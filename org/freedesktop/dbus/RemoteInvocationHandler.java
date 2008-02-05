@@ -12,17 +12,13 @@ package org.freedesktop.dbus;
 
 import static org.freedesktop.dbus.Gettext._;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.text.MessageFormat;
-import java.util.List;
 
 import org.freedesktop.DBus;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -38,7 +34,7 @@ class RemoteInvocationHandler implements InvocationHandler
    public static final int CALL_TYPE_CALLBACK = 2;
    public static Object convertRV(String sig, Object[] rp, Method m, AbstractConnection conn) throws DBusException
    {
-      Class c = m.getReturnType();
+      Class<? extends Object> c = m.getReturnType();
 
       if (null == rp) { 
          if(null == c || Void.TYPE.equals(c)) return null;
@@ -72,7 +68,7 @@ class RemoteInvocationHandler implements InvocationHandler
                if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
                throw new DBusExecutionException(MessageFormat.format(_("Wrong return type (failed to de-serialize correct types: {0})"), new Object[] {e.getMessage()}));
             }
-            Constructor cons = c.getConstructors()[0];
+            Constructor<? extends Object> cons = c.getConstructors()[0];
             try {
                return cons.newInstance(rp);
             } catch (Exception e) {
@@ -81,6 +77,7 @@ class RemoteInvocationHandler implements InvocationHandler
             }
       }
    }
+   @SuppressWarnings("unchecked")
    public static Object executeRemoteMethod(RemoteObject ro, Method m, AbstractConnection conn, int syncmethod, CallbackHandler callback, Object... args) throws DBusExecutionException
    {
       Type[] ts = m.getGenericParameterTypes();

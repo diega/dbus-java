@@ -12,7 +12,6 @@ package org.freedesktop.dbus;
 
 import java.util.Vector;
 import org.freedesktop.dbus.exceptions.DBusException;
-import org.freedesktop.dbus.exceptions.MessageFormatException;
 
 public class MethodReturn extends Message
 {

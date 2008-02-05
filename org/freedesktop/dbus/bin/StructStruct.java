@@ -14,8 +14,6 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.HashMap;
 
-import org.freedesktop.dbus.exceptions.DBusException;
-
 class StructStruct
 {
    public static Map<StructStruct, Type[]> fillPackages(Map<StructStruct, Type[]> structs, String pack)

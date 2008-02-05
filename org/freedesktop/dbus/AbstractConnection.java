@@ -37,7 +37,6 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.exceptions.FatalDBusException;
 import org.freedesktop.dbus.exceptions.FatalException;
-import org.freedesktop.dbus.exceptions.NonFatalException;
 
 import cx.ath.matthew.debug.Debug;
 
@@ -233,10 +232,10 @@ public abstract class AbstractConnection
    private ObjectTree objectTree;
    private _globalhandler _globalhandlerreference;
    protected Map<DBusInterface,RemoteObject> importedObjects;
-   protected Map<SignalTuple,Vector<DBusSigHandler>> handledSignals;
+   protected Map<SignalTuple,Vector<DBusSigHandler<? extends DBusSignal>>> handledSignals;
    protected EfficientMap pendingCalls;
-   protected Map<MethodCall, CallbackHandler> pendingCallbacks;
-   protected Map<MethodCall, DBusAsyncReply> pendingCallbackReplys;
+   protected Map<MethodCall, CallbackHandler<? extends Object>> pendingCallbacks;
+   protected Map<MethodCall, DBusAsyncReply<? extends Object>> pendingCallbackReplys;
    protected LinkedList<Runnable> runnables;
    protected LinkedList<_workerthread> workers;
    protected FallbackContainer fallbackcontainer;
@@ -282,11 +281,11 @@ public abstract class AbstractConnection
       synchronized (exportedObjects) {
          exportedObjects.put(null, new ExportedObject(_globalhandlerreference));
       }
-      handledSignals = new HashMap<SignalTuple,Vector<DBusSigHandler>>();
+      handledSignals = new HashMap<SignalTuple,Vector<DBusSigHandler<? extends DBusSignal>>>();
       pendingCalls = new EfficientMap(PENDING_MAP_INITIAL_SIZE);
       outgoing = new EfficientQueue(PENDING_MAP_INITIAL_SIZE);
-      pendingCallbacks = new HashMap<MethodCall, CallbackHandler>();
-      pendingCallbackReplys = new HashMap<MethodCall, DBusAsyncReply>();
+      pendingCallbacks = new HashMap<MethodCall, CallbackHandler<? extends Object>>();
+      pendingCallbackReplys = new HashMap<MethodCall, DBusAsyncReply<? extends Object>>();
       pendingErrors = new LinkedList<Error>();
       runnables = new LinkedList<Runnable>();
       workers = new LinkedList<_workerthread>();
@@ -502,10 +501,11 @@ public abstract class AbstractConnection
     * @throws DBusException If listening for the signal on the bus failed.
     * @throws ClassCastException If type is not a sub-type of DBusSignal.
     */
+   @SuppressWarnings("unchecked")
    public <T extends DBusSignal> void addSigHandler(Class<T> type, DBusSigHandler<T> handler) throws DBusException
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException(_("Not A DBus Signal")); 
-      addSigHandler(new DBusMatchRule(type), handler);
+      addSigHandler(new DBusMatchRule(type), (DBusSigHandler<? extends DBusSignal>) handler);
    }
    /** 
     * Add a Signal Handler.
@@ -515,26 +515,27 @@ public abstract class AbstractConnection
     * @param handler The handler to call when a signal is received.
     * @throws DBusException If listening for the signal on the bus failed.
     * @throws ClassCastException If type is not a sub-type of DBusSignal.
-    */
+    */ 
+   @SuppressWarnings("unchecked")
    public <T extends DBusSignal> void addSigHandler(Class<T> type, DBusInterface object, DBusSigHandler<T> handler) throws DBusException
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException(_("Not A DBus Signal"));
       String objectpath = importedObjects.get(object).objectpath;
       if (!objectpath.matches(OBJECT_REGEX)||objectpath.length() > MAX_NAME_LENGTH)
          throw new DBusException(_("Invalid object path: ")+objectpath);
-      addSigHandler(new DBusMatchRule(type, null, objectpath), handler);
+      addSigHandler(new DBusMatchRule(type, null, objectpath), (DBusSigHandler<? extends DBusSignal>) handler);
    }
 
    protected abstract <T extends DBusSignal> void addSigHandler(DBusMatchRule rule, DBusSigHandler<T> handler) throws DBusException;
 
-   protected void addSigHandlerWithoutMatch(Class signal, DBusSigHandler handler) throws DBusException
+   protected <T extends DBusSignal> void addSigHandlerWithoutMatch(Class<? extends DBusSignal> signal, DBusSigHandler<T> handler) throws DBusException
    {
       DBusMatchRule rule = new DBusMatchRule(signal);
       SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember(), rule.getObject(), rule.getSource());
       synchronized (handledSignals) {
-         Vector<DBusSigHandler> v = handledSignals.get(key);
+         Vector<DBusSigHandler<? extends DBusSignal>> v = handledSignals.get(key);
          if (null == v) {
-            v = new Vector<DBusSigHandler>();
+            v = new Vector<DBusSigHandler<? extends DBusSignal>>();
             v.add(handler);
             handledSignals.put(key, v);
          } else
@@ -638,9 +639,10 @@ public abstract class AbstractConnection
     * @param parameters The parameters to call the method with.
     * @return A handle to the call.
     */
+   @SuppressWarnings("unchecked")
    public DBusAsyncReply callMethodAsync(DBusInterface object, String m, Object... parameters)
    {
-      Class[] types = new Class[parameters.length];
+      Class<?>[] types = new Class[parameters.length];
       for (int i = 0; i < parameters.length; i++) 
          types[i] = parameters[i].getClass();
       RemoteObject ro = importedObjects.get(object);
@@ -664,8 +666,6 @@ public abstract class AbstractConnection
    private void handleMessage(final MethodCall m) throws DBusException
    {
       if (Debug.debug) Debug.print(Debug.DEBUG, "Handling incoming method call: "+m);
-      // get the method signature
-      Object[] params = m.getParameters();
 
       ExportedObject eo = null;
       Method meth = null;
@@ -801,9 +801,9 @@ public abstract class AbstractConnection
    private void handleMessage(final DBusSignal s)
    {
       if (Debug.debug) Debug.print(Debug.DEBUG, "Handling incoming signal: "+s);
-      Vector<DBusSigHandler> v = new Vector<DBusSigHandler>();
+      Vector<DBusSigHandler<? extends DBusSignal>> v = new Vector<DBusSigHandler<? extends DBusSignal>>();
       synchronized(handledSignals) {
-         Vector<DBusSigHandler> t;
+         Vector<DBusSigHandler<? extends DBusSignal>> t;
          t = handledSignals.get(new SignalTuple(s.getInterface(), s.getName(), null, null));
          if (null != t) v.addAll(t);
          t = handledSignals.get(new SignalTuple(s.getInterface(), s.getName(), s.getPath(), null));
@@ -815,7 +815,7 @@ public abstract class AbstractConnection
       }
       if (0 == v.size()) return;
       final AbstractConnection conn = this;
-      for (final DBusSigHandler h: v) {
+      for (final DBusSigHandler<? extends DBusSignal> h: v) {
          if (Debug.debug) Debug.print(Debug.VERBOSE, "Adding Runnable for signal "+s+" with handler "+h);
          addRunnable(new Runnable() { 
             private boolean run = false;
@@ -829,7 +829,7 @@ public abstract class AbstractConnection
                      rs = s.createReal(conn);
                   else
                      rs = s;
-                  h.handle(rs); 
+                  ((DBusSigHandler<DBusSignal>)h).handle(rs); 
                } catch (DBusException DBe) {
                   if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
                   try {

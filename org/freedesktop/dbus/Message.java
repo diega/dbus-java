@@ -925,7 +925,7 @@ public class Message
                      ofs[0] = ofssave;
                      entries.add((Object[]) extractone(sigb, buf, ofs, true));
                   }
-                  rv = new DBusMap(entries.toArray(new Object[0][]));
+                  rv = new DBusMap<Object, Object>(entries.toArray(new Object[0][]));
                   break;
                default:
                   if (0 == size) {

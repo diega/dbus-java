@@ -10,8 +10,6 @@
 */
 package org.freedesktop.dbus.test;
 
-import java.lang.reflect.Type;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,11 +18,8 @@ import java.util.Set;
 import java.util.Vector;
 
 import org.freedesktop.DBus;
-import org.freedesktop.dbus.DBusCallInfo;
 import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSigHandler;
-import org.freedesktop.dbus.Struct;
 import org.freedesktop.dbus.UInt16;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.UInt64;
@@ -79,7 +74,7 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
    public boolean isRemote() { return false; }
    @SuppressWarnings("unchecked")
    @DBus.Description("Returns whatever it is passed")
-      public Variant Identity(Variant input)
+      public <T> Variant<T> Identity(Variant<T> input)
       {
          done.add("org.freedesktop.DBus.Binding.Tests.Identity");
          notdone.remove("org.freedesktop.DBus.Binding.Tests.Identity");
@@ -156,7 +151,7 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
          return input;
       }
    @DBus.Description("Returns whatever it is passed")
-      public Variant[] IdentityArray(Variant[] input) 
+      public <T> Variant<T>[] IdentityArray(Variant<T>[] input) 
       {
          done.add("org.freedesktop.DBus.Binding.Tests.IdentityArray");
          notdone.remove("org.freedesktop.DBus.Binding.Tests.IdentityArray");
@@ -248,7 +243,6 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
       notdone.remove("org.freedesktop.DBus.Binding.SingleTests.Sum");
       int sum = 0;
       for (byte b: a) sum += (b < 0 ? b+256 : b);
-      sum = sum;
       return new UInt32(sum % (UInt32.MAX_VALUE+1));
    }
    @DBus.Description("Given a map of A => B, should return a map of B => a list of all the As which mapped to B")
@@ -277,7 +271,7 @@ public class cross_test_server implements DBus.Binding.Tests, DBus.Binding.Singl
    }
    @DBus.Description("Given any compound type as a variant, return all the primitive types recursively contained within as an array of variants")
    @SuppressWarnings("unchecked")
-   public List<Variant> Primitize(Variant a)
+   public List<Variant<Object>> Primitize(Variant<Object> a)
    {
       done.add("org.freedesktop.DBus.Binding.Tests.Primitize");
       notdone.remove("org.freedesktop.DBus.Binding.Tests.Primitize");

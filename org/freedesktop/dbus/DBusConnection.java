@@ -12,10 +12,7 @@ package org.freedesktop.dbus;
 
 import static org.freedesktop.dbus.Gettext._;
 
-import java.lang.ref.WeakReference;
-
 import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
 
 import java.io.IOException;
 
@@ -46,7 +43,7 @@ import cx.ath.matthew.debug.Debug;
  */
 public class DBusConnection extends AbstractConnection
 {
-   private class _sighandler implements DBusSigHandler
+   private class _sighandler implements DBusSigHandler<DBusSignal>
    {
       public void handle(DBusSignal s)
       {
@@ -89,7 +86,6 @@ public class DBusConnection extends AbstractConnection
    private static final Map<Object,DBusConnection> conn = new HashMap<Object,DBusConnection>();
    private int _refcount = 0;
    private Object _reflock = new Object();
-   private Object connkey;
    private DBus _dbus;
 
    /**
@@ -199,7 +195,7 @@ public class DBusConnection extends AbstractConnection
                ifaces.add(tag.replaceAll("^interface *name *= *['\"]([^'\"]*)['\"].*$", "$1"));
             }
          }
-         Vector<Class> ifcs = new Vector<Class>();
+         Vector<Class<? extends Object>> ifcs = new Vector<Class<? extends Object>>();
          for(String iface: ifaces) {
             int j = 0;
             while (j >= 0) {
@@ -327,7 +323,7 @@ public class DBusConnection extends AbstractConnection
       
       String unique = _dbus.GetNameOwner(busname);
 
-      return dynamicProxy(busname, objectpath);
+      return dynamicProxy(unique, objectpath);
    }
 
    /** 
@@ -499,7 +495,7 @@ public class DBusConnection extends AbstractConnection
       
       SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember(), rule.getObject(), rule.getSource());
       synchronized (handledSignals) {
-         Vector<DBusSigHandler> v = handledSignals.get(key);
+         Vector<DBusSigHandler<? extends DBusSignal>> v = handledSignals.get(key);
          if (null != v) {
             v.remove(handler);
             if (0 == v.size()) {
@@ -523,13 +519,14 @@ public class DBusConnection extends AbstractConnection
     * @throws DBusException If listening for the signal on the bus failed.
     * @throws ClassCastException If type is not a sub-type of DBusSignal.
     */
+   @SuppressWarnings("unchecked")
    public <T extends DBusSignal> void addSigHandler(Class<T> type, String source, DBusSigHandler<T> handler) throws DBusException
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException(_("Not A DBus Signal"));
       if (source.matches(BUSNAME_REGEX)) throw new DBusException(_("Cannot watch for signals based on well known bus name as source, only unique names."));
       if (!source.matches(CONNID_REGEX)||source.length() > MAX_NAME_LENGTH) 
          throw new DBusException(_("Invalid bus name: ")+source);
-      addSigHandler(new DBusMatchRule(type, source, null), handler);
+      addSigHandler(new DBusMatchRule(type, source, null), (DBusSigHandler<? extends DBusSignal>) handler);
    }
    /** 
     * Add a Signal Handler.
@@ -541,6 +538,7 @@ public class DBusConnection extends AbstractConnection
     * @throws DBusException If listening for the signal on the bus failed.
     * @throws ClassCastException If type is not a sub-type of DBusSignal.
     */
+   @SuppressWarnings("unchecked")
    public <T extends DBusSignal> void addSigHandler(Class<T> type, String source, DBusInterface object,  DBusSigHandler<T> handler) throws DBusException
    {
       if (!DBusSignal.class.isAssignableFrom(type)) throw new ClassCastException(_("Not A DBus Signal"));
@@ -550,7 +548,7 @@ public class DBusConnection extends AbstractConnection
       String objectpath = importedObjects.get(object).objectpath;
       if (!objectpath.matches(OBJECT_REGEX)||objectpath.length() > MAX_NAME_LENGTH)
          throw new DBusException(_("Invalid object path: ")+objectpath);
-      addSigHandler(new DBusMatchRule(type, source, objectpath), handler);
+      addSigHandler(new DBusMatchRule(type, source, objectpath), (DBusSigHandler<? extends DBusSignal>) handler);
    }
    protected <T extends DBusSignal> void addSigHandler(DBusMatchRule rule, DBusSigHandler<T> handler) throws DBusException
    {
@@ -562,9 +560,9 @@ public class DBusConnection extends AbstractConnection
       }
       SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember(), rule.getObject(), rule.getSource());
       synchronized (handledSignals) {
-         Vector<DBusSigHandler> v = handledSignals.get(key);
+         Vector<DBusSigHandler<? extends DBusSignal>> v = handledSignals.get(key);
          if (null == v) {
-            v = new Vector<DBusSigHandler>();
+            v = new Vector<DBusSigHandler<? extends DBusSignal>>();
             v.add(handler);
             handledSignals.put(key, v);
          } else

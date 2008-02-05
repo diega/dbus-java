@@ -379,7 +379,7 @@ public interface DBus extends DBusInterface
       public interface Tests extends DBusInterface
       {
          @Description("Returns whatever it is passed")
-         public Variant Identity(Variant input);
+         public <T> Variant<T> Identity(Variant<T> input);
          @Description("Returns whatever it is passed")
          public byte IdentityByte(byte input);
          @Description("Returns whatever it is passed")
@@ -401,7 +401,7 @@ public interface DBus extends DBusInterface
          @Description("Returns whatever it is passed")
          public String IdentityString(String input);
          @Description("Returns whatever it is passed")
-         public Variant[] IdentityArray(Variant[] input);
+         public <T> Variant<T>[] IdentityArray(Variant<T>[] input);
          @Description("Returns whatever it is passed")
          public byte[] IdentityByteArray(byte[] input);
          @Description("Returns whatever it is passed")
@@ -429,7 +429,7 @@ public interface DBus extends DBusInterface
          @Description("This method returns the contents of a struct as separate values")
          public Triplet<String, UInt32, Short> DeStruct(TestStruct a);
          @Description("Given any compound type as a variant, return all the primitive types recursively contained within as an array of variants")
-         public List<Variant> Primitize(Variant a);
+         public List<Variant<Object>> Primitize(Variant<Object> a);
          @Description("inverts it's input")
          public boolean Invert(boolean a);
          @Description("triggers sending of a signal from the supplied object with the given parameter")

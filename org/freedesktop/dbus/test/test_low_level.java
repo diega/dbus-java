@@ -10,7 +10,6 @@
 */
 package org.freedesktop.dbus.test;
 import cx.ath.matthew.debug.Debug;
-import cx.ath.matthew.utils.Hexdump;
 import org.freedesktop.dbus.BusAddress;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.Message;

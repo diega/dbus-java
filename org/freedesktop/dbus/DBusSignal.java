@@ -13,6 +13,7 @@ package org.freedesktop.dbus;
 import static org.freedesktop.dbus.Gettext._;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
@@ -71,8 +72,8 @@ public class DBusSignal extends Message
          super(source, objectpath, type, name, sig, parameters, serial);
       }
    }
-   private static Map<Class, Type[]> typeCache = new HashMap<Class, Type[]>();
-   private static Map<Class, Constructor> conCache = new HashMap<Class, Constructor>();
+   private static Map<Class<? extends DBusSignal>, Type[]> typeCache = new HashMap<Class<? extends DBusSignal>, Type[]>();
+   private static Map<Class<? extends DBusSignal>, Constructor<? extends DBusSignal>> conCache = new HashMap<Class<? extends DBusSignal>, Constructor<? extends DBusSignal>>();
    private static Map<String, String> signames = new HashMap<String, String>();
    private static Map<String, String> intnames = new HashMap<String, String>();
    private Class<? extends DBusSignal> c;
@@ -115,6 +116,7 @@ public class DBusSignal extends Message
       } while (null == c && name.matches(".*\\..*"));
       return c;
    }
+   @SuppressWarnings("unchecked")
    DBusSignal createReal(AbstractConnection conn) throws DBusException
    {
       String intname = intnames.get(getInterface());
@@ -125,15 +127,15 @@ public class DBusSignal extends Message
          c = createSignalClass(intname+"$"+signame);
       if (Debug.debug) Debug.print(Debug.DEBUG, "Converting signal to type: "+c);
       Type[] types = typeCache.get(c);
-      Constructor con = conCache.get(c);
+      Constructor<? extends DBusSignal> con = conCache.get(c);
       if (null == types) {
-         con = c.getDeclaredConstructors()[0];
+         con = (Constructor<? extends DBusSignal>) c.getDeclaredConstructors()[0];
          conCache.put(c, con);
          Type[] ts = con.getGenericParameterTypes();
          types = new Type[ts.length-1];
          for (int i = 1; i < ts.length; i++)
             if (ts[i] instanceof TypeVariable)
-               for (Type b: ((TypeVariable) ts[i]).getBounds())
+               for (Type b: ((TypeVariable<GenericDeclaration>) ts[i]).getBounds())
                   types[i-1] = b;
             else
                types[i-1] = ts[i];
@@ -175,21 +177,21 @@ public class DBusSignal extends Message
 
       if (!objectpath.matches(AbstractConnection.OBJECT_REGEX)) throw new DBusException(_("Invalid object path: ")+objectpath);
 
-      Class tc = getClass();
+      Class<? extends DBusSignal> tc = getClass();
       String member;
       if (tc.isAnnotationPresent(DBusMemberName.class))
-         member = ((DBusMemberName) tc.getAnnotation(DBusMemberName.class)).value();
+         member = tc.getAnnotation(DBusMemberName.class).value();
       else
          member = tc.getSimpleName();
       String iface = null;
-      Class enc = tc.getEnclosingClass();
+      Class<? extends Object> enc = tc.getEnclosingClass();
       if (null == enc ||
             !DBusInterface.class.isAssignableFrom(enc) ||
             enc.getName().equals(enc.getSimpleName()))
          throw new DBusException(_("Signals must be declared as a member of a class implementing DBusInterface which is the member of a package."));
       else
          if (null != enc.getAnnotation(DBusInterfaceName.class))
-            iface = ((DBusInterfaceName) enc.getAnnotation(DBusInterfaceName.class)).value();
+            iface = enc.getAnnotation(DBusInterfaceName.class).value();
          else
             iface = AbstractConnection.dollar_pattern.matcher(enc.getName()).replaceAll(".");
 
@@ -207,13 +209,13 @@ public class DBusSignal extends Message
          try {
             Type[] types = typeCache.get(tc);
             if (null == types) {
-               Constructor con = tc.getDeclaredConstructors()[0];
+               Constructor<? extends DBusSignal> con = (Constructor<? extends DBusSignal>) tc.getDeclaredConstructors()[0];
                conCache.put(tc, con);
                Type[] ts = con.getGenericParameterTypes();
                types = new Type[ts.length-1];
                for (int i = 1; i <= types.length; i++) 
                   if (ts[i] instanceof TypeVariable)
-                     types[i-1] = ((TypeVariable) ts[i]).getBounds()[0];
+                     types[i-1] = ((TypeVariable<GenericDeclaration>) ts[i]).getBounds()[0];
                   else
                      types[i-1] = ts[i];
                typeCache.put(tc, types);

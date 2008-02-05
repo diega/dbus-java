@@ -12,7 +12,6 @@ package org.freedesktop.dbus;
 
 import static org.freedesktop.dbus.Gettext._;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Proxy;
 import java.io.File;
 import java.io.IOException;
@@ -111,7 +110,7 @@ public class DirectConnection extends AbstractConnection
                ifaces.add(tag.replaceAll("^interface *name *= *['\"]([^'\"]*)['\"].*$", "$1"));
             }
          }
-         Vector<Class> ifcs = new Vector<Class>();
+         Vector<Class<? extends Object>> ifcs = new Vector<Class<? extends Object>>();
          for(String iface: ifaces) {
             int j = 0;
             while (j >= 0) {
@@ -222,7 +221,7 @@ public class DirectConnection extends AbstractConnection
    {
       SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember(), rule.getObject(), rule.getSource());
       synchronized (handledSignals) {
-         Vector<DBusSigHandler> v = handledSignals.get(key);
+         Vector<DBusSigHandler<? extends DBusSignal>> v = handledSignals.get(key);
          if (null != v) {
             v.remove(handler);
             if (0 == v.size()) {
@@ -235,9 +234,9 @@ public class DirectConnection extends AbstractConnection
    {
       SignalTuple key = new SignalTuple(rule.getInterface(), rule.getMember(), rule.getObject(), rule.getSource());
       synchronized (handledSignals) {
-         Vector<DBusSigHandler> v = handledSignals.get(key);
+         Vector<DBusSigHandler<? extends DBusSignal>> v = handledSignals.get(key);
          if (null == v) {
-            v = new Vector<DBusSigHandler>();
+            v = new Vector<DBusSigHandler<? extends DBusSignal>>();
             v.add(handler);
             handledSignals.put(key, v);
          } else
