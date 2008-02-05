@@ -247,6 +247,7 @@ public abstract class AbstractConnection
    protected _sender sender;
    protected Transport transport;
    protected String addr;
+   protected boolean weakreferences = false;
    static final Pattern dollar_pattern = Pattern.compile("[$]");
    public static final boolean EXCEPTION_DEBUG;
    static final boolean FLOAT_SUPPORT;
@@ -279,7 +280,7 @@ public abstract class AbstractConnection
       importedObjects = new HashMap<DBusInterface,RemoteObject>();
       _globalhandlerreference = new _globalhandler();
       synchronized (exportedObjects) {
-         exportedObjects.put(null, new ExportedObject(_globalhandlerreference));
+         exportedObjects.put(null, new ExportedObject(_globalhandlerreference, weakreferences));
       }
       handledSignals = new HashMap<SignalTuple,Vector<DBusSigHandler<? extends DBusSignal>>>();
       pendingCalls = new EfficientMap(PENDING_MAP_INITIAL_SIZE);
@@ -372,6 +373,17 @@ public abstract class AbstractConnection
       return info;
    }
 
+   /**
+    * If set to true the bus will not hold a strong reference to exported objects.
+    * If they go out of scope they will automatically be unexported from the bus.
+    * The default is to hold a strong reference, which means objects must be 
+    * explicitly unexported before they will be garbage collected.
+    */
+   public void setWeakReferences(boolean weakreferences)
+   {
+      this.weakreferences = weakreferences;
+   }
+
    /** 
     * Export an object so that its methods can be called on DBus.
     * @param objectpath The path to the object we are exposing. MUST be in slash-notation, like "/org/freedesktop/Local", 
@@ -390,7 +402,7 @@ public abstract class AbstractConnection
       synchronized (exportedObjects) {
          if (null != exportedObjects.get(objectpath)) 
             throw new DBusException(_("Object already exported"));
-         ExportedObject eo = new ExportedObject(object);
+         ExportedObject eo = new ExportedObject(object, weakreferences);
          exportedObjects.put(objectpath, eo);
          objectTree.add(objectpath, eo, eo.introspectiondata);
       }
@@ -410,7 +422,7 @@ public abstract class AbstractConnection
          throw new DBusException(_("Must Specify an Object Path"));
       if (!objectprefix.matches(OBJECT_REGEX)||objectprefix.length() > MAX_NAME_LENGTH) 
          throw new DBusException(_("Invalid object path: ")+objectprefix);
-         ExportedObject eo = new ExportedObject(object);
+         ExportedObject eo = new ExportedObject(object, weakreferences);
          fallbackcontainer.add(objectprefix, eo);
    }
    /** 

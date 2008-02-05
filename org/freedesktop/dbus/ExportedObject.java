@@ -12,6 +12,7 @@ package org.freedesktop.dbus;
 
 import static org.freedesktop.dbus.Gettext._;
 
+import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
 import java.lang.annotation.Annotation;
@@ -138,11 +139,14 @@ class ExportedObject
       return m;
    }
    Map<MethodTuple,Method> methods;
-   WeakReference<DBusInterface> object;
+   Reference<DBusInterface> object;
    String introspectiondata;
-   public ExportedObject(DBusInterface object) throws DBusException
+   public ExportedObject(DBusInterface object, boolean weakreferences) throws DBusException
    {
-      this.object = new WeakReference<DBusInterface>(object);
+      if (weakreferences)
+         this.object = new WeakReference<DBusInterface>(object);
+      else
+         this.object = new StrongReference<DBusInterface>(object);
       introspectiondata = "";
       methods = getExportedMethods(object.getClass());
       introspectiondata += 
