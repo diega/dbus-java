@@ -1,7 +1,7 @@
 Version 2.4:
 
 	* Add DBusMemberName to force method names or signal names to something
-	  other than the Java name (suggested byaViktar Vauchkevich <vctr -at-
+	  other than the Java name (suggested by Viktar Vauchkevich <vctr -at-
 	  yandex -dot- ru>)
 	* Don't respond to Introspect/Ping except on the right interface 
 	  (pointed out by Serkan Kaba <serkan_kaba -at- yahoo -dot- com>)
