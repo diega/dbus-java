@@ -19,6 +19,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.text.MessageFormat;
+import java.util.Arrays;
 
 import org.freedesktop.DBus;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -41,6 +42,7 @@ class RemoteInvocationHandler implements InvocationHandler
          else throw new DBusExecutionException(_("Wrong return type (got void, expected a value)"));
       } else {
          try { 
+            if (Debug.debug) Debug.print(Debug.VERBOSE, "Converting return parameters from "+Arrays.deepToString(rp)+" to type "+m.getGenericReturnType());
             rp = Marshalling.deSerializeParameters(rp, 
                   new Type[] { m.getGenericReturnType() }, conn);
          }

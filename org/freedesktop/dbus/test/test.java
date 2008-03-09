@@ -685,12 +685,13 @@ public class test
       v.add(3);
       TestSerializable<String> s = new TestSerializable<String>(1, "woo", v);
       s = tri2.testSerializable((byte) 12, s, 13);
+      System.out.print("returned: "+s);
       if (s.getInt() != 1 || 
           ! s.getString().equals("woo") ||
           s.getVector().size() != 3 ||
-          s.getVector().get(1) != 1 ||
-          s.getVector().get(2) != 2 ||
-          s.getVector().get(3) != 3)
+          s.getVector().get(0) != 1 ||
+          s.getVector().get(1) != 2 ||
+          s.getVector().get(2) != 3)
          fail("Didn't get back the same TestSerializable");
       
       System.out.println("done");

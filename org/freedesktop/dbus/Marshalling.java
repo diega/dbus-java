@@ -561,6 +561,11 @@ public class Marshalling
       if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing from "+Arrays.deepToString(parameters)+" to "+Arrays.deepToString(types));
       if (null == parameters) return null;
 
+      if (types.length == 1 && types[0] instanceof ParameterizedType
+            && Tuple.class.isAssignableFrom((Class) ((ParameterizedType) types[0]).getRawType())) {
+         types = ((ParameterizedType) types[0]).getActualTypeArguments();
+      }
+
       for (int i = 0; i < parameters.length; i++) {
          // CHECK IF ARRAYS HAVE THE SAME LENGTH <-- has to happen after expanding parameters
          if (i >= types.length) {
