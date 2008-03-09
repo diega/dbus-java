@@ -39,6 +39,15 @@ class RemoteInvocationHandler implements InvocationHandler
       if (null == rp) { 
          if(null == c || Void.TYPE.equals(c)) return null;
          else throw new DBusExecutionException(_("Wrong return type (got void, expected a value)"));
+      } else {
+         try { 
+            rp = Marshalling.deSerializeParameters(rp, 
+                  new Type[] { m.getGenericReturnType() }, conn);
+         }
+         catch (Exception e) { 
+            if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
+            throw new DBusExecutionException(MessageFormat.format(_("Wrong return type (failed to de-serialize correct types: {0} )"), new Object[] { e.getMessage() }));
+         }
       }
 
       switch (rp.length) {
@@ -47,27 +56,13 @@ class RemoteInvocationHandler implements InvocationHandler
                return null;
             else throw new DBusExecutionException(_("Wrong return type (got void, expected a value)"));
          case 1:
-            try { 
-               rp = Marshalling.deSerializeParameters(rp, 
-                     new Type[] { m.getGenericReturnType() }, conn);
-            }
-            catch (Exception e) { 
-               if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
-               throw new DBusExecutionException(MessageFormat.format(_("Wrong return type (failed to de-serialize correct types: {0} )"), new Object[] { e.getMessage() }));
-            }
-
             return rp[0];
          default:
 
             // check we are meant to return multiple values
             if (!Tuple.class.isAssignableFrom(c))
                throw new DBusExecutionException(_("Wrong return type (not expecting Tuple)"));
-            try {
-               rp = Marshalling.deSerializeParameters(rp, ((ParameterizedType) m.getGenericReturnType()).getActualTypeArguments(), conn);
-            } catch (Exception e) { 
-               if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
-               throw new DBusExecutionException(MessageFormat.format(_("Wrong return type (failed to de-serialize correct types: {0})"), new Object[] {e.getMessage()}));
-            }
+            
             Constructor<? extends Object> cons = c.getConstructors()[0];
             try {
                return cons.newInstance(rp);

@@ -34,7 +34,7 @@ public interface TestRemoteInterface2 extends DBusInterface
    @DBusMemberName("checkbool")
    public boolean check();
    @Description("Test Serializable Object")
-   public void testSerializable(byte b, TestSerializable<String> s, int i);
+   public TestSerializable<String> testSerializable(byte b, TestSerializable<String> s, int i);
    @Description("Call another method on itself from within a call")
    public String recursionTest();
    @Description("Parameter-overloaded method (string)")
