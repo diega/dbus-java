@@ -38,6 +38,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.freedesktop.DBus.Introspectable;
 import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.Marshalling;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.types.DBusStructType;
@@ -103,7 +104,7 @@ public class CreateInterface
    {
       if (null == dbus || "".equals(dbus)) return "";
       Vector<Type> v = new Vector<Type>();
-      /* UNNECCESSARY?? int c = Marshalling.getJavaType(dbus, v, 1);*/
+      int c = Marshalling.getJavaType(dbus, v, 1);
       Type t = v.get(0);
       return collapseType(t, imports, structs, container, fullnames);
    }

@@ -2,6 +2,7 @@ Version 2.4.1:
 
 	* Fix returning DBusSerializables (Spotted by Johannes Felten
 	  <johannesfelten -at- googlemail -dot- com>)
+	* Fix CreateInterface (Spotted by Tom Walsh <walshtc -at- gmail -dot- com>)
 
 Version 2.4:
 
