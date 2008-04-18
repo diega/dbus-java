@@ -177,7 +177,9 @@ public class Message
       headers = new HashMap<Byte, Object>();
       big = (Endian.BIG == endian);
       bytecounter = 0;
-      serial = ++globalserial;
+      synchronized (Message.class) {
+         serial = ++globalserial;
+      }
       if (Debug.debug) Debug.print(Debug.DEBUG, "Creating message with serial "+serial);
       this.type = type;
       this.flags = flags;
