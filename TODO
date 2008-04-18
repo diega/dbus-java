@@ -1,4 +1,5 @@
  ** check that the blocking is correct on DBusAsyncReply and add an explicit timeout value
+ * document that you need to do connect; setup objects; get bus name for activation
  * dbus 'patterns', like watching for disconnects of registered listeners
  * named pipes under windows: http://www.koders.com/csharp/fid2CD89EB558B80CE4947D53BAC3D667F2F1188FB9.aspx
  * document that if you don't hold a reference, I will lose it! (now not default)
