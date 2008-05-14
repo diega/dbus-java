@@ -200,7 +200,9 @@ public class DBusConnection extends AbstractConnection
             int j = 0;
             while (j >= 0) {
                try {
-                  ifcs.add(Class.forName(iface));
+                  Class ifclass = Class.forName(iface);
+                  if (!ifcs.contains(ifclass))
+                     ifcs.add(ifclass);
                   break;
                } catch (Exception e) {}
                j = iface.lastIndexOf(".");

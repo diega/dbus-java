@@ -5,6 +5,9 @@ Version 2.4.1:
 	* Fix CreateInterface (Spotted by Tom Walsh <walshtc -at- gmail -dot- com>)
 	* Fix serial assignment race condition (Spotted by Ed Wei
 	  <Edward.Wei.03 -at- alum -dot- dartmouth -dot- org>)
+	* Fix dynamic introspection of objects which export the same
+	  interface multiple times (Patch from	Sveinung Kvilhaugsvik
+	  <sveinung84 -at- users -dot- sourceforge -dot- net>)
 
 Version 2.4:
 
