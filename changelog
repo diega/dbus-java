@@ -9,7 +9,10 @@ Version 2.4.1:
 	  interface multiple times (Patch from	Sveinung Kvilhaugsvik
 	  <sveinung84 -at- users -dot- sourceforge -dot- net>)
 	* Fix CreateInterface to mangle names which are reserved words
-	  (Spotted by sveinung84 -at- users -dot- sourceforge -dot- net)
+	  (Spotted by Sveinung Kvilhaugsvik <sveinung84 -at- users -dot-
+		sourceforge -dot- net>)
+	* Fix DBusDaemon to not crash on bad tcp connections (Patch from
+	  Hugues Moreau <hmoreau -at- gmail -dot- com>)
 
 Version 2.4:
 
@@ -45,7 +48,7 @@ Version 2.3.2:
 	  <freedesktop -at- snorc -dot- org>)
 	* Add licence headers to files missing them
 	* Fix minor bug in AbstractConnection.java (reported by Frank Benoit
-	  <benoit -at- tionex -dot- de>
+	  <benoit -at- tionex -dot- de>)
 	* Make Marshalling more verbose and descriptive in the presence of
 	  mismatched parameter lists (suggested by Anibal Sanchez
 	  <anibal -dot- sanchez -at- sunya -dot- com -dot- ar>)
