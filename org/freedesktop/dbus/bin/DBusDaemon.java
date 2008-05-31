@@ -838,7 +838,13 @@ public class DBusDaemon extends Thread
       // accept new connections
       while (d._run) {
          Socket s = ss.accept();
-         if ((new Transport.SASL()).auth(Transport.SASL.MODE_SERVER, Transport.SASL.AUTH_EXTERNAL, address.getParameter("guid"), s.getOutputStream(), s.getInputStream(), null)) {
+         boolean authOK=false;
+         try {
+        	 authOK = (new Transport.SASL()).auth(Transport.SASL.MODE_SERVER, Transport.SASL.AUTH_EXTERNAL, address.getParameter("guid"), s.getOutputStream(), s.getInputStream(), null);
+         } catch (Exception e) {
+        	 if (Debug.debug) Debug. print(Debug.DEBUG, e);
+         }
+         if (authOK) {
             d.addSock(s);
          } else
             s.close();

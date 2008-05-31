@@ -272,6 +272,8 @@ public class Transport
          top: while (true) {
             int c = s.read();
             switch (c) {
+               case -1:
+                 throw new IOException("Stream unexpectedly short (broken pipe)");
                case 0:
                case '\r':
                   continue;

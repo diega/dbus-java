@@ -11,6 +11,7 @@
 package org.freedesktop.dbus.bin;
 
 import static org.freedesktop.dbus.Gettext._;
+import static org.freedesktop.dbus.bin.IdentifierMangler.mangle;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -155,7 +156,7 @@ public class CreateInterface
       Vector<Element> out = new Vector<Element>();
       if (null == meth.getAttribute("name") ||
             "".equals(meth.getAttribute("name"))) {
-         System.err.println(_("ERROR: Interface name was blank, failed"));
+         System.err.println(_("ERROR: Method name was blank, failed"));
          System.exit(1);
       }
       String annotations = "";
@@ -193,7 +194,7 @@ public class CreateInterface
       comment = "";
       sig += parseReturns(out, imports, tuples, structs);
 
-      sig += meth.getAttribute("name")+"(";
+      sig += mangle(meth.getAttribute("name"))+"(";
 
       char defaultname = 'a';
       String params = "";
@@ -201,7 +202,7 @@ public class CreateInterface
          String type = getJavaType(arg.getAttribute("type"), imports, structs, false, false);
          String name = arg.getAttribute("name");
          if (null == name || "".equals(name)) name = ""+(defaultname++);
-         params += type+" "+name+", ";         
+         params += type+" "+mangle(name)+", ";         
       }
       return ("".equals(comment) ? "" : "   /**\n" + comment + "   */\n")
          + annotations + "  public " + sig + 
@@ -229,8 +230,8 @@ public class CreateInterface
             String type = getJavaType(arg.getAttribute("type"), imports, structs, false, false);
             String name = arg.getAttribute("name");
             if (null == name || "".equals(name)) name = ""+(defaultname++);
-            params.put(name, type);
-            porder.add(name);
+            params.put(mangle(name), type);
+            porder.add(mangle(name));
          }
       }
 

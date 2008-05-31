@@ -8,6 +8,8 @@ Version 2.4.1:
 	* Fix dynamic introspection of objects which export the same
 	  interface multiple times (Patch from	Sveinung Kvilhaugsvik
 	  <sveinung84 -at- users -dot- sourceforge -dot- net>)
+	* Fix CreateInterface to mangle names which are reserved words
+	  (Spotted by sveinung84 -at- users -dot- sourceforge -dot- net)
 
 Version 2.4:
 
