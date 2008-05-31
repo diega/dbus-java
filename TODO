@@ -1,3 +1,4 @@
+ ** Relicence to expat
  ** check that the blocking is correct on DBusAsyncReply and add an explicit timeout value
  * document that you need to do connect; setup objects; get bus name for activation
  * dbus 'patterns', like watching for disconnects of registered listeners
