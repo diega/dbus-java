@@ -13,6 +13,7 @@ Version 2.4.1:
 		sourceforge -dot- net>)
 	* Fix DBusDaemon to not crash on bad tcp connections (Patch from
 	  Hugues Moreau <hmoreau -at- gmail -dot- com>)
+	* Relicence to LGPL or AFL.
 
 Version 2.4:
 
