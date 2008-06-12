@@ -577,7 +577,8 @@ public abstract class AbstractConnection
 
       // disconnect from the trasport layer
       try {
-         transport.disconnect();
+         if (null != transport)
+            transport.disconnect();
       } catch (IOException IOe) {
          if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);            
       }

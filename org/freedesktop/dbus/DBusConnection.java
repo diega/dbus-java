@@ -159,9 +159,11 @@ public class DBusConnection extends AbstractConnection
          transport = new Transport(addr, AbstractConnection.TIMEOUT);
       } catch (IOException IOe) {
          if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);            
+         disconnect();
          throw new DBusException(_("Failed to connect to bus ")+IOe.getMessage());
       } catch (ParseException Pe) {
          if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, Pe);            
+         disconnect();
          throw new DBusException(_("Failed to connect to bus ")+Pe.getMessage());
       }
 
