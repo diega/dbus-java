@@ -33,6 +33,8 @@ JARPREFIX?=$(PREFIX)/share/java
 BINPREFIX?=$(PREFIX)/bin
 DOCPREFIX?=$(PREFIX)/share/doc/libdbus-java
 MANPREFIX?=$(PREFIX)/share/man/man1
+# allows overriding the javadoc install location from command line
+JAVADOCPREFIX?=$(DOCPREFIX)
 
 # Installation directory of the java-unix libraries
 JAVAUNIXLIBDIR?=/usr/lib/jni
@@ -271,8 +273,8 @@ install-doc: doc
 	install -d $(DESTDIR)$(DOCPREFIX)/dbus-java
 	install -m 644 doc/dbus-java/*.html $(DESTDIR)$(DOCPREFIX)/dbus-java
 	install -m 644 doc/dbus-java/*.css $(DESTDIR)$(DOCPREFIX)/dbus-java
-	install -d $(DESTDIR)$(DOCPREFIX)/api
-	cp -a doc/api/* $(DESTDIR)$(DOCPREFIX)/api
+	install -d $(DESTDIR)$(JAVADOCPREFIX)/api
+	cp -a doc/api/* $(DESTDIR)$(JAVADOCPREFIX)/api
 
 dist: .dist
 .dist: $(DISTFILES)
