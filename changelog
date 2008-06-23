@@ -2,6 +2,8 @@ Version 2.5:
 
 	* Patch from  Omair Majid <omajid -at- redhat -dot- com> to
 	  have seperate javadoc installation directory
+	* Patch from  Omair Majid <omajid -at- redhat -dot- com> to
+	  have make all build the manpages.
 
 Version 2.4.1:
 
