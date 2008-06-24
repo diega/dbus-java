@@ -5,9 +5,6 @@ Version 2.5:
 	* Patch from  Omair Majid <omajid -at- redhat -dot- com> to
 	  have make all build the manpages.
 	* ... but as serkan_kaba requested, also provide a bin target which doesn't
-
-Version 2.4.1:
-
 	* Fix returning DBusSerializables (Spotted by Johannes Felten
 	  <johannesfelten -at- googlemail -dot- com>)
 	* Fix CreateInterface (Spotted by Tom Walsh <walshtc -at- gmail -dot- com>)
