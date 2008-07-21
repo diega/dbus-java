@@ -609,7 +609,7 @@ public class DBusDaemon extends Thread
       while (_run) {
             try {
                Message m;
-               Connstruct c;
+               Connstruct c = null;
                WeakReference<Connstruct> wc;
                synchronized (inqueue) {
                   while (0 == inqueue.size()) try {
@@ -618,7 +618,8 @@ public class DBusDaemon extends Thread
                   
                   m = inqueue.head();
                   wc = inqueue.remove(m);
-                  c = wc.get();
+                  if (null != wc)
+                     c = wc.get();
                }
                if (null != c) {
                   if (Debug.debug) Debug.print(Debug.INFO, "<inqueue> Got message "+m+" from "+c.unique);

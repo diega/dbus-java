@@ -87,7 +87,7 @@ translations/en_GB.po: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/dbus/exc
 	sed -n '/_(/s/.*_("\([^"]*\)").*/\1/p' $^ | sort -u | sed 's/\(.*\)/msgid "\1"\nmsgstr "\1"/' >> $@
 
 libdbus-java-$(VERSION).jar: .classes
-	echo "Class-Path: ${JAVAUNIXJARDIR}/unix.jar ${JAVAUNIXJARDIR}/debug-$(DEBUG).jar" > Manifest
+	echo "Class-Path: ${JAVAUNIXJARDIR}/unix.jar ${JAVAUNIXJARDIR}/hexdump.jar ${JAVAUNIXJARDIR}/debug-$(DEBUG).jar" > Manifest
 	(cd classes; $(JAR) -cfm ../$@ ../Manifest org/freedesktop/dbus/*.class org/freedesktop/*.class org/freedesktop/dbus/types/*.class org/freedesktop/dbus/exceptions/*.class *localized*class)
 dbus-java-test-$(VERSION).jar: .testclasses
 	echo "Class-Path: ${JARPREFIX}/libdbus-java-$(VERSION).jar" > Manifest
