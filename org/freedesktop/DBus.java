@@ -81,6 +81,12 @@ public interface DBus extends DBusInterface
        * @param value The new value of the property (may be any valid DBus type).
        */
       public <A> void Set (String interface_name, String property_name, A value);
+      /**
+       * Get all properties and values.
+       * @param interface_name The interface the properties is associated with.
+       * @return The properties mapped to their values.
+       */
+      public Map<String, Variant> GetAll (String interface_name);
    }
    /**
     * Messages generated locally in the application.
