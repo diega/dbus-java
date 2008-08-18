@@ -2,6 +2,8 @@ Version 2.5.1:
 
 	* Fix for possible NPex in DBusDaemon
 	* Add hexdump.jar to Class-Path for libdbus-java.jar
+	* Add GetAll to properties interface (Patch from
+	  Sveinung Kvilhaugsvik <sveinung84@users.sourceforge.net>)
 
 Version 2.5:
 
