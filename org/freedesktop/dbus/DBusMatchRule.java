@@ -15,6 +15,8 @@ import static org.freedesktop.dbus.Gettext._;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
+import java.util.HashMap;
+
 public class DBusMatchRule
 {
    /* signal, error, method_call, method_reply */
@@ -23,6 +25,12 @@ public class DBusMatchRule
    private String member;
    private String object;
    private String source;
+	private static HashMap<String, Class<? extends DBusSignal>> signalTypeMap = 
+					new HashMap<String, Class<? extends DBusSignal>>();
+	static Class<? extends DBusSignal> getCachedSignalType(String type)
+	{
+		return signalTypeMap.get(type);
+	}
    public DBusMatchRule(String type, String iface, String member)
    {
       this.type = type;
@@ -90,6 +98,7 @@ public class DBusMatchRule
             member = c.getAnnotation(DBusMemberName.class).value();
          else
             member = c.getSimpleName();
+			signalTypeMap.put(iface+'$'+member, (Class<? extends DBusSignal>) c);
          type = "signal";
       }
       else if (Error.class.isAssignableFrom(c)) {

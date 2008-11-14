@@ -53,7 +53,7 @@ class testnewclass implements TestNewInterface
    }
 }
 
-class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignalInterface
+class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignalInterface, TestSignalInterface2
 {
    private DBusConnection conn;
    public testclass(DBusConnection conn)
@@ -295,6 +295,26 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
 }
 
 /**
+ * Typed signal handler for renamed signal
+ */
+class renamedsignalhandler implements DBusSigHandler<TestSignalInterface2.TestRenamedSignal>
+{
+   /** Handling a signal */
+   public void handle(TestSignalInterface2.TestRenamedSignal t)
+   {
+      if (false == test.done5) {
+         test.done5 = true;
+      } else {
+         test.fail("SignalHandler R has been run too many times");
+      }
+      System.out.println("SignalHandler R Running");
+      System.out.println("string("+t.value+") int("+t.number+")");
+      if (!"Bar".equals(t.value) || !(new UInt32(42)).equals(t.number))
+         test.fail("Incorrect TestRenamedSignal parameters");
+   }
+}
+
+/**
  * Typed signal handler
  */
 class signalhandler implements DBusSigHandler<TestSignalInterface.TestSignal>
@@ -405,6 +425,7 @@ public class test
    public static boolean done2 = false;
    public static boolean done3 = false;
    public static boolean done4 = false;
+   public static boolean done5 = false;
    public static void fail(String message)
    {
       System.out.println("Test Failed: "+message);
@@ -435,6 +456,7 @@ public class test
       try {
          /** This registers an instance of the test class as the signal handler for the TestSignal class. */
          clientconn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler());
+         clientconn.addSigHandler(TestSignalInterface2.TestRenamedSignal.class, new renamedsignalhandler());
          String source = dbus.GetNameOwner("foo.bar.Test");
          clientconn.addSigHandler(TestSignalInterface.TestArraySignal.class, source, peer, new arraysignalhandler());
          clientconn.addSigHandler(TestSignalInterface.TestObjectSignal.class, new objectsignalhandler());
@@ -471,6 +493,7 @@ public class test
       System.out.println("Sending Signal");
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
       serverconn.sendSignal(new TestSignalInterface.TestSignal("/foo/bar/Wibble", "Bar", new UInt32(42)));
+      serverconn.sendSignal(new TestSignalInterface2.TestRenamedSignal("/foo/bar/Wibble", "Bar", new UInt32(42)));
 
       System.out.println("These things are on the bus:");
       String[] names = dbus.ListNames();
@@ -756,6 +779,7 @@ public class test
       if (!done2) fail("Signal handler 2 failed to be run");
       if (!done3) fail("Signal handler 3 failed to be run");
       if (!done4) fail("Callback handler failed to be run");
+      if (!done5) fail("Signal handler R failed to be run");
       
    } catch (Exception e) {
       e.printStackTrace();

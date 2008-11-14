@@ -73,6 +73,7 @@ public class DBusSignal extends Message
       }
    }
    private static Map<Class<? extends DBusSignal>, Type[]> typeCache = new HashMap<Class<? extends DBusSignal>, Type[]>();
+   private static Map<String, Class<? extends DBusSignal>> classCache = new HashMap<String, Class<? extends DBusSignal>>();
    private static Map<Class<? extends DBusSignal>, Constructor<? extends DBusSignal>> conCache = new HashMap<Class<? extends DBusSignal>, Constructor<? extends DBusSignal>>();
    private static Map<String, String> signames = new HashMap<String, String>();
    private static Map<String, String> intnames = new HashMap<String, String>();
@@ -105,15 +106,21 @@ public class DBusSignal extends Message
       return s;
    }
    @SuppressWarnings("unchecked")
-   private static Class<? extends DBusSignal> createSignalClass(String name)
+   private static Class<? extends DBusSignal> createSignalClass(String intname, String signame) throws DBusException
    {
-      Class<? extends DBusSignal> c = null;
+		String name = intname+'$'+signame;
+      Class<? extends DBusSignal> c = classCache.get(name);
+		if (null == c) c = DBusMatchRule.getCachedSignalType(name);
+		if (null != c) return c;
       do {
          try {
             c = (Class<? extends DBusSignal>) Class.forName(name);
          } catch (ClassNotFoundException CNFe) {}
          name = name.replaceAll("\\.([^\\.]*)$", "\\$$1");
       } while (null == c && name.matches(".*\\..*"));
+		if (null == c) 
+			throw new DBusException(_("Could not create class from signal ")+intname+'.'+signame);
+		classCache.put(name, c);
       return c;
    }
    @SuppressWarnings("unchecked")
@@ -124,7 +131,7 @@ public class DBusSignal extends Message
       if (null == intname) intname = getInterface();
       if (null == signame) signame = getName();
       if (null == c) 
-         c = createSignalClass(intname+"$"+signame);
+         c = createSignalClass(intname,signame);
       if (Debug.debug) Debug.print(Debug.DEBUG, "Converting signal to type: "+c);
       Type[] types = typeCache.get(c);
       Constructor<? extends DBusSignal> con = conCache.get(c);
