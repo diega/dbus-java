@@ -320,22 +320,26 @@ public interface Remote extends DBusInterface
 \label{fig:interfacename}
 \end{figure}
 
+If you have signals which are declared in a renamed interface (see below for
+signals) then when adding a signal handler you {\em must} use an {\tt
+addSigHandler} method which takes a class object corresponding to that signal.
+If you do not then receiving the signal will fail.
+
 \section{DBusSignal}
 
-Signals are also declared as part of an interface. The Java API
-models these as inner classes within an interface. The containing
-interface must extend {\tt DBusInterface}, and the inner classes
-representing the signals must extend {\tt
+Signals are also declared as part of an interface. The Java API models these as
+inner classes within an interface. The containing interface must extend {\tt
+DBusInterface}, and the inner classes representing the signals must extend {\tt
 DBusSignal\footnote{\url{\javadocroot/org/freedesktop/dbus/DBusSignal.html}}}.
-The Signal name is derived from the name of this inner class, and
-the interface from its containing interface.
+The Signal name is derived from the name of this inner class, and the interface
+from its containing interface.
 
 Signals can take parameters as methods can (although they cannot return
-      anything). For the reflection to work, a Signal declare a single
-constructor of the correct type. The constructor must  take the object path
-they are being emitted from as their first (String) argument, followed by the
-other parameters in order. They must also call the superclass constructor with
-the same parameters.  A full definition of a signal can be seen in
+anything). For the reflection to work, a Signal declare a single constructor of
+the correct type. The constructor must  take the object path they are being
+emitted from as their first (String) argument, followed by the other parameters
+in order. They must also call the superclass constructor with the same
+parameters.  A full definition of a signal can be seen in
 figure~\ref{fig:signal}. Again, more complicated definitions are available in
 the test
 classes\footnote{\url{\javadocroot/org/freedesktop/dbus/test/TestSignalInterface.html}}.
