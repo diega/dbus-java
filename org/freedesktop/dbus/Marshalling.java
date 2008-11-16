@@ -95,7 +95,7 @@ public class Marshalling
          out = newout;
       }
       if (null == out[level]) out[level] = new StringBuffer();
-      else out[level].delete(0, out[level].length);      
+      else out[level].delete(0, out[level].length());      
 
       if (basic && !(c instanceof Class))
          throw new DBusException(c+_(" is not a basic type"));

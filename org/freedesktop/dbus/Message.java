@@ -621,7 +621,6 @@ public class Message
                         throw new MarshallingException(_("Primative array being sent as non-primative array."));
                   }
                   appendBytes(primbuf);
-                  i++;
                } else if (data instanceof List) {
                   Object[] contents = ((List) data).toArray();
                   int diff = i;

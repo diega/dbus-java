@@ -1,18 +1,15 @@
-Version 2.5.2:
-
-	* Make signals with renamed interfaces and member names work
-	  if they are explicitly listened for (Partially fixes: #18257).
-	  Also make the error reporting better when it doesn't work.
-	* Add test for signal with renamed interface.
-	* Fix clearing of string buffer during marshalling (Fixes: #17362)
-	:
-
 Version 2.5.1:
 
 	* Fix for possible NPex in DBusDaemon
 	* Add hexdump.jar to Class-Path for libdbus-java.jar
 	* Add GetAll to properties interface (Patch from
 	  Sveinung Kvilhaugsvik <sveinung84@users.sourceforge.net>)
+	* Make signals with renamed interfaces and member names work
+	  if they are explicitly listened for (Partially fixes: #18257).
+	  Also make the error reporting better when it doesn't work.
+	* Add test for signal with renamed interface.
+	* Fix clearing of string buffer during marshalling (Fixes: #17362)
+	* Fix array marshalling bug (Fixes: #13291)
 
 Version 2.5:
 

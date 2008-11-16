@@ -292,6 +292,12 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
          || !"moo".equals(((Map<Object,Object>) v.getValue()).get("cow")))
          test.fail("Didn't send variant correctly");
    }
+	public void reg13291(byte[] as, byte[] bs)
+	{
+		if (as.length != bs.length) test.fail("didn't receive identical byte arrays");
+		for (int i = 0; i < as.length;  i++)
+			if (as[i] != bs[i]) test.fail("didn't receive identical byte arrays");
+	}
 }
 
 /**
@@ -738,6 +744,13 @@ public class test
       if (3 != tri2.overload()) test.fail("wrong overloaded method called");
       if (4 != tri.overload()) test.fail("wrong overloaded method called");
       System.out.println("done");
+
+		System.out.print("reg13291...");
+		byte[] as = new byte[10];
+		for (int i = 0; i < 10; i++)
+			as[i] = (byte) (100-i);
+		tri.reg13291(as, as);
+		System.out.println("done");
 
       System.out.print("Testing nested lists...");
       lli = new Vector<List<Integer>>();

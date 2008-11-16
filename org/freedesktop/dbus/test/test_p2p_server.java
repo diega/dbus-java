@@ -62,6 +62,9 @@ public class test_p2p_server implements TestRemoteInterface
    public void newpathtest(Path p)
    {
    }
+	public void reg13291(byte[] as, byte[] bs)
+	{
+	}
    public boolean isRemote() { return false; }
    public float testfloat(float[] f)
    {

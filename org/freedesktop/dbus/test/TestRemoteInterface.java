@@ -47,4 +47,6 @@ public interface TestRemoteInterface extends DBusInterface
    public float testfloat(float[] f);
    @Description("Testing structs of structs")
    public int[][] teststructstruct(TestStruct3 in);
+   @Description("Regression test for #13291")
+   public void reg13291(byte[] as, byte[] bs);
 }
