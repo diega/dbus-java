@@ -43,6 +43,50 @@ import cx.ath.matthew.debug.Debug;
  */
 public class DBusConnection extends AbstractConnection
 {
+	/**
+	 * Add addresses of peers to a set which will watch for them to
+	 * disappear and automatically remove them from the set.
+	 */
+	public class PeerSet implements Set<String>, DBusSigHandler<DBus.NameOwnerChanged>
+	{
+		private Set<String> addresses;
+		public PeerSet()
+		{
+			addresses = new TreeSet<String>();
+		}
+		public void handle(DBus.NameOwnerChanged noc)
+		{}
+		boolean add(String address)
+		{}
+		boolean addAll(Collection<? extends String> addresses)
+		{}
+		void clear()
+		{}
+		boolean contains(Object o)
+		{}
+		boolean containsAll(Collection<?> os)
+		{}
+		boolean equals(Object o)
+		{}
+		int hashCode()
+		{}
+		boolean isEmpty()
+		{}
+		Iterator<String> iterator()
+		{}
+		boolean remove(Object o)
+		{}
+		boolean removeAll(Collection<?> os)
+		{}
+		boolean retainAll(Collection<?> os)
+		{}
+		int size()
+		{}
+		Object[] toArray()
+		{}
+		<T> T[] toArray(T[] a)
+		{}
+	}
    private class _sighandler implements DBusSigHandler<DBusSignal>
    {
       public void handle(DBusSignal s)
@@ -248,6 +292,27 @@ public class DBusConnection extends AbstractConnection
    }
 
    /** 
+    * Release a bus name.
+	 * Releases the name so that other people can use it
+    * @param busname The name to release. MUST be in dot-notation like "org.freedesktop.local"
+    * @throws DBusException If the busname is incorrectly formatted.
+    */
+   public void releaseBusName(String busname) throws DBusException
+   {
+      if (!busname.matches(BUSNAME_REGEX)||busname.length() > MAX_NAME_LENGTH)
+         throw new DBusException(_("Invalid bus name"));
+      synchronized (this.busnames) {
+         UInt32 rv;
+         try { 
+            rv = _dbus.ReleaseName(busname);
+         } catch (DBusExecutionException DBEe) {
+            if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBEe);
+            throw new DBusException(DBEe.getMessage());
+         }
+         this.busnames.remove(busname);
+      }
+   }
+   /** 
     * Request a bus name.
     * Request the well known name that this should respond to on the Bus.
     * @param busname The name to respond to. MUST be in dot-notation like "org.freedesktop.local"
@@ -278,6 +343,7 @@ public class DBusConnection extends AbstractConnection
          this.busnames.add(busname);
       }
    }
+
    /**
     * Returns the unique name of this connection.
     */

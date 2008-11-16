@@ -772,8 +772,19 @@ public class test
       /* send an object in a signal */
       serverconn.sendSignal(new TestSignalInterface.TestObjectSignal("/foo/bar/Wibble", tclass));
 
+		// setup bus name set 
+		Set<String> peers = new serverconn.PeerSet();
+		peers.add("org.freedesktop.DBus");
+		clientconn.requestBusName("test.testclient");
+		peers.add("test.testclient");
+		clientconn.releaseBusName("test.testclient");
+
       /** Pause while we wait for the DBus messages to go back and forth. */
       Thread.sleep(1000);
+
+		// check that bus name set has been trimmed
+		if (peers.size() != 1) fail("peers hasn't been trimmed");
+		if (!peers.contains("org.freedesktop.DBus")) fail ("peers contains the wrong name");
 
       System.out.println("Checking for outstanding errors");
       DBusExecutionException DBEe = serverconn.getError();
