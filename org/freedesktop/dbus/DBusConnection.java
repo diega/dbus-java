@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.text.ParseException;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,39 +55,97 @@ public class DBusConnection extends AbstractConnection
 		public PeerSet()
 		{
 			addresses = new TreeSet<String>();
+			try { 
+				addSigHandler(new DBusMatchRule(DBus.NameOwnerChanged.class, null, null), this);
+			} catch (DBusException DBe) {
+				if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
+			}
 		}
 		public void handle(DBus.NameOwnerChanged noc)
-		{}
-		boolean add(String address)
-		{}
-		boolean addAll(Collection<? extends String> addresses)
-		{}
-		void clear()
-		{}
-		boolean contains(Object o)
-		{}
-		boolean containsAll(Collection<?> os)
-		{}
-		boolean equals(Object o)
-		{}
-		int hashCode()
-		{}
-		boolean isEmpty()
-		{}
-		Iterator<String> iterator()
-		{}
-		boolean remove(Object o)
-		{}
-		boolean removeAll(Collection<?> os)
-		{}
-		boolean retainAll(Collection<?> os)
-		{}
-		int size()
-		{}
-		Object[] toArray()
-		{}
-		<T> T[] toArray(T[] a)
-		{}
+		{
+			if ("".equals(noc.new_owner) && addresses.contains(noc.name)) 
+				synchronized (addresses) {
+					addresses.remove(noc.name);
+				}
+		}
+		public boolean add(String address)
+		{
+			synchronized (addresses) {
+				return addresses.add(address);
+			}
+		}
+		public boolean addAll(Collection<? extends String> addresses)
+		{
+			synchronized (this.addresses) {
+				return this.addresses.addAll(addresses);
+			}
+		}
+		public void clear()
+		{
+			synchronized (addresses) {
+				addresses.clear();
+			}
+		}
+		public boolean contains(Object o)
+		{
+			return addresses.contains(o);
+		}
+		public boolean containsAll(Collection<?> os)
+		{
+			return addresses.containsAll(os);
+		}
+		public boolean equals(Object o)
+		{
+			if (o instanceof PeerSet)
+				return ((PeerSet) o).addresses.equals(addresses);
+			else return false;
+		}
+		public int hashCode()
+		{
+			return addresses.hashCode();
+		}
+		public boolean isEmpty()
+		{
+			return addresses.isEmpty();
+		}
+		public Iterator<String> iterator()
+		{
+			return addresses.iterator();
+		}
+		public boolean remove(Object o)
+		{
+			synchronized(addresses) {
+				return addresses.remove(o);
+			}
+		}
+		public boolean removeAll(Collection<?> os)
+		{
+			synchronized(addresses) {
+				return addresses.removeAll(os);
+			}
+		}
+		public boolean retainAll(Collection<?> os)
+		{
+			synchronized(addresses) {
+				return addresses.retainAll(os);
+			}
+		}
+		public int size()
+		{
+			return addresses.size();
+		}
+		public Object[] toArray()
+		{
+			synchronized(addresses) {
+				return addresses.toArray();
+			}
+		}
+		public <T> T[] toArray(T[] a)
+		{
+			synchronized(addresses) {
+				return addresses.toArray(a);
+			}
+		}
 	}
    private class _sighandler implements DBusSigHandler<DBusSignal>
    {
@@ -675,4 +735,8 @@ public class DBusConnection extends AbstractConnection
          }
       }
    }
+	public PeerSet getPeerSet()
+	{
+		return new PeerSet();
+	}
 }

@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import java.text.Collator;
@@ -773,7 +774,7 @@ public class test
       serverconn.sendSignal(new TestSignalInterface.TestObjectSignal("/foo/bar/Wibble", tclass));
 
 		// setup bus name set 
-		Set<String> peers = new serverconn.PeerSet();
+		Set<String> peers = serverconn.getPeerSet();
 		peers.add("org.freedesktop.DBus");
 		clientconn.requestBusName("test.testclient");
 		peers.add("test.testclient");
