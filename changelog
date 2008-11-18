@@ -1,3 +1,10 @@
+Version 2.6:
+
+	* Add DBusConnection.releaseBusName API
+	* Add DBusConnection.PeerSet for tracking peer lifetimes
+	* Fix bug where DBusDaemon never sends NameOwnerChanged/NameLost
+	  signals
+
 Version 2.5.1:
 
 	* Fix for possible NPex in DBusDaemon

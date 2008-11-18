@@ -63,13 +63,15 @@ public class DBusConnection extends AbstractConnection
 		}
 		public void handle(DBus.NameOwnerChanged noc)
 		{
+			if (Debug.debug)
+				Debug.print(Debug.DEBUG, "Received NameOwnerChanged("+noc.name+","+noc.old_owner+","+noc.new_owner+")");
 			if ("".equals(noc.new_owner) && addresses.contains(noc.name)) 
-				synchronized (addresses) {
-					addresses.remove(noc.name);
-				}
+				remove(noc.name);
 		}
 		public boolean add(String address)
 		{
+			if (Debug.debug)
+				Debug.print(Debug.DEBUG, "Adding "+address);
 			synchronized (addresses) {
 				return addresses.add(address);
 			}
@@ -114,6 +116,8 @@ public class DBusConnection extends AbstractConnection
 		}
 		public boolean remove(Object o)
 		{
+			if (Debug.debug)
+				Debug.print(Debug.DEBUG, "Removing "+o);
 			synchronized(addresses) {
 				return addresses.remove(o);
 			}
@@ -735,8 +739,4 @@ public class DBusConnection extends AbstractConnection
          }
       }
    }
-	public PeerSet getPeerSet()
-	{
-		return new PeerSet();
-	}
 }

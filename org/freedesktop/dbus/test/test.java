@@ -774,7 +774,7 @@ public class test
       serverconn.sendSignal(new TestSignalInterface.TestObjectSignal("/foo/bar/Wibble", tclass));
 
 		// setup bus name set 
-		Set<String> peers = serverconn.getPeerSet();
+		Set<String> peers = serverconn.new PeerSet();
 		peers.add("org.freedesktop.DBus");
 		clientconn.requestBusName("test.testclient");
 		peers.add("test.testclient");

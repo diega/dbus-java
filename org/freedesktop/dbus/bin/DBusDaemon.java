@@ -240,7 +240,7 @@ public class DBusDaemon extends Thread
          }
          
          int rv;
-         if (exists) {
+         if (!exists) {
             rv = DBus.DBUS_RELEASE_NAME_REPLY_NON_EXISTANT;
          } else {
             if (Debug.debug) Debug.print(Debug.WARN, "Client "+c.unique+" acquired name "+name);
