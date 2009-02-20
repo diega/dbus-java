@@ -61,7 +61,13 @@ manpage.1: manpage.sgml
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>&dhpackage;</command> <replaceable>dest</replaceable> <replaceable>path</replaceable> <replaceable>interface</replaceable> <replaceable>method</replaceable> <option><replaceable>sig</replaceable> <replaceable>args</replaceable></option>
+      <command>&dhpackage;</command>
+      <arg><replaceable>dest</replaceable></arg>
+      <arg><replaceable>path</replaceable></arg>
+      <arg><replaceable>interface</replaceable></arg>
+      <arg><replaceable>method</replaceable></arg>
+      <arg><option><replaceable>sig</replaceable></option></arg>
+      <arg><option><replaceable>args</replaceable></option></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
   <refsect1>
@@ -83,8 +89,6 @@ manpage.1: manpage.sgml
       options is included below. 
     </para>
 
-    <variablelist>
-    </variablelist>
   </refsect1>
   <refsect1>
     <title>AUTHOR</title>

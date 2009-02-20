@@ -4,13 +4,15 @@ Version 2.6:
 	* Add DBusConnection.PeerSet for tracking peer lifetimes
 	* Fix bug where DBusDaemon never sends NameOwnerChanged/NameLost
 	  signals
+	* Patches from Omair Majid <omajid -at- redhat -dot- com> to fix
+	  DBusCall manpage and allow alternative docbook-to-man implementations.
 
 Version 2.5.1:
 
 	* Fix for possible NPex in DBusDaemon
 	* Add hexdump.jar to Class-Path for libdbus-java.jar
 	* Add GetAll to properties interface (Patch from
-	  Sveinung Kvilhaugsvik <sveinung84@users.sourceforge.net>)
+	  Sveinung Kvilhaugsvik <sveinung84 -at- users -dot- sourceforge -dot- net>)
 	* Make signals with renamed interfaces and member names work
 	  if they are explicitly listened for (Partially fixes: #18257).
 	  Also make the error reporting better when it doesn't work.
