@@ -6,6 +6,7 @@ Version 2.6:
 	  signals
 	* Patches from Omair Majid <omajid -at- redhat -dot- com> to fix
 	  DBusCall manpage and allow alternative docbook-to-man implementations.
+	* fix dependency on unix.jar even in tcp mode
 
 Version 2.5.1:
 
