@@ -10,9 +10,9 @@
 */
 package org.freedesktop.dbus;
 
-public final class Path implements Comparable<Path>
+public class Path implements Comparable<Path>
 {
-   private String path;
+   protected String path;
    public Path(String path)
    {
       this.path = path;
