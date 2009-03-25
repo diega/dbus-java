@@ -7,6 +7,8 @@ Version 2.6:
 	* Patches from Omair Majid <omajid -at- redhat -dot- com> to fix
 	  DBusCall manpage and allow alternative docbook-to-man implementations.
 	* fix dependency on unix.jar even in tcp mode
+	* fix Path/ObjectPath cast issues (reported by Greg DeAngelis
+	  <gdeangel -at- gmail -dot- com>)
 
 Version 2.5.1:
 

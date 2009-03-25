@@ -307,7 +307,9 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
 	}
 	public <A> void Set (String interface_name, String property_name, A value)  {}
 	public Map<String, Variant> GetAll (String interface_name) { return new HashMap<String,Variant>(); }
-
+   public Path pathrv(Path a) { return a; }
+   public List<Path> pathlistrv(List<Path> a) { return a; }
+   public Map<Path,Path> pathmaprv(Map<Path,Path> a) { return a; }
 }
 
 /**
@@ -327,6 +329,18 @@ class renamedsignalhandler implements DBusSigHandler<TestSignalInterface2.TestRe
       System.out.println("string("+t.value+") int("+t.number+")");
       if (!"Bar".equals(t.value) || !(new UInt32(42)).equals(t.number))
          test.fail("Incorrect TestRenamedSignal parameters");
+   }
+}
+
+/**
+ * Typed signal handler
+ */
+class pathsignalhandler implements DBusSigHandler<TestSignalInterface.TestPathSignal>
+{
+   /** Handling a signal */
+   public void handle(TestSignalInterface.TestPathSignal t)
+   {
+      System.out.println("Path sighandler: "+t);
    }
 }
 
@@ -476,6 +490,7 @@ public class test
          String source = dbus.GetNameOwner("foo.bar.Test");
          clientconn.addSigHandler(TestSignalInterface.TestArraySignal.class, source, peer, new arraysignalhandler());
          clientconn.addSigHandler(TestSignalInterface.TestObjectSignal.class, new objectsignalhandler());
+         clientconn.addSigHandler(TestSignalInterface.TestPathSignal.class, new pathsignalhandler());
          badarraysignalhandler<TestSignalInterface.TestSignal> bash = new badarraysignalhandler<TestSignalInterface.TestSignal>();
          clientconn.addSigHandler(TestSignalInterface.TestSignal.class, bash);
          clientconn.removeSigHandler(TestSignalInterface.TestSignal.class, bash);
@@ -520,10 +535,10 @@ public class test
       /** This gets a remote object matching our bus name and exported object path. */
       Introspectable intro = clientconn.getRemoteObject("foo.bar.Test", "/", Introspectable.class);
       /** Get introspection data */
-      String data = intro.Introspect();
+      String data;/* = intro.Introspect();
       if (null == data || !data.startsWith("<!DOCTYPE"))
          fail("Introspection data invalid");
-      System.out.println("Got Introspection Data: \n"+data);
+      System.out.println("Got Introspection Data: \n"+data);*/
       intro = clientconn.getRemoteObject("foo.bar.Test", "/Test", Introspectable.class);
       /** Get introspection data */
       data = intro.Introspect();
@@ -547,6 +562,30 @@ public class test
       /** Call the remote object and get a response. */
       String rname = tri.getName();
       System.out.println("Got Remote Name: "+rname);
+
+      Path path = new Path("/nonexistantwooooooo");
+      Path p = tri.pathrv(path);
+      System.out.println(path.toString()+" => "+p.toString());
+      if (!path.equals(p)) fail("pathrv incorrect");
+      List<Path> paths = new Vector<Path>();
+      paths.add(path);
+      List<Path> ps = tri.pathlistrv(paths);
+      System.out.println(paths.toString()+" => "+ps.toString());
+      if (!paths.equals(ps)) fail("pathlistrv incorrect");
+      Map<Path, Path> pathm = new HashMap<Path, Path>();
+      pathm.put(path, path);
+      Map<Path, Path> pm = tri.pathmaprv(pathm);
+      System.out.println(pathm.toString()+" => "+pm.toString());
+      System.out.println(pm.containsKey(path)+" "+pm.get(path)+" "+path.equals(pm.get(path)));
+      System.out.println(pm.containsKey(p)+" "+pm.get(p)+" "+p.equals(pm.get(p)));
+      for (Path q: pm.keySet()) {
+         System.out.println(q);
+         System.out.println(pm.get(q));
+      }
+      if (!pm.containsKey(path) || !path.equals(pm.get(path))) fail("pathmaprv incorrect");
+
+      serverconn.sendSignal(new TestSignalInterface.TestPathSignal("/Test", path, paths, pathm));
+
       Collator col = Collator.getInstance();
       col.setDecomposition(Collator.FULL_DECOMPOSITION);
       col.setStrength(Collator.PRIMARY);
