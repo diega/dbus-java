@@ -546,7 +546,13 @@ public class test
          fail("Introspection data invalid");
       System.out.println("Got Introspection Data: \n"+data);
       
-      System.out.println("Pinging ourselves");
+ 		// setup bus name set 
+		Set<String> peers = serverconn.new PeerSet();
+		peers.add("org.freedesktop.DBus");
+		clientconn.requestBusName("test.testclient");
+		peers.add("test.testclient");
+
+		System.out.println("Pinging ourselves");
       /** Call ping. */
       for (int i = 0; i < 10; i++) {
          long then = System.currentTimeMillis();
@@ -817,6 +823,8 @@ public class test
          test.fail("Failed to check nested lists");
       System.out.println("done");
 
+		clientconn.releaseBusName("test.testclient");
+
       System.out.print("Testing dynamic object creation...");
       TestNewInterface tni = tri2.getNew();
       System.out.print(tni.getName()+" ");
@@ -824,13 +832,6 @@ public class test
 
       /* send an object in a signal */
       serverconn.sendSignal(new TestSignalInterface.TestObjectSignal("/foo/bar/Wibble", tclass));
-
-		// setup bus name set 
-		Set<String> peers = serverconn.new PeerSet();
-		peers.add("org.freedesktop.DBus");
-		clientconn.requestBusName("test.testclient");
-		peers.add("test.testclient");
-		clientconn.releaseBusName("test.testclient");
 
       /** Pause while we wait for the DBus messages to go back and forth. */
       Thread.sleep(1000);
