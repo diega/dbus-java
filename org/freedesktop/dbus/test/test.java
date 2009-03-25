@@ -698,8 +698,8 @@ public class test
 
       System.out.println("Testing Properties returning Paths");
       Properties prop = clientconn.getRemoteObject("foo.bar.Test", "/Test", Properties.class);
-		Path path = (Path) prop.Get("foo.bar", "foo");
-      System.out.println("Got path "+path);
+		Path prv = (Path) prop.Get("foo.bar", "foo");
+      System.out.println("Got path "+prv);
       System.out.println("Calling Method7--9");
       /** This gets a remote object matching our bus name and exported object path. */
       TestRemoteInterface2 tri2 = clientconn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);
