@@ -44,6 +44,7 @@ import org.freedesktop.DBus.Error.ServiceUnknown;
 import org.freedesktop.DBus.Error.UnknownObject;
 import org.freedesktop.DBus.Peer;
 import org.freedesktop.DBus.Introspectable;
+import org.freedesktop.DBus.Properties;
 
 class testnewclass implements TestNewInterface
 {
@@ -54,7 +55,7 @@ class testnewclass implements TestNewInterface
    }
 }
 
-class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignalInterface, TestSignalInterface2
+class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignalInterface, TestSignalInterface2, Properties
 {
    private DBusConnection conn;
    public testclass(DBusConnection conn)
@@ -299,6 +300,14 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
 		for (int i = 0; i < as.length;  i++)
 			if (as[i] != bs[i]) test.fail("didn't receive identical byte arrays");
 	}
+	@SuppressWarnings("unchecked")
+	public <A> A Get (String interface_name, String property_name)
+	{
+		return (A) new Path("/nonexistant/path");
+	}
+	public <A> void Set (String interface_name, String property_name, A value)  {}
+	public Map<String, Variant> GetAll (String interface_name) { return new HashMap<String,Variant>(); }
+
 }
 
 /**
@@ -648,6 +657,10 @@ public class test
       System.out.println("Got Fallback Name: "+tri.getName());
       System.out.println("Fallback Introspection Data: \n"+intro.Introspect());
 
+      System.out.println("Testing Properties returning Paths");
+      Properties prop = clientconn.getRemoteObject("foo.bar.Test", "/Test", Properties.class);
+		Path path = (Path) prop.Get("foo.bar", "foo");
+      System.out.println("Got path "+path);
       System.out.println("Calling Method7--9");
       /** This gets a remote object matching our bus name and exported object path. */
       TestRemoteInterface2 tri2 = clientconn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);

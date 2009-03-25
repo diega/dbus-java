@@ -424,12 +424,12 @@ public class Marshalling
 
       // its an object path, get/create the proxy
       if (parameter instanceof ObjectPath) {
-         if (type instanceof Class && Path.class.equals((Class) type))
-            parameter = new Path(((ObjectPath) parameter).path);
-         else
+         if (type instanceof Class && DBusInterface.class.isAssignableFrom((Class) type))
             parameter = conn.getExportedObject(
                   ((ObjectPath) parameter).source,
                   ((ObjectPath) parameter).path);
+         else
+            parameter = new Path(((ObjectPath) parameter).path);
       }
       
       // it should be a struct. create it
