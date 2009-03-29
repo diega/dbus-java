@@ -43,6 +43,7 @@ public class DirectConnection extends AbstractConnection
 
       try {
          transport = new Transport(addr, AbstractConnection.TIMEOUT);
+			connected = true;
       } catch (IOException IOe) {
          if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);            
          throw new DBusException(_("Failed to connect to bus ")+IOe.getMessage());

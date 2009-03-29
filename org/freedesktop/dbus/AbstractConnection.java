@@ -200,12 +200,14 @@ public abstract class AbstractConnection
          if (Debug.debug) Debug.print(Debug.INFO, "Flushing outbound queue and quitting");
          // flush the outbound queue before disconnect.
          if (null != outgoing) do {
-            synchronized (outgoing) {
-               if (!outgoing.isEmpty())
-                  m = outgoing.remove(); 
-               else m = null;
-            }
-            sendMessage(m);
+				EfficientQueue ogq = outgoing;
+            synchronized (ogq) {
+					outgoing = null;
+				}
+				if (!ogq.isEmpty())
+					m = ogq.remove(); 
+				else m = null;
+				sendMessage(m);
          } while (null != m);
 
          // close the underlying streams
@@ -246,6 +248,7 @@ public abstract class AbstractConnection
    static final Pattern dollar_pattern = Pattern.compile("[$]");
    public static final boolean EXCEPTION_DEBUG;
    static final boolean FLOAT_SUPPORT;
+	protected boolean connected = false;
    static {
       FLOAT_SUPPORT = (null != System.getenv("DBUS_JAVA_FLOATS"));
       EXCEPTION_DEBUG = (null != System.getenv("DBUS_JAVA_EXCEPTION_DEBUG"));
@@ -463,8 +466,8 @@ public abstract class AbstractConnection
    }
    void queueOutgoing(Message m)
    {
-      if (null == outgoing) return;
       synchronized (outgoing) {
+			if (null == outgoing) return;
          outgoing.add(m); 
          if (Debug.debug) Debug.print(Debug.DEBUG, "Notifying outgoing thread");
          outgoing.notifyAll();
@@ -555,6 +558,7 @@ public abstract class AbstractConnection
     */
    public void disconnect()
    {
+		connected = false;
       if (Debug.debug) Debug.print(Debug.INFO, "Sending disconnected signal");
 		try {
 			handleMessage(new org.freedesktop.DBus.Local.Disconnected("/"));
@@ -579,8 +583,10 @@ public abstract class AbstractConnection
 
       // disconnect from the trasport layer
       try {
-         if (null != transport)
+         if (null != transport) {
             transport.disconnect();
+				transport = null;
+			}
       } catch (IOException IOe) {
          if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);            
       }
@@ -928,6 +934,7 @@ public abstract class AbstractConnection
    protected void sendMessage(Message m)
    {
       try {
+			if (!connected) throw new NotConnected(_("Disconnected"));
          if (m instanceof DBusSignal) 
             ((DBusSignal) m).appendbody(this);
 
@@ -944,6 +951,10 @@ public abstract class AbstractConnection
          
       } catch (Exception e) {
          if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
+         if (m instanceof MethodCall && e instanceof NotConnected) 
+            try {
+					((MethodCall) m).setReply(new Error("org.freedesktop.DBus.Local", "org.freedesktop.DBus.Local.Disconnected", 0, "s", new Object[] { _("Disconnected") }));
+            } catch (DBusException DBe) {}
          if (m instanceof MethodCall && e instanceof DBusExecutionException) 
             try {
                ((MethodCall)m).setReply(new Error(m, e));
@@ -966,7 +977,7 @@ public abstract class AbstractConnection
    }
    private Message readIncoming() throws DBusException 
    {
-      if (null == transport) throw new NotConnected(_("No transport present"));
+      if (!connected) throw new NotConnected(_("No transport present"));
       Message m = null;
       try {
          m = transport.min.readMessage();

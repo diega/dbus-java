@@ -355,6 +355,7 @@ class disconnecthandler implements DBusSigHandler<DBus.Local.Disconnected>
 				conn.removeSigHandler(TestSignalInterface2.TestRenamedSignal.class, sh);
 			} catch (DBusException DBe) {
 				DBe.printStackTrace();
+				test.fail("Disconnect handler threw an exception: "+DBe);
 			}
 		}
    }
@@ -881,6 +882,7 @@ public class test
       System.out.println("Disconnecting");
       /** Disconnect from the bus. */
       clientconn.disconnect();
+      serverconn.disconnect();
 
       System.out.println("Trying to do things after disconnection");
 
@@ -895,7 +897,6 @@ public class test
 			System.out.println("getName() failed with exception "+NC);
 		}
       clientconn = null;
-      serverconn.disconnect();
       serverconn = null;
 
       if (!done1) fail("Signal handler 1 failed to be run");
