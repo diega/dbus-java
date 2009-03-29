@@ -37,6 +37,7 @@ import org.freedesktop.dbus.UInt64;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.freedesktop.dbus.exceptions.NotConnected;
 
 import org.freedesktop.DBus;
 import org.freedesktop.DBus.Error.MatchRuleInvalid;
@@ -333,6 +334,34 @@ class renamedsignalhandler implements DBusSigHandler<TestSignalInterface2.TestRe
 }
 
 /**
+ * Disconnect handler
+ */
+class disconnecthandler implements DBusSigHandler<DBus.Local.Disconnected>
+{
+	private DBusConnection conn;
+	private renamedsignalhandler sh;
+	public disconnecthandler(DBusConnection conn, renamedsignalhandler sh)
+	{
+		this.conn = conn;
+		this.sh = sh;
+	}
+   /** Handling a signal */
+   public void handle(DBus.Local.Disconnected t)
+   {
+      if (false == test.done6) {
+         test.done6 = true;
+			System.out.println("Handling disconnect, unregistering handler");
+			try {
+				conn.removeSigHandler(TestSignalInterface2.TestRenamedSignal.class, sh);
+			} catch (DBusException DBe) {
+				DBe.printStackTrace();
+			}
+		}
+   }
+}
+
+
+/**
  * Typed signal handler
  */
 class pathsignalhandler implements DBusSigHandler<TestSignalInterface.TestPathSignal>
@@ -456,6 +485,7 @@ public class test
    public static boolean done3 = false;
    public static boolean done4 = false;
    public static boolean done5 = false;
+   public static boolean done6 = false;
    public static void fail(String message)
    {
       System.out.println("Test Failed: "+message);
@@ -483,10 +513,13 @@ public class test
       DBus dbus = clientconn.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
 
       System.out.print("Listening for signals...");
+		signalhandler sigh = new signalhandler();
+		renamedsignalhandler rsh = new renamedsignalhandler();
       try {
          /** This registers an instance of the test class as the signal handler for the TestSignal class. */
-         clientconn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler());
-         clientconn.addSigHandler(TestSignalInterface2.TestRenamedSignal.class, new renamedsignalhandler());
+         clientconn.addSigHandler(TestSignalInterface.TestSignal.class, sigh);
+         clientconn.addSigHandler(TestSignalInterface2.TestRenamedSignal.class, rsh);
+         clientconn.addSigHandler(DBus.Local.Disconnected.class, new disconnecthandler(clientconn, rsh));
          String source = dbus.GetNameOwner("foo.bar.Test");
          clientconn.addSigHandler(TestSignalInterface.TestArraySignal.class, source, peer, new arraysignalhandler());
          clientconn.addSigHandler(TestSignalInterface.TestObjectSignal.class, new objectsignalhandler());
@@ -849,6 +882,19 @@ public class test
       System.out.println("Disconnecting");
       /** Disconnect from the bus. */
       clientconn.disconnect();
+
+      System.out.println("Trying to do things after disconnection");
+
+		/** Remove sig handler */
+		clientconn.removeSigHandler(TestSignalInterface.TestSignal.class, sigh);
+
+		/** Call a method when disconnected */
+		try {
+			System.out.println("getName() suceeded and returned: "+tri.getName());
+			fail("Should not succeed when disconnected");
+		} catch (NotConnected NC) {
+			System.out.println("getName() failed with exception "+NC);
+		}
       clientconn = null;
       serverconn.disconnect();
       serverconn = null;
@@ -858,9 +904,10 @@ public class test
       if (!done3) fail("Signal handler 3 failed to be run");
       if (!done4) fail("Callback handler failed to be run");
       if (!done5) fail("Signal handler R failed to be run");
+      if (!done6) fail("Disconnect handler failed to be run");
       
    } catch (Exception e) {
       e.printStackTrace();
-      fail("Unexpected Exception Occurred");
+      fail("Unexpected Exception Occurred: "+e);
    }}
 }

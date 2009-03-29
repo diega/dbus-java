@@ -111,11 +111,6 @@ public abstract class AbstractConnection
                } catch (Exception e) { 
                   if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);            
                   if (e instanceof FatalException) {
-                     try {
-                        handleMessage(new org.freedesktop.DBus.Local.Disconnected("/"));
-                     } catch (Exception ee) {
-                        if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, ee);            
-                     }
                      disconnect();
                   }
                }
@@ -560,6 +555,13 @@ public abstract class AbstractConnection
     */
    public void disconnect()
    {
+      if (Debug.debug) Debug.print(Debug.INFO, "Sending disconnected signal");
+		try {
+			handleMessage(new org.freedesktop.DBus.Local.Disconnected("/"));
+		} catch (Exception ee) {
+			if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, ee);            
+		}
+
       if (Debug.debug) Debug.print(Debug.INFO, "Disconnecting Abstract Connection");
       // run all pending tasks.
       while (runnables.size() > 0)

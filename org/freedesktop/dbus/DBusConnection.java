@@ -639,7 +639,8 @@ public class DBusConnection extends AbstractConnection
                   _dbus.RemoveMatch(rule.toString());
                } catch (DBusExecutionException DBEe) {
                   if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBEe);
-                  throw new DBusException(DBEe.getMessage());
+						if (!"org.freedesktop.DBus.Local.Disconnected".equals(DBEe.getType()))
+							throw new DBusException(DBEe.getMessage());
                }
             }
          } 
