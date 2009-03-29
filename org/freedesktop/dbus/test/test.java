@@ -584,6 +584,7 @@ public class test
 		peers.add("org.freedesktop.DBus");
 		clientconn.requestBusName("test.testclient");
 		peers.add("test.testclient");
+		clientconn.releaseBusName("test.testclient");
 
 		System.out.println("Pinging ourselves");
       /** Call ping. */
@@ -855,8 +856,6 @@ public class test
           reti.get(0).get(0) != 1)
          test.fail("Failed to check nested lists");
       System.out.println("done");
-
-		clientconn.releaseBusName("test.testclient");
 
       System.out.print("Testing dynamic object creation...");
       TestNewInterface tni = tri2.getNew();
