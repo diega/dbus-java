@@ -17,6 +17,7 @@ import java.util.Vector;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.exceptions.MessageFormatException;
+import org.freedesktop.dbus.exceptions.NotConnected;
 
 import cx.ath.matthew.debug.Debug;
 
@@ -79,6 +80,7 @@ public class Error extends Message
    @SuppressWarnings("unchecked")
    private static Class<? extends DBusExecutionException> createExceptionClass(String name)
    {
+      if (name == "org.freedesktop.DBus.Local.Disconnected") return NotConnected.class;
       Class<? extends DBusExecutionException> c = null;
       do {
          try {

@@ -1,3 +1,8 @@
+Version 2.6.1:
+
+   * Fix bug in disconnected signal/exception handling (Spotted by Serkan Kaba
+         <serkan_kaba -at- yahoo -dot- com>)
+
 Version 2.6:
 
 	* Add DBusConnection.releaseBusName API
