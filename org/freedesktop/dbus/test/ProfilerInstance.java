@@ -23,4 +23,6 @@ public class ProfilerInstance implements Profiler
    public void bytes(byte[] b) { return; }
    public void struct(ProfileStruct ps) { return; }
    public void string(String s) { return; }
+   public void NoReply() { return; }
+   public void Pong() { return; }
 }

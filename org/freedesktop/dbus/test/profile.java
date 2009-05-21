@@ -291,14 +291,25 @@ public class profile
             conn.exportObject("/Profiler", pi);
             Profiler p = conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler",         Profiler.class);
             Peer peer = conn.getRemoteObject("org.freedesktop.DBus.java.profiler", "/Profiler", Peer.class);
+				conn.changeThreadCount((byte)1);
+
             long start = System.currentTimeMillis();
             int count = 0;
             do {
-               peer.Ping();
+               p.Pong();
                count++;
             } while(count < 10000);
             long end = System.currentTimeMillis();
             System.out.println("No payload: "+((count*1000)/(end-start))+" RT/second");
+            start = System.currentTimeMillis();
+            count = 0;
+            do {
+               p.Pong();
+               count++;
+            } while(count < 10000);
+				peer.Ping();
+            end = System.currentTimeMillis();
+            System.out.println("No payload, One way: "+((count*1000)/(end-start))+" /second");
             int len = 256;
             while (len <= 32768) {
                byte[] bs = new byte[len];

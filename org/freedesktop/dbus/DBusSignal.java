@@ -252,7 +252,7 @@ public class DBusSignal extends Message
       String sig = getSig();
 
       long c = bytecounter;
-      if (0 < args.length) append(sig, args);
+      if (null != args && 0 < args.length) append(sig, args);
       marshallint(bytecounter-c, blen, 0, 4);
       bodydone = true;
    }

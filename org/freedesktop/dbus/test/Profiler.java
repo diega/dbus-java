@@ -10,6 +10,7 @@
 */
 package org.freedesktop.dbus.test;
 
+import org.freedesktop.DBus.Method.NoReply;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -32,6 +33,8 @@ public interface Profiler extends DBusInterface
    public void bytes(byte[] b);
    public void struct(ProfileStruct ps);
    public void string(String s);
+	public void NoReply();
+	public void Pong();
 }
 
 

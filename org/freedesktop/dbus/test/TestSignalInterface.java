@@ -40,6 +40,22 @@ public interface TestSignalInterface extends DBusInterface
          this.number = number;
       }
    }
+	public static class StringSignal extends DBusSignal
+	{
+		public final String aoeu;
+		public StringSignal(String path, String aoeu) throws DBusException
+		{
+			super(path, aoeu);
+			this.aoeu = aoeu;
+		}
+	}
+	public static class EmptySignal extends DBusSignal
+	{
+		public EmptySignal(String path) throws DBusException
+		{
+			super(path);
+		}
+	}
    @Description("Test signal with arrays")
    public static class TestArraySignal extends DBusSignal
    {
