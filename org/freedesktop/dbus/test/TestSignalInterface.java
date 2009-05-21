@@ -14,10 +14,12 @@ import org.freedesktop.DBus.Description;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusMemberName;
 import org.freedesktop.dbus.DBusSignal;
+import org.freedesktop.dbus.Path;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.exceptions.DBusException;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * A sample signal with two parameters
@@ -75,6 +77,19 @@ public interface TestSignalInterface extends DBusInterface
       {
          super(path, otherpath);
          this.otherpath = otherpath;
+      }
+   }
+   public static class TestPathSignal extends DBusSignal
+   {
+      public final Path otherpath;
+      public final List<Path> pathlist;
+      public final Map<Path,Path> pathmap;
+      public TestPathSignal(String path, Path otherpath, List<Path> pathlist, Map<Path,Path> pathmap) throws DBusException
+      {
+         super(path, otherpath, pathlist, pathmap);
+         this.otherpath = otherpath;
+         this.pathlist = pathlist;
+         this.pathmap = pathmap;
       }
    }
 }

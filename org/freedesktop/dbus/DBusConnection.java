@@ -31,6 +31,7 @@ import java.util.Vector;
 import org.freedesktop.DBus;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.freedesktop.dbus.exceptions.NotConnected;
 
 import cx.ath.matthew.debug.Debug;
 
@@ -265,6 +266,7 @@ public class DBusConnection extends AbstractConnection
    
       try {
          transport = new Transport(addr, AbstractConnection.TIMEOUT);
+			connected = true;
       } catch (IOException IOe) {
          if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);            
          disconnect();
@@ -296,9 +298,11 @@ public class DBusConnection extends AbstractConnection
    @SuppressWarnings("unchecked")
    DBusInterface dynamicProxy(String source, String path) throws DBusException
    {
+		if (Debug.debug) Debug.print(Debug.INFO, "Introspecting "+path+" on "+source+" for dynamic proxy creation");
       try {
          DBus.Introspectable intro = getRemoteObject(source, path, DBus.Introspectable.class);
          String data = intro.Introspect();
+			if (Debug.debug) Debug.print(Debug.VERBOSE, "Got introspection data: "+data);
          String[] tags = data.split("[<>]");
          Vector<String> ifaces = new Vector<String>();
          for (String tag: tags) {
@@ -308,6 +312,7 @@ public class DBusConnection extends AbstractConnection
          }
          Vector<Class<? extends Object>> ifcs = new Vector<Class<? extends Object>>();
          for(String iface: ifaces) {
+				if (Debug.debug) Debug.print(Debug.DEBUG, "Trying interface "+iface);
             int j = 0;
             while (j >= 0) {
                try {
@@ -637,9 +642,11 @@ public class DBusConnection extends AbstractConnection
                handledSignals.remove(key);
                try {
                   _dbus.RemoveMatch(rule.toString());
+               } catch (NotConnected NC) {
+                  if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, NC);
                } catch (DBusExecutionException DBEe) {
                   if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBEe);
-                  throw new DBusException(DBEe.getMessage());
+						throw new DBusException(DBEe.getMessage());
                }
             }
          } 

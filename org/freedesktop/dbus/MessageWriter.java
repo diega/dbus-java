@@ -20,9 +20,16 @@ import cx.ath.matthew.utils.Hexdump;
 public class MessageWriter
 {
    private OutputStream out;
+	private boolean isunix;
    public MessageWriter(OutputStream out)
    {
       this.out = out;
+		this.isunix = false;
+		try {
+			if (out instanceof USOutputStream)
+				this.isunix = true;
+		} catch (Throwable t) {
+		}
    }
    public void writeMessage(Message m) throws IOException
    {
@@ -34,7 +41,7 @@ public class MessageWriter
          if (Debug.debug) Debug.print(Debug.WARN, "Message "+m+" wire-data was null!");
          return;
       }
-      if (out instanceof USOutputStream) {
+      if (isunix) {
          if (Debug.debug) {
             Debug.print(Debug.DEBUG, "Writing all "+m.getWireData().length+" buffers simultaneously to Unix Socket");
             for (byte[] buf: m.getWireData()) 

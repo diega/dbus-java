@@ -15,6 +15,7 @@ JAVADOC?=javadoc
 JAR?=jar
 MAKE?=make
 MSGFMT?=msgfmt
+DOCBOOKTOMAN?=docbook-to-man
 
 # Program parameters
 CPFLAG?=-classpath
@@ -137,7 +138,7 @@ doc/api/index.html: $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java .doc
 	$(JAVADOC) -quiet -author -link http://java.sun.com/j2se/1.5.0/docs/api/ -classpath $(JAVAUNIXJARDIR)/unix.jar:$(JAVAUNIXJARDIR)/hexdump.jar:$(JAVAUNIXJARDIR)/debug-$(DEBUG).jar -d doc/api $(SRCDIR)/*.java $(SRCDIR)/dbus/*.java $(SRCDIR)/dbus/types/*.java $(SRCDIR)/dbus/exceptions/*.java
 
 %.1: %.sgml
-	docbook-to-man $< > $@
+	$(DOCBOOKTOMAN) $< > $@
 	
 bin/%: %.sh .bin
 	sed 's,\%JARPATH\%,$(JARPREFIX),;s,\%JAVAUNIXJARPATH\%,$(JAVAUNIXJARDIR),;s,\%JAVAUNIXLIBPATH\%,$(JAVAUNIXLIBDIR),;s,\%VERSION\%,$(VERSION),;s,\%DEBUG\%,$(DEBUG),;s,\%JAVA\%,$(JAVA),' < $< > $@

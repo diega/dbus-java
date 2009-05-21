@@ -49,4 +49,8 @@ public interface TestRemoteInterface extends DBusInterface
    public int[][] teststructstruct(TestStruct3 in);
    @Description("Regression test for #13291")
    public void reg13291(byte[] as, byte[] bs);
+   /* test lots of things involving Path */
+   public Path pathrv(Path a);
+   public List<Path> pathlistrv(List<Path> a);
+   public Map<Path,Path> pathmaprv(Map<Path,Path> a);
 }

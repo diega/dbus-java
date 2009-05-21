@@ -37,6 +37,7 @@ import org.freedesktop.dbus.UInt64;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.freedesktop.dbus.exceptions.NotConnected;
 
 import org.freedesktop.DBus;
 import org.freedesktop.DBus.Error.MatchRuleInvalid;
@@ -44,6 +45,7 @@ import org.freedesktop.DBus.Error.ServiceUnknown;
 import org.freedesktop.DBus.Error.UnknownObject;
 import org.freedesktop.DBus.Peer;
 import org.freedesktop.DBus.Introspectable;
+import org.freedesktop.DBus.Properties;
 
 class testnewclass implements TestNewInterface
 {
@@ -54,7 +56,7 @@ class testnewclass implements TestNewInterface
    }
 }
 
-class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignalInterface, TestSignalInterface2
+class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignalInterface, TestSignalInterface2, Properties
 {
    private DBusConnection conn;
    public testclass(DBusConnection conn)
@@ -299,6 +301,16 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
 		for (int i = 0; i < as.length;  i++)
 			if (as[i] != bs[i]) test.fail("didn't receive identical byte arrays");
 	}
+	@SuppressWarnings("unchecked")
+	public <A> A Get (String interface_name, String property_name)
+	{
+		return (A) new Path("/nonexistant/path");
+	}
+	public <A> void Set (String interface_name, String property_name, A value)  {}
+	public Map<String, Variant> GetAll (String interface_name) { return new HashMap<String,Variant>(); }
+   public Path pathrv(Path a) { return a; }
+   public List<Path> pathlistrv(List<Path> a) { return a; }
+   public Map<Path,Path> pathmaprv(Map<Path,Path> a) { return a; }
 }
 
 /**
@@ -329,15 +341,54 @@ class emptysignalhandler implements DBusSigHandler<TestSignalInterface.EmptySign
    /** Handling a signal */
    public void handle(TestSignalInterface.EmptySignal t)
    {
-      if (false == test.done6) {
-         test.done6 = true;
+      if (false == test.done7) {
+         test.done7 = true;
       } else {
          test.fail("SignalHandler E has been run too many times");
       }
       System.out.println("SignalHandler E Running");
+	}
+}
+/**
+ * Disconnect handler
+ */
+class disconnecthandler implements DBusSigHandler<DBus.Local.Disconnected>
+{
+	private DBusConnection conn;
+	private renamedsignalhandler sh;
+	public disconnecthandler(DBusConnection conn, renamedsignalhandler sh)
+	{
+		this.conn = conn;
+		this.sh = sh;
+	}
+   /** Handling a signal */
+   public void handle(DBus.Local.Disconnected t)
+   {
+      if (false == test.done6) {
+         test.done6 = true;
+			System.out.println("Handling disconnect, unregistering handler");
+			try {
+				conn.removeSigHandler(TestSignalInterface2.TestRenamedSignal.class, sh);
+			} catch (DBusException DBe) {
+				DBe.printStackTrace();
+				test.fail("Disconnect handler threw an exception: "+DBe);
+			}
+		}
    }
 }
 
+
+/**
+ * Typed signal handler
+ */
+class pathsignalhandler implements DBusSigHandler<TestSignalInterface.TestPathSignal>
+{
+   /** Handling a signal */
+   public void handle(TestSignalInterface.TestPathSignal t)
+   {
+      System.out.println("Path sighandler: "+t);
+   }
+}
 
 /**
  * Typed signal handler
@@ -452,6 +503,7 @@ public class test
    public static boolean done4 = false;
    public static boolean done5 = false;
    public static boolean done6 = false;
+   public static boolean done7 = false;
    public static void fail(String message)
    {
       System.out.println("Test Failed: "+message);
@@ -479,14 +531,18 @@ public class test
       DBus dbus = clientconn.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
 
       System.out.print("Listening for signals...");
+		signalhandler sigh = new signalhandler();
+		renamedsignalhandler rsh = new renamedsignalhandler();
       try {
          /** This registers an instance of the test class as the signal handler for the TestSignal class. */
-         clientconn.addSigHandler(TestSignalInterface.TestSignal.class, new signalhandler());
          clientconn.addSigHandler(TestSignalInterface.EmptySignal.class, new emptysignalhandler());
-         clientconn.addSigHandler(TestSignalInterface2.TestRenamedSignal.class, new renamedsignalhandler());
+         clientconn.addSigHandler(TestSignalInterface.TestSignal.class, sigh);
+         clientconn.addSigHandler(TestSignalInterface2.TestRenamedSignal.class, rsh);
+         clientconn.addSigHandler(DBus.Local.Disconnected.class, new disconnecthandler(clientconn, rsh));
          String source = dbus.GetNameOwner("foo.bar.Test");
          clientconn.addSigHandler(TestSignalInterface.TestArraySignal.class, source, peer, new arraysignalhandler());
          clientconn.addSigHandler(TestSignalInterface.TestObjectSignal.class, new objectsignalhandler());
+         clientconn.addSigHandler(TestSignalInterface.TestPathSignal.class, new pathsignalhandler());
          badarraysignalhandler<TestSignalInterface.TestSignal> bash = new badarraysignalhandler<TestSignalInterface.TestSignal>();
          clientconn.addSigHandler(TestSignalInterface.TestSignal.class, bash);
          clientconn.removeSigHandler(TestSignalInterface.TestSignal.class, bash);
@@ -532,10 +588,10 @@ public class test
       /** This gets a remote object matching our bus name and exported object path. */
       Introspectable intro = clientconn.getRemoteObject("foo.bar.Test", "/", Introspectable.class);
       /** Get introspection data */
-      String data = intro.Introspect();
+      String data;/* = intro.Introspect();
       if (null == data || !data.startsWith("<!DOCTYPE"))
          fail("Introspection data invalid");
-      System.out.println("Got Introspection Data: \n"+data);
+      System.out.println("Got Introspection Data: \n"+data);*/
       intro = clientconn.getRemoteObject("foo.bar.Test", "/Test", Introspectable.class);
       /** Get introspection data */
       data = intro.Introspect();
@@ -543,7 +599,14 @@ public class test
          fail("Introspection data invalid");
       System.out.println("Got Introspection Data: \n"+data);
       
-      System.out.println("Pinging ourselves");
+ 		// setup bus name set 
+		Set<String> peers = serverconn.new PeerSet();
+		peers.add("org.freedesktop.DBus");
+		clientconn.requestBusName("test.testclient");
+		peers.add("test.testclient");
+		clientconn.releaseBusName("test.testclient");
+
+		System.out.println("Pinging ourselves");
       /** Call ping. */
       for (int i = 0; i < 10; i++) {
          long then = System.currentTimeMillis();
@@ -559,6 +622,30 @@ public class test
       /** Call the remote object and get a response. */
       String rname = tri.getName();
       System.out.println("Got Remote Name: "+rname);
+
+      Path path = new Path("/nonexistantwooooooo");
+      Path p = tri.pathrv(path);
+      System.out.println(path.toString()+" => "+p.toString());
+      if (!path.equals(p)) fail("pathrv incorrect");
+      List<Path> paths = new Vector<Path>();
+      paths.add(path);
+      List<Path> ps = tri.pathlistrv(paths);
+      System.out.println(paths.toString()+" => "+ps.toString());
+      if (!paths.equals(ps)) fail("pathlistrv incorrect");
+      Map<Path, Path> pathm = new HashMap<Path, Path>();
+      pathm.put(path, path);
+      Map<Path, Path> pm = tri.pathmaprv(pathm);
+      System.out.println(pathm.toString()+" => "+pm.toString());
+      System.out.println(pm.containsKey(path)+" "+pm.get(path)+" "+path.equals(pm.get(path)));
+      System.out.println(pm.containsKey(p)+" "+pm.get(p)+" "+p.equals(pm.get(p)));
+      for (Path q: pm.keySet()) {
+         System.out.println(q);
+         System.out.println(pm.get(q));
+      }
+      if (!pm.containsKey(path) || !path.equals(pm.get(path))) fail("pathmaprv incorrect");
+
+      serverconn.sendSignal(new TestSignalInterface.TestPathSignal("/Test", path, paths, pathm));
+
       Collator col = Collator.getInstance();
       col.setDecomposition(Collator.FULL_DECOMPOSITION);
       col.setStrength(Collator.PRIMARY);
@@ -669,6 +756,10 @@ public class test
       System.out.println("Got Fallback Name: "+tri.getName());
       System.out.println("Fallback Introspection Data: \n"+intro.Introspect());
 
+      System.out.println("Testing Properties returning Paths");
+      Properties prop = clientconn.getRemoteObject("foo.bar.Test", "/Test", Properties.class);
+		Path prv = (Path) prop.Get("foo.bar", "foo");
+      System.out.println("Got path "+prv);
       System.out.println("Calling Method7--9");
       /** This gets a remote object matching our bus name and exported object path. */
       TestRemoteInterface2 tri2 = clientconn.getRemoteObject("foo.bar.Test", "/Test", TestRemoteInterface2.class);
@@ -794,19 +885,12 @@ public class test
       /* send an object in a signal */
       serverconn.sendSignal(new TestSignalInterface.TestObjectSignal("/foo/bar/Wibble", tclass));
 
-		// setup bus name set 
-		Set<String> peers = serverconn.new PeerSet();
-		peers.add("org.freedesktop.DBus");
-		clientconn.requestBusName("test.testclient");
-		peers.add("test.testclient");
-		clientconn.releaseBusName("test.testclient");
-
       /** Pause while we wait for the DBus messages to go back and forth. */
       Thread.sleep(1000);
 
 		// check that bus name set has been trimmed
-		//if (peers.size() != 1) fail("peers hasn't been trimmed");
-		//if (!peers.contains("org.freedesktop.DBus")) fail ("peers contains the wrong name");
+		if (peers.size() != 1) fail("peers hasn't been trimmed");
+		if (!peers.contains("org.freedesktop.DBus")) fail ("peers contains the wrong name");
 
       System.out.println("Checking for outstanding errors");
       DBusExecutionException DBEe = serverconn.getError();
@@ -817,8 +901,21 @@ public class test
       System.out.println("Disconnecting");
       /** Disconnect from the bus. */
       clientconn.disconnect();
-      clientconn = null;
       serverconn.disconnect();
+
+      System.out.println("Trying to do things after disconnection");
+
+		/** Remove sig handler */
+		clientconn.removeSigHandler(TestSignalInterface.TestSignal.class, sigh);
+
+		/** Call a method when disconnected */
+		try {
+			System.out.println("getName() suceeded and returned: "+tri.getName());
+			fail("Should not succeed when disconnected");
+		} catch (NotConnected NC) {
+			System.out.println("getName() failed with exception "+NC);
+		}
+      clientconn = null;
       serverconn = null;
 
       if (!done1) fail("Signal handler 1 failed to be run");
@@ -826,10 +923,11 @@ public class test
       if (!done3) fail("Signal handler 3 failed to be run");
       if (!done4) fail("Callback handler failed to be run");
       if (!done5) fail("Signal handler R failed to be run");
-      if (!done6) fail("Signal handler E failed to be run");
+      if (!done6) fail("Disconnect handler failed to be run");
+      if (!done7) fail("Signal handler E failed to be run");
       
    } catch (Exception e) {
       e.printStackTrace();
-      fail("Unexpected Exception Occurred");
+      fail("Unexpected Exception Occurred: "+e);
    }}
 }
