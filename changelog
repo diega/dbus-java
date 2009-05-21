@@ -2,6 +2,8 @@ Version 2.6.1:
 
    * Fix bug in disconnected signal/exception handling (Spotted by Serkan Kaba
          <serkan_kaba -at- yahoo -dot- com>)
+	* Fix bug in empty signals (Spotted by Daniel Wagner <Daniel -dot- Wagner
+			-at- bmw-carit -dot- de>)
 
 Version 2.6:
 
