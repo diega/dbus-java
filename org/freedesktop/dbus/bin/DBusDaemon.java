@@ -83,12 +83,12 @@ public class DBusDaemon extends Thread
    }
    static class MagicMap<A, B>
    {
-      private Map<A, B> m;
+      private Map<A, LinkedList<B>> m;
       private LinkedList<A> q;
       private String name;
       public MagicMap(String name)
       {
-         m = new HashMap<A, B>();
+         m = new HashMap<A, LinkedList<B>>();
          q = new LinkedList<A>();
          this.name = name;
       }
@@ -99,16 +99,28 @@ public class DBusDaemon extends Thread
       public void putFirst(A a, B b)
       {
          if (Debug.debug) Debug.print("<"+name+"> Queueing {"+a+" => "+b+"}");
-         m.put(a, b);
+			if (m.containsKey(a)) 
+				m.get(a).add(b);
+			else {
+				LinkedList<B> l = new LinkedList<B>();
+				l.add(b);
+				m.put(a, l);
+			}
          q.addFirst(a);
       }
       public void putLast(A a, B b)
       {
          if (Debug.debug) Debug.print("<"+name+"> Queueing {"+a+" => "+b+"}");
-         m.put(a, b);
+			if (m.containsKey(a)) 
+				m.get(a).add(b);
+			else {
+				LinkedList<B> l = new LinkedList<B>();
+				l.add(b);
+				m.put(a, l);
+			}
          q.addLast(a);
       }
-      public B remove(A a)
+      public List<B> remove(A a)
       {
          if (Debug.debug) Debug.print("<"+name+"> Removing {"+a+"}");
          q.remove(a);
@@ -430,18 +442,23 @@ public class DBusDaemon extends Thread
          if (Debug.debug) Debug.print(Debug.DEBUG, "enter");
          while (_run) {
             Message m;
-            Connstruct c;
+            List<WeakReference<Connstruct>> wcs;
             // block on outqueue
             synchronized (localqueue) { 
                while (localqueue.size() == 0) try {
                   localqueue.wait();
                } catch (InterruptedException Ie) { } 
                m = localqueue.head();
-               c = localqueue.remove(m).get();
+               wcs = localqueue.remove(m);
             }
-            if (null != c) try {
-               if (Debug.debug) Debug.print(Debug.VERBOSE, "<localqueue> Got message "+m+" from "+c);
-               handleMessage(c, m);
+            if (null != wcs) try {
+					for (WeakReference<Connstruct> wc: wcs) {
+						Connstruct c = wc.get();
+						if (null != c) {
+							if (Debug.debug) Debug.print(Debug.VERBOSE, "<localqueue> Got message "+m+" from "+c);
+							handleMessage(c, m);
+						}
+					}
             } catch (DBusException DBe) {
                if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, DBe);
             }
@@ -463,7 +480,7 @@ public class DBusDaemon extends Thread
 
             if (Debug.debug) Debug.print(Debug.VERBOSE, "Acquiring lock on outqueue and blocking for data");
             Message m = null;
-            Connstruct c = null;
+				List<WeakReference<Connstruct>> wcs = null;
             // block on outqueue
             synchronized (outqueue) { 
                while (outqueue.size() == 0) try {
@@ -471,19 +488,23 @@ public class DBusDaemon extends Thread
                } catch (InterruptedException Ie) { } 
 
                m = outqueue.head();
-               WeakReference<Connstruct> wc = outqueue.remove(m);
-               if (null != wc) c = wc.get();
+               wcs = outqueue.remove(m);
             }
-            if (null != c) {
-               if (Debug.debug) Debug.print(Debug.VERBOSE, "<outqueue> Got message "+m+" for "+c.unique);
-               if (Debug.debug) Debug.print(Debug.INFO, "Sending message "+m+" to "+c.unique);
-               try {
-                  c.mout.writeMessage(m);
-               }
-               catch (IOException IOe) {
-                  if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, IOe);
-                  removeConnection(c);
-               }
+            if (null != wcs) {
+					for (WeakReference<Connstruct> wc: wcs) {
+						Connstruct c = wc.get();
+						if (null != c) {
+							if (Debug.debug) Debug.print(Debug.VERBOSE, "<outqueue> Got message "+m+" for "+c.unique);
+							if (Debug.debug) Debug.print(Debug.INFO, "Sending message "+m+" to "+c.unique);
+							try {
+								c.mout.writeMessage(m);
+							}
+							catch (IOException IOe) {
+								if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, IOe);
+								removeConnection(c);
+							}
+						}
+					}
             }
             else if (Debug.debug) Debug.print(Debug.INFO, "Discarding "+m+" connection reaped");
          }
@@ -609,54 +630,56 @@ public class DBusDaemon extends Thread
       while (_run) {
             try {
                Message m;
-               Connstruct c = null;
-               WeakReference<Connstruct> wc;
+               List<WeakReference<Connstruct>> wcs;
                synchronized (inqueue) {
                   while (0 == inqueue.size()) try {
                      inqueue.wait();
                   } catch (InterruptedException Ie) {}
                   
                   m = inqueue.head();
-                  wc = inqueue.remove(m);
-                  if (null != wc)
-                     c = wc.get();
-               }
-               if (null != c) {
-                  if (Debug.debug) Debug.print(Debug.INFO, "<inqueue> Got message "+m+" from "+c.unique);
-                  // check if they have hello'd
-                  if (null == c.unique 
-                        && (!(m instanceof MethodCall) 
-                           || !"org.freedesktop.DBus".equals(m.getDestination())
-                           || !"Hello".equals(m.getName()))) {
-                     send(c,new Error("org.freedesktop.DBus", null, "org.freedesktop.DBus.Error.AccessDenied", m.getSerial(), "s", _("You must send a Hello message")));
-                  } else {
-                     try {
-                        if (null != c.unique) m.setSource(c.unique);
-                     } catch (DBusException DBe) {
-                        if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, DBe);
-                        send(c,new Error("org.freedesktop.DBus", null, "org.freedesktop.DBus.Error.GeneralError", m.getSerial(), "s", _("Sending message failed")));
-                     }
+						wcs = inqueue.remove(m);
+					}
+					if (null != wcs) {
+						for (WeakReference<Connstruct> wc: wcs) {
+							Connstruct c = wc.get();
+							if (null != c) {
+								if (Debug.debug) Debug.print(Debug.INFO, "<inqueue> Got message "+m+" from "+c.unique);
+								// check if they have hello'd
+								if (null == c.unique 
+										&& (!(m instanceof MethodCall) 
+											|| !"org.freedesktop.DBus".equals(m.getDestination())
+											|| !"Hello".equals(m.getName()))) {
+									send(c,new Error("org.freedesktop.DBus", null, "org.freedesktop.DBus.Error.AccessDenied", m.getSerial(), "s", _("You must send a Hello message")));
+								} else {
+									try {
+										if (null != c.unique) m.setSource(c.unique);
+									} catch (DBusException DBe) {
+										if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, DBe);
+										send(c,new Error("org.freedesktop.DBus", null, "org.freedesktop.DBus.Error.GeneralError", m.getSerial(), "s", _("Sending message failed")));
+									}
 
-                     if ("org.freedesktop.DBus".equals(m.getDestination())) {
-                        synchronized (localqueue) {
-                           localqueue.putLast(m, wc);
-                           localqueue.notifyAll();
-                        }
-                     } else {
-                        if (m instanceof DBusSignal) {
-                           List<Connstruct> list = findSignalMatches((DBusSignal) m);
-                           for (Connstruct d: list)
-                              send(d, m);
-                        } else {
-                           Connstruct dest = names.get(m.getDestination());
+									if ("org.freedesktop.DBus".equals(m.getDestination())) {
+										synchronized (localqueue) {
+											localqueue.putLast(m, wc);
+											localqueue.notifyAll();
+										}
+									} else {
+										if (m instanceof DBusSignal) {
+											List<Connstruct> list = findSignalMatches((DBusSignal) m);
+											for (Connstruct d: list)
+																	 send(d, m);
+										} else {
+											Connstruct dest = names.get(m.getDestination());
 
-                           if (null == dest) {
-                              send(c, new Error("org.freedesktop.DBus", null, "org.freedesktop.DBus.Error.ServiceUnknown", m.getSerial(), "s", MessageFormat.format(_("The name `{0}' does not exist"), new Object[] { m.getDestination() })));
-                           } else
-                              send(dest, m);
-                        }
-                     }
-                  }
+											if (null == dest) {
+												send(c, new Error("org.freedesktop.DBus", null, "org.freedesktop.DBus.Error.ServiceUnknown", m.getSerial(), "s", MessageFormat.format(_("The name `{0}' does not exist"), new Object[] { m.getDestination() })));
+											} else
+												send(dest, m);
+										}
+									}
+								}
+							}
+						}
                }
             }
             catch (DBusException DBe) {

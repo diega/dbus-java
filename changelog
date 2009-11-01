@@ -5,7 +5,9 @@ Version 2.6.1:
 	* Fix bug in empty signals (Spotted by Daniel Wagner <Daniel -dot- Wagner
 			-at- bmw-carit -dot- de>)
 	* Fix bug in maps containing complex types (Spotted by Tim Court <tim -dot- 
-			court -at- venture3systems -dot- com>
+			court -at- venture3systems -dot- com>)
+	* Fix signal handling bug in DBusDaemon (Spotted by Markus Gaebelein 
+			<Markus -dot- Gaebelein -at- fiducia -dot- de>)
 
 Version 2.6:
 
