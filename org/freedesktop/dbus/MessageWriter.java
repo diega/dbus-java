@@ -10,6 +10,7 @@
 */
 package org.freedesktop.dbus;
 
+import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 
@@ -23,13 +24,15 @@ public class MessageWriter
 	private boolean isunix;
    public MessageWriter(OutputStream out)
    {
-      this.out = out;
+		this.out = out;
 		this.isunix = false;
 		try {
 			if (out instanceof USOutputStream)
 				this.isunix = true;
 		} catch (Throwable t) {
 		}
+		if (!this.isunix)
+			this.out = new BufferedOutputStream(this.out);
    }
    public void writeMessage(Message m) throws IOException
    {

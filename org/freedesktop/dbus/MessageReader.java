@@ -12,9 +12,10 @@ package org.freedesktop.dbus;
 
 import static org.freedesktop.dbus.Gettext._;
 
+import java.io.BufferedInputStream;
+import java.io.EOFException;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.EOFException;
 import java.net.SocketTimeoutException;
 import java.text.MessageFormat;
 
@@ -35,7 +36,7 @@ public class MessageReader
    private int[] len = new int[4];
    public MessageReader(InputStream in)
    {
-      this.in = in;
+      this.in = new BufferedInputStream(in);
    }
    public Message readMessage() throws IOException, DBusException
    {

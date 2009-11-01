@@ -8,6 +8,8 @@ Version 2.6.1:
 			court -at- venture3systems -dot- com>)
 	* Fix signal handling bug in DBusDaemon (Spotted by Markus Gaebelein 
 			<Markus -dot- Gaebelein -at- fiducia -dot- de>)
+	* Make MessageReader/Writer use Buffered streams to try and improve
+			performance
 
 Version 2.6:
 
