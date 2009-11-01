@@ -20,7 +20,7 @@ import java.util.Vector;
 
 class DBusMap<K, V> implements Map<K, V>
 {
-   private Object[][] entries;
+   Object[][] entries;
    public DBusMap(Object[][] entries)
    {
       this.entries=entries;

@@ -518,6 +518,15 @@ public class Marshalling
                   o.getClass());
          }
       }
+      if (parameter instanceof DBusMap) {
+			if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing a Map");
+			DBusMap dmap = (DBusMap) parameter;
+			Type[] maptypes = ((ParameterizedType) type).getActualTypeArguments();
+			for (int i = 0; i < dmap.entries.length; i++) {
+				dmap.entries[i][0] = deSerializeParameter(dmap.entries[i][0], maptypes[0], conn);
+				dmap.entries[i][1] = deSerializeParameter(dmap.entries[i][1], maptypes[1], conn);
+			}
+      }
       return parameter;
    }
    static List<Object> deSerializeParameters(List<Object> parameters, Type type, AbstractConnection conn) throws Exception

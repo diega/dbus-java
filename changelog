@@ -1,9 +1,11 @@
 Version 2.6.1:
 
-   * Fix bug in disconnected signal/exception handling (Spotted by Serkan Kaba
-         <serkan_kaba -at- yahoo -dot- com>)
+	* Fix bug in disconnected signal/exception handling (Spotted by Serkan Kaba
+			<serkan_kaba -at- yahoo -dot- com>)
 	* Fix bug in empty signals (Spotted by Daniel Wagner <Daniel -dot- Wagner
 			-at- bmw-carit -dot- de>)
+	* Fix bug in maps containing complex types (Spotted by Tim Court <tim -dot- 
+			court -at- venture3systems -dot- com>
 
 Version 2.6:
 
