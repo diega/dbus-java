@@ -109,9 +109,13 @@ public class Transport
          col.setDecomposition(Collator.FULL_DECOMPOSITION);
          col.setStrength(Collator.PRIMARY);
       }
-      public static final int LOCK_TIMEOUT = 1000;
-      public static final int COOKIE_TIMEOUT = 120;
+		public static final int LOCK_TIMEOUT = 1000;
+		public static final int NEW_KEY_TIMEOUT_SECONDS = 60 * 5;
+		public static final int EXPIRE_KEYS_TIMEOUT_SECONDS = NEW_KEY_TIMEOUT_SECONDS + (60 * 2);
+		public static final int MAX_TIME_TRAVEL_SECONDS = 60 * 5;
+		public static final int COOKIE_TIMEOUT = 240;
       public static final String COOKIE_CONTEXT = "org_freedesktop_java";
+
       private String findCookie(String context, String ID) throws IOException
       {
          String homedir = System.getProperty("user.home");
@@ -119,15 +123,18 @@ public class Transport
          BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
          String s = null;
          String cookie = null;
-         long timestamp = System.currentTimeMillis()/1000;
-         while (null != (s = r.readLine())) {
-            String[] line = s.split(" ");
-            long time = Long.parseLong(line[1]);
-            if (line[0].equals(ID) && (timestamp - time) < COOKIE_TIMEOUT) {
-               cookie = line[2];
-               break;
-            }
-         }
+			long now = System.currentTimeMillis()/1000;
+			while (null != (s = r.readLine())) {
+				String[] line = s.split(" ");
+				long timestamp = Long.parseLong(line[1]);
+				if (line[0].equals(ID) && (! (timestamp < 0 ||
+								(now + MAX_TIME_TRAVEL_SECONDS) < timestamp ||
+								(now - EXPIRE_KEYS_TIMEOUT_SECONDS) > timestamp))) {
+					cookie = line[2];
+					break;
+				}
+			}
+			r.close();
          return cookie;
       }
       private void addCookie(String context, String ID, long timestamp, String cookie) throws IOException

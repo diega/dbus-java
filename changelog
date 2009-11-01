@@ -11,6 +11,9 @@ Version 2.6.1:
 	* Make MessageReader/Writer use Buffered streams to try and improve
 			performance
 	* Support reading session bus address from file in $HOME
+	* Fix TCP cookie timestamp problems (Report/fix from Johannes Felten
+			<johannesfelten -at- googlemail -dot- com>)
+
 
 Version 2.6:
 

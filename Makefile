@@ -189,6 +189,17 @@ low-level: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBu
 	  $(MAKE) DBUS_JAVA_FLOATS=true low-level-run ;\
 	  kill $$(cat pid))
 
+checktcp: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDaemon dbus.jar dbus-java-bin-$(VERSION).jar dbus-bin.jar
+	( PASS=false; \
+	  testbin/DBusDaemon --tcp --addressfile address --pidfile pid 2> server.log&\
+	  sleep 1; \
+	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
+	  dbus-monitor >> monitor.log &\
+	  if $(MAKE) DBUS_JAVA_FLOATS=true DEBUG=$(DEBUG) testrun 2>&1 | tee client.log; then export PASS=true; fi  ; \
+	  kill $$(cat pid) ; \
+	  if [ "$$PASS" = "true" ]; then exit 0; else exit 1; fi )
+
+
 check: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar testbin/DBusDaemon dbus.jar dbus-java-bin-$(VERSION).jar dbus-bin.jar
 	( PASS=false; \
 	  testbin/DBusDaemon --addressfile address --pidfile pid 2> server.log&\
