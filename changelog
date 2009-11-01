@@ -10,6 +10,7 @@ Version 2.6.1:
 			<Markus -dot- Gaebelein -at- fiducia -dot- de>)
 	* Make MessageReader/Writer use Buffered streams to try and improve
 			performance
+	* Support reading session bus address from file in $HOME
 
 Version 2.6:
 

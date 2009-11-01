@@ -14,6 +14,9 @@ import static org.freedesktop.dbus.Gettext._;
 
 import java.lang.reflect.Proxy;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 
 import java.text.MessageFormat;
@@ -235,7 +238,35 @@ public class DBusConnection extends AbstractConnection
                break;
             case SESSION:
                s = System.getenv("DBUS_SESSION_BUS_ADDRESS");
-               if (null == s) throw new DBusException(_("Cannot Resolve Session Bus Address"));
+               if (null == s) {
+						// address gets stashed in $HOME/.dbus/session-bus/`dbus-uuidgen --get`-`sed 's/:\(.\)\..*/\1/' <<< $DISPLAY`
+						String display = System.getenv("DISPLAY");
+						if (null == display) throw new DBusException(_("Cannot Resolve Session Bus Address"));
+						File uuidfile = new File("/var/lib/dbus/machine-id");
+						if (!uuidfile.exists()) throw new DBusException(_("Cannot Resolve Session Bus Address"));
+						try {
+							BufferedReader r = new BufferedReader(new FileReader(uuidfile));
+							String uuid = r.readLine();
+							String homedir = System.getProperty("user.home");
+							File addressfile = new File(homedir + "/.dbus/session-bus",
+									uuid + "-" + display.replaceAll(":([0-9]*)\\..*", "$1"));
+							if (!addressfile.exists()) throw new DBusException(_("Cannot Resolve Session Bus Address"));
+							r = new BufferedReader(new FileReader(addressfile));
+							String l;
+							while (null != (l = r.readLine())) {
+								if (Debug.debug) Debug.print(Debug.VERBOSE, "Reading D-Bus session data: "+l);
+								if (l.matches("DBUS_SESSION_BUS_ADDRESS.*")) {
+									s = l.replaceAll("^[^=]*=", "");
+									if (Debug.debug) Debug.print(Debug.VERBOSE, "Parsing "+l+" to "+s);
+								}
+							}
+							if (null == s || "".equals(s)) throw new DBusException(_("Cannot Resolve Session Bus Address"));
+							if (Debug.debug) Debug.print(Debug.INFO, "Read bus address "+s+" from file "+addressfile.toString());
+						} catch (Exception e) {
+							if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
+							throw new DBusException(_("Cannot Resolve Session Bus Address"));
+						}
+					}
                break;
             default:
                throw new DBusException(_("Invalid Bus Type: ")+bustype);
