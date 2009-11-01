@@ -207,7 +207,8 @@ internal-cross-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar t
 	  export DBUS_SESSION_BUS_ADDRESS=$$(cat address) ;\
 	  $(MAKE) DEBUG=$(DEBUG) DBUS_JAVA_FLOATS=true -s cross-test-server | tee server.log &\
 	  sleep 1;\
-	  $(MAKE) DEBUG=$(DEBUG) DBUS_JAVA_FLOATS=true -s cross-test-client | tee client.log ;\
+	  $(MAKE) DEBUG=$(DEBUG) DBUS_JAVA_FLOATS=true -s cross-test-client | tee client1.log &\
+	  $(MAKE) DEBUG=$(DEBUG) DBUS_JAVA_FLOATS=true -s cross-test-client | tee client2.log ;\
 	  kill $$(cat pid) ; )
 
 peer-to-peer-test: libdbus-java-$(VERSION).jar dbus-java-test-$(VERSION).jar
