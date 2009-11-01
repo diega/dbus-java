@@ -440,6 +440,14 @@ class arraysignalhandler implements DBusSigHandler<TestSignalInterface.TestArray
                !"hey".equals(t.v.get(0).a.get(3)) ||
                !"aloha".equals(t.v.get(0).a.get(4)))
             test.fail("Incorrect TestArraySignal parameters");
+			
+			if (t.m.keySet().size() != 2) test.fail("Incorrect TestArraySignal map size: should be 2, actually "+t.m.keySet().size());
+         if (!(t.m.get(new UInt32(1)).b.getValue() instanceof UInt64) ||
+               678L != ((UInt64) t.m.get(new UInt32(1)).b.getValue()).longValue() ||
+				   !(t.m.get(new UInt32(42)).b.getValue() instanceof UInt64) ||
+               789L != ((UInt64) t.m.get(new UInt32(42)).b.getValue()).longValue())
+            test.fail("Incorrect TestArraySignal parameters");
+			
       } catch (Exception e) {
          e.printStackTrace();
          test.fail("SignalHandler 2 threw an exception: "+e);
@@ -816,7 +824,10 @@ public class test
       /** This creates an instance of the Test Signal, with the given object path, signal name and parameters, and broadcasts in on the Bus. */
       List<TestStruct2> tsl = new Vector<TestStruct2>();
       tsl.add(new TestStruct2(l, new Variant<UInt64>(new UInt64(567))));
-      serverconn.sendSignal(new TestSignalInterface.TestArraySignal("/Test", tsl));
+      Map<UInt32, TestStruct2> tsm = new HashMap<UInt32, TestStruct2>();
+      tsm.put(new UInt32(1), new TestStruct2(l, new Variant<UInt64>(new UInt64(678))));
+      tsm.put(new UInt32(42), new TestStruct2(l, new Variant<UInt64>(new UInt64(789))));
+      serverconn.sendSignal(new TestSignalInterface.TestArraySignal("/Test", tsl, tsm));
       
       System.out.println("done");
 

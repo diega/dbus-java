@@ -62,10 +62,12 @@ public interface TestSignalInterface extends DBusInterface
    public static class TestArraySignal extends DBusSignal
    {
       public final List<TestStruct2> v;
-      public TestArraySignal(String path, List<TestStruct2> v) throws DBusException
+      public final Map<UInt32, TestStruct2> m;
+      public TestArraySignal(String path, List<TestStruct2> v, Map<UInt32, TestStruct2> m) throws DBusException
       {
-         super(path, v);
+         super(path, v, m);
          this.v = v;
+         this.m = m;
       }
    }
    @Description("Test signal sending an object path")
