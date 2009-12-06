@@ -870,8 +870,45 @@ public abstract class AbstractConnection
          if (pendingCalls.contains(err.getReplySerial()))
             m = pendingCalls.remove(err.getReplySerial());
       }
-      if (null != m)
+      if (null != m) {
          m.setReply(err);
+         CallbackHandler cbh = null;
+         DBusAsyncReply asr = null;
+         synchronized (pendingCallbacks) {
+            cbh = pendingCallbacks.remove(m);
+            if (Debug.debug) Debug.print(Debug.VERBOSE, cbh+" = pendingCallbacks.remove("+m+")");
+            asr = pendingCallbackReplys.remove(m);
+         }
+         // queue callback for execution
+         if (null != cbh) {
+            final CallbackHandler fcbh = cbh;
+            if (Debug.debug) Debug.print(Debug.VERBOSE, "Adding Error Runnable with callback handler "+fcbh);
+            addRunnable(new Runnable() { 
+               private boolean run = false;
+               public synchronized void run() 
+               {
+                  if (run) return;
+                  run = true;
+                  try {
+                     if (Debug.debug) Debug.print(Debug.VERBOSE, "Running Error Callback for "+err);
+                     DBusCallInfo info = new DBusCallInfo(err);
+                     synchronized (infomap) {
+                        infomap.put(Thread.currentThread(), info);
+                     }
+
+                     fcbh.handleError(err.getException());
+                     synchronized (infomap) {
+                        infomap.remove(Thread.currentThread());
+                     }
+
+                  } catch (Exception e) {
+                     if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
+                  }
+               }
+            });
+         }
+ 
+		}
       else
          synchronized (pendingErrors) {
             pendingErrors.addLast(err); }

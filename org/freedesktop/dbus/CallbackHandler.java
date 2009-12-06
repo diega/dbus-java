@@ -10,10 +10,13 @@
 */
 package org.freedesktop.dbus;
 
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
+
 /**
  * Interface for callbacks in async mode
  */
 public interface CallbackHandler<ReturnType>
 {
    public void handle(ReturnType r);
+   public void handleError(DBusExecutionException e);
 }

@@ -30,6 +30,7 @@ public interface TestRemoteInterface extends DBusInterface
     */
    @Description("Simple test method")
    public String getName();
+   public String getNameAndThrow();
    @Description("Test of nested maps")
    public <T> int frobnicate(List<Long> n, Map<String,Map<UInt16,Short>> m, T v);
    @Description("Throws a TestException when called")

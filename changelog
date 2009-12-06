@@ -1,4 +1,4 @@
-Version 2.6.1:
+Version 2.7:
 
 	* Fix bug in disconnected signal/exception handling (Spotted by Serkan Kaba
 			<serkan_kaba -at- yahoo -dot- com>)
@@ -13,7 +13,7 @@ Version 2.6.1:
 	* Support reading session bus address from file in $HOME
 	* Fix TCP cookie timestamp problems (Report/fix from Johannes Felten
 			<johannesfelten -at- googlemail -dot- com>)
-
+	* Add handleError() method to callbacks (breaks backwards source compatibility)
 
 Version 2.6:
 

@@ -34,6 +34,10 @@ public class test_p2p_server implements TestRemoteInterface
       }
       return out;
    }
+   public String getNameAndThrow()
+	{ 
+		return getName();
+	}
    public String getName()
    {
       System.out.println("getName called");

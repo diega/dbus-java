@@ -172,6 +172,10 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
    {
       return "This Is A UTF-8 Name: س !!";
    }
+	public String getNameAndThrow() throws TestException
+	{
+		throw new TestException("test");
+	}
    public boolean check()
    {
       System.out.println("Being checked");
@@ -496,7 +500,20 @@ class callbackhandler implements CallbackHandler<String>
       col.setStrength(Collator.PRIMARY);
       if (0 != col.compare("This Is A UTF-8 Name: ﺱ !!", r))
          test.fail("call with callback, wrong return value");
+      if (test.done4) test.fail("Already ran callback handler");
       test.done4 = true;
+   }
+   public void handleError(DBusExecutionException e)
+   {
+		System.out.println("Handling error callback: "+e+" message = '"+e.getMessage()+"'");
+		if (!(e instanceof TestException)) test.fail("Exception is of the wrong sort");
+      Collator col = Collator.getInstance();
+      col.setDecomposition(Collator.FULL_DECOMPOSITION);
+      col.setStrength(Collator.PRIMARY);
+      if (0 != col.compare("test", e.getMessage()))
+			test.fail("Exception has the wrong message");
+      if (test.done8) test.fail("Already ran callback error handler");
+		test.done8=true;
    }
 }
 
@@ -512,6 +529,7 @@ public class test
    public static boolean done5 = false;
    public static boolean done6 = false;
    public static boolean done7 = false;
+   public static boolean done8 = false;
    public static void fail(String message)
    {
       System.out.println("Test Failed: "+message);
@@ -699,6 +717,8 @@ public class test
  
       System.out.println("Doing stuff asynchronously with callback");
       clientconn.callWithCallback(tri, "getName", new callbackhandler());
+      System.out.println("Doing stuff asynchronously with callback, which throws an error");
+      clientconn.callWithCallback(tri, "getNameAndThrow", new callbackhandler());
 
       /** call something that throws */
       try {
@@ -936,6 +956,7 @@ public class test
       if (!done5) fail("Signal handler R failed to be run");
       if (!done6) fail("Disconnect handler failed to be run");
       if (!done7) fail("Signal handler E failed to be run");
+      if (!done8) fail("Error callback handler failed to be run");
       
    } catch (Exception e) {
       e.printStackTrace();
