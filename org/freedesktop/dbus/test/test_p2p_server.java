@@ -20,6 +20,7 @@ import java.util.Map;
 import org.freedesktop.dbus.DirectConnection;
 import org.freedesktop.dbus.Path;
 import org.freedesktop.dbus.UInt16;
+import org.freedesktop.dbus.Variant;
 
 public class test_p2p_server implements TestRemoteInterface
 {
@@ -73,6 +74,7 @@ public class test_p2p_server implements TestRemoteInterface
    public List<Path> pathlistrv(List<Path> a) { return a; }
    public Map<Path,Path> pathmaprv(Map<Path,Path> a) { return a; }
    public boolean isRemote() { return false; }
+   public Map<String, Variant> svm() { return null; }
    public float testfloat(float[] f)
    {
       System.out.println("got float: "+Arrays.toString(f));

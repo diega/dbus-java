@@ -13,6 +13,7 @@ package org.freedesktop.dbus.test;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.Path;
 import org.freedesktop.dbus.UInt16;
+import org.freedesktop.dbus.Variant;
 import org.freedesktop.DBus.Description;
 import org.freedesktop.DBus.Method;
 
@@ -50,6 +51,7 @@ public interface TestRemoteInterface extends DBusInterface
    public int[][] teststructstruct(TestStruct3 in);
    @Description("Regression test for #13291")
    public void reg13291(byte[] as, byte[] bs);
+   public Map<String, Variant> svm();
    /* test lots of things involving Path */
    public Path pathrv(Path a);
    public List<Path> pathlistrv(List<Path> a);

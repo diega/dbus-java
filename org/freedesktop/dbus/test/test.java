@@ -305,16 +305,28 @@ class testclass implements TestRemoteInterface, TestRemoteInterface2, TestSignal
 		for (int i = 0; i < as.length;  i++)
 			if (as[i] != bs[i]) test.fail("didn't receive identical byte arrays");
 	}
-	@SuppressWarnings("unchecked")
-	public <A> A Get (String interface_name, String property_name)
-	{
-		return (A) new Path("/nonexistant/path");
-	}
-	public <A> void Set (String interface_name, String property_name, A value)  {}
-	public Map<String, Variant> GetAll (String interface_name) { return new HashMap<String,Variant>(); }
-   public Path pathrv(Path a) { return a; }
-   public List<Path> pathlistrv(List<Path> a) { return a; }
-   public Map<Path,Path> pathmaprv(Map<Path,Path> a) { return a; }
+@SuppressWarnings("unchecked")
+public <A> A Get (String interface_name, String property_name)
+{
+   return (A) new Path("/nonexistant/path");
+}
+public <A> void Set (String interface_name, String property_name, A value)  {}
+public Map<String, Variant> GetAll (String interface_name) { return new HashMap<String,Variant>(); }
+public Path pathrv(Path a) { return a; }
+public List<Path> pathlistrv(List<Path> a) { return a; }
+public Map<Path,Path> pathmaprv(Map<Path,Path> a) { return a; }
+@SuppressWarnings("unchecked")
+   public Map<String, Variant> svm()
+   {
+      HashMap<String, Variant> properties = new HashMap<String, Variant>();
+      HashMap<String, Variant<String>> parameters = new HashMap<String, Variant<String>>();
+
+      parameters.put("Name", new Variant<String>("Joe"));
+      parameters.put("Password", new Variant<String>("abcdef"));
+
+      properties.put("Parameters", new Variant(parameters, "a{sv}"));
+      return (Map<String, Variant>) properties;
+   }
 }
 
 /**
@@ -648,6 +660,11 @@ public class test
       /** Call the remote object and get a response. */
       String rname = tri.getName();
       System.out.println("Got Remote Name: "+rname);
+
+      Map<String, Variant> svmmap = tri.svm();
+      System.out.println(svmmap.toString());
+      if (!"{ Parameters => [{ Name => [Joe],Password => [abcdef] }] }".equals(svmmap.toString()))
+         fail("incorrect reply from svm");
 
       Path path = new Path("/nonexistantwooooooo");
       Path p = tri.pathrv(path);
