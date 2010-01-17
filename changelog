@@ -1,3 +1,8 @@
+Version 2.8:
+
+   * Patch manpage source to build with docbook2x (Patch from Alexander Kurtakov 
+         <akurtako -at- redhat -dot- com>)
+
 Version 2.7:
 
 	* Fix bug in disconnected signal/exception handling (Spotted by Serkan Kaba
