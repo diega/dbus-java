@@ -402,7 +402,7 @@ public class Marshalling
    @SuppressWarnings("unchecked")
    static Object deSerializeParameter(Object parameter, Type type, AbstractConnection conn) throws Exception
    {
-      if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing from "+parameter.getClass()+" to "+type.getClass());
+      if (Debug.debug) Debug.print(Debug.VERBOSE, "Deserializing from "+parameter.getClass()+" to "+type);
       if (null == parameter) 
          return null;
 
